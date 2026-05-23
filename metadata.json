@@ -1,0 +1,6 @@
+{
+  "name": "MS Moda Íntima",
+  "description": "Gerenciador financeiro para negócios de moda íntima feminina, com relatórios de vendas, controle de pedidos e acesso offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
