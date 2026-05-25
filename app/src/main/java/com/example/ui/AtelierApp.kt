@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -52,6 +54,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val isAddingTransaction by viewModel.isAddingTransaction.collectAsStateWithLifecycle()
     val transactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
+    val orders by viewModel.allOrders.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
@@ -185,6 +188,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                             AppTab.DASHBOARD -> DashboardScreen(
                                 summary = summary,
                                 transactions = transactions,
+                                orders = orders,
                                 onVerTodosClick = { viewModel.setTab(AppTab.TRANSACTIONS) },
                                 viewModel = viewModel
                             )
@@ -551,9 +555,90 @@ fun Modifier.glow(color: Color): Modifier = this // Decorative visual effect pla
 fun DashboardScreen(
     summary: FinancialSummary,
     transactions: List<TransactionEntity>,
+    orders: List<com.example.data.OrderEntity>,
     onVerTodosClick: () -> Unit,
     viewModel: TransactionViewModel
 ) {
+    var showReportDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showReportDialog) {
+        AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = {
+                Text(
+                    text = "Demonstrativo Financeiro Oficial",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val totalIn = summary.totalInflow
+                    val totalOut = summary.totalOutflow
+                    val bal = summary.currentBalance
+                    val marginHtml = if (totalIn > 0) (bal / totalIn) * 100.0 else 0.0
+                    val countPieces = orders.sumOf { it.quantity }
+                    val costPiece = if (countPieces > 0) totalOut / countPieces else 0.0
+
+                    Text(
+                        text = "Este relatório sintetiza a saúde operacional do atelier com base nas encomendas solicitadas e despesas operacionais registradas.",
+                        fontSize = 12.sp,
+                        color = OnSurfaceVariant
+                    )
+                    
+                    Divider(color = Color.White.copy(alpha = 0.1f))
+                    
+                    Text("RESUMO DOS INDICADORES:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Primary)
+                    Text("• Faturamento Bruto (Encomendas): " + String.format(Locale("pt", "BR"), "R$ %,.2f", totalIn), fontSize = 12.sp, color = Color.White)
+                    Text("• Custos Operacionais (Insumos): " + String.format(Locale("pt", "BR"), "R$ %,.2f", totalOut), fontSize = 12.sp, color = Color.White)
+                    Text("• Lucro Operacional Retido: " + String.format(Locale("pt", "BR"), "R$ %,.2f", bal), fontSize = 12.sp, color = Tertiary)
+                    Text("• Margem de Lucratividade: " + String.format(Locale("pt", "BR"), "%.2f%%", marginHtml), fontSize = 12.sp, color = Color.White)
+                    Text("• Volume Total Fabricado: " + countPieces + " peças", fontSize = 12.sp, color = Color.White)
+                    Text("• Custo Médio por Peça Produzida: " + String.format(Locale("pt", "BR"), "R$ %,.2f", costPiece), fontSize = 12.sp, color = Color.White)
+
+                    Divider(color = Color.White.copy(alpha = 0.1f))
+                    
+                    Text("DETALHAMENTO DE RATEIO DE GASTOS:", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Primary)
+                    summary.categoryBreakdown.forEach { (cat, pct) ->
+                        Text("• $cat: " + String.format(Locale("pt", "BR"), "%.1f%%", pct), fontSize = 12.sp, color = OnSurfaceVariant)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showReportDialog = false
+                        generatePdfAndShare(
+                            context = context,
+                            balance = summary.currentBalance,
+                            inflow = summary.totalInflow,
+                            outflow = summary.totalOutflow,
+                            transactions = transactions,
+                            orders = orders
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                ) {
+                    Text("Exportar PDF", color = OnPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReportDialog = false }) {
+                    Text("Voltar", color = OnSurfaceVariant)
+                }
+            },
+            containerColor = Color(0xFF1E0E2E), // Deep grape background
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -561,6 +646,55 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
     ) {
+        // Executive Header with PDF Generation Trigger Action Button
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Painel de Negócios",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Faturamento e Custos operacionais",
+                        fontSize = 11.sp,
+                        color = OnSurfaceVariant
+                    )
+                }
+                
+                Button(
+                    onClick = { showReportDialog = true },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White.copy(alpha = 0.06f),
+                        contentColor = Color.White
+                    ),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share, // Export indicator
+                        contentDescription = "PDF",
+                        tint = Secondary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Gerar PDF",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
         // Balanço Atual / Saldo Atual Card
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -722,6 +856,109 @@ fun DashboardScreen(
                                     .fillMaxHeight()
                                     .background(ErrorColor, RoundedCornerShape(2.dp))
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Advanced Operational Ratio Metrics
+        item {
+            val totalIn = summary.totalInflow
+            val totalOut = summary.totalOutflow
+            val bal = summary.currentBalance
+            val marginPct = if (totalIn > 0.0) (bal / totalIn) * 100.0 else 0.0
+            val totalPieces = orders.sumOf { it.quantity }
+            val avgTicket = if (orders.isNotEmpty()) totalIn / orders.size else 0.0
+            val costPerPiece = if (totalPieces > 0) totalOut / totalPieces else 0.0
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Métricas de Produção & Eficiência",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Margin card
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Margem Líquida", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(String.format(Locale("pt", "BR"), "%.1f%%", marginPct), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = if (marginPct >= 40) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFF59E0B).copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (marginPct >= 40) "Alto" else "Baixo",
+                                        fontSize = 8.sp,
+                                        color = if (marginPct >= 40) Color(0xFF10B981) else Color(0xFFF59E0B),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Ticket Card
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Ticket Médio", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(String.format(Locale("pt", "BR"), "R$ %,.2f", avgTicket), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Production Volume Card
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Produção Geral", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("$totalPieces pçs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+
+                    // Unit Cost Card
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Custo por Peça", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(String.format(Locale("pt", "BR"), "R$ %,.2f", costPerPiece), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
@@ -4030,5 +4267,159 @@ fun DetailMetric(label: String, value: String) {
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
         )
+    }
+}
+
+// ------------------------------------
+// PDF GENERATION AND OUTWARD SHARING ENGINE
+// ------------------------------------
+fun generatePdfAndShare(
+    context: android.content.Context,
+    balance: Double,
+    inflow: Double,
+    outflow: Double,
+    transactions: List<TransactionEntity>,
+    orders: List<com.example.data.OrderEntity>
+) {
+    try {
+        val pdfDocument = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        val paint = android.graphics.Paint()
+
+        // Draw title
+        paint.color = android.graphics.Color.BLACK
+        paint.textSize = 18f
+        paint.isFakeBoldText = true
+        canvas.drawText("MS MODA ÍNTIMA - RELATÓRIO OPERACIONAL", 40f, 65f, paint)
+
+        // Subtitle
+        paint.textSize = 10f
+        paint.isFakeBoldText = false
+        paint.color = android.graphics.Color.DKGRAY
+        canvas.drawText("Atelier de Costura e Confecção - Demonstrativo de Lucros e Custos", 40f, 85f, paint)
+
+        // Metadata
+        val df = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+        canvas.drawText("Emitido em: " + df.format(java.util.Date()), 390f, 85f, paint)
+
+        // Line separator
+        paint.strokeWidth = 2f
+        paint.color = android.graphics.Color.BLACK
+        canvas.drawLine(40f, 100f, 555f, 100f, paint)
+
+        // Draw Section indicator titles
+        paint.textSize = 12f
+        paint.isFakeBoldText = true
+        canvas.drawText("Resumo Consolidado de Saúde Financeira", 40f, 130f, paint)
+
+        paint.textSize = 11f
+        paint.isFakeBoldText = false
+        paint.color = android.graphics.Color.BLACK
+        canvas.drawText(String.format("Faturamento Bruto (Receitas): R$ %,.2f", inflow), 50f, 165f, paint)
+        canvas.drawText(String.format("Despesas Operacionais (Saídas): R$ %,.2f", outflow), 50f, 185f, paint)
+        
+        paint.isFakeBoldText = true
+        paint.textSize = 11f
+        canvas.drawText(String.format("Saldo Caixa Retido (Lucro Líquido): R$ %,.2f", balance), 50f, 215f, paint)
+
+        // Draw helper KPI
+        paint.isFakeBoldText = false
+        val totalPieces = orders.sumOf { it.quantity }
+        val costPiece = if (totalPieces > 0) outflow / totalPieces else 0.0
+        val margin = if (inflow > 0.0) (balance / inflow) * 100.0 else 0.0
+        canvas.drawText(String.format("Margem Estimada de Rendimento: %,.1f%%", margin), 50f, 235f, paint)
+        canvas.drawText(String.format("Volume Total Fabricado: %d calcinhas", totalPieces), 50f, 255f, paint)
+        canvas.drawText(String.format("Custo de Insumo Unitário Médio: R$ %,.2f", costPiece), 50f, 275f, paint)
+
+        // Draw Orders Table Title
+        paint.isFakeBoldText = true
+        paint.textSize = 12f
+        canvas.drawText("Histórico Detalhado de Encomendas (Receitas)", 40f, 315f, paint)
+
+        var currentY = 335f
+        paint.textSize = 9f
+        paint.isFakeBoldText = false
+        paint.color = android.graphics.Color.BLACK
+        canvas.drawText("Cliente", 45f, currentY, paint)
+        canvas.drawText("Especificação", 160f, currentY, paint)
+        canvas.drawText("Quant.", 320f, currentY, paint)
+        canvas.drawText("Valor Total", 450f, currentY, paint)
+
+        canvas.drawLine(40f, currentY+5, 555f, currentY+5, paint)
+        currentY += 20f
+
+        val limitedOrders = orders.take(8)
+        limitedOrders.forEach { o ->
+            canvas.drawText(o.clientName.take(18), 45f, currentY, paint)
+            canvas.drawText(o.pantyType + " (" + o.pantySize + ")", 160f, currentY, paint)
+            canvas.drawText(o.quantity.toString() + " un", 320f, currentY, paint)
+            canvas.drawText(String.format("R$ %,.2f", o.totalValue), 450f, currentY, paint)
+            currentY += 15f
+        }
+
+        // Draw Costs Table Title
+        currentY += 15f
+        paint.isFakeBoldText = true
+        paint.textSize = 12f
+        canvas.drawText("Histórico Detalhado dos Custos (Saídas)", 40f, currentY, paint)
+        currentY += 20f
+
+        paint.textSize = 9f
+        paint.isFakeBoldText = false
+        canvas.drawText("Descrição", 45f, currentY, paint)
+        canvas.drawText("Categoria", 220f, currentY, paint)
+        canvas.drawText("Semana", 370f, currentY, paint)
+        canvas.drawText("Importe", 450f, currentY, paint)
+
+        canvas.drawLine(40f, currentY+5, 555f, currentY+5, paint)
+        currentY += 20f
+
+        val limitTxs = transactions.filter { it.type == "OUTFLOW" }.take(8)
+        limitTxs.forEach { t ->
+            canvas.drawText(t.description.take(24), 45f, currentY, paint)
+            canvas.drawText(t.category, 220f, currentY, paint)
+            canvas.drawText(t.week, 370f, currentY, paint)
+            canvas.drawText(String.format("R$ %,.2f", t.amount), 450f, currentY, paint)
+            currentY += 15f
+        }
+
+        // Signature area
+        currentY = 750f
+        canvas.drawLine(40f, currentY, 220f, currentY, paint)
+        canvas.drawLine(340f, currentY, 520f, currentY, paint)
+        
+        canvas.drawText("Assinatura Atelier / Contábil", 65f, currentY + 15, paint)
+        canvas.drawText("Data de Validação Oficial", 365f, currentY + 15, paint)
+
+        pdfDocument.finishPage(page)
+
+        // Write to cache directory to bypass FileProvider requirement securely
+        val file = java.io.File(context.cacheDir, "Relatorio_Atelier.pdf")
+        val stream = java.io.FileOutputStream(file)
+        pdfDocument.writeTo(stream)
+        pdfDocument.close()
+        stream.close()
+
+        Toast.makeText(context, "PDF pronto: " + file.name, Toast.LENGTH_SHORT).show()
+
+        // Share via Intent
+        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(android.content.Intent.EXTRA_TITLE, "Exportar Relatório Atelier")
+            putExtra(android.content.Intent.EXTRA_SUBJECT, "Relatório Geral - MS Moda Íntima")
+            putExtra(android.content.Intent.EXTRA_TEXT, "Segue anexo o Relatório Executivo do Atelier MS Moda Íntima.")
+            
+            // Note: Use standard Uri.fromFile or direct File integration for simplified intent transfers
+            val fileUri = android.net.Uri.fromFile(file)
+            putExtra(android.content.Intent.EXTRA_STREAM, fileUri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(android.content.Intent.createChooser(shareIntent, "Compartilhar Relatório Finanças"))
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Erro ao exportar PDF: " + e.message, Toast.LENGTH_LONG).show()
     }
 }
