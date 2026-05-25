@@ -17,12 +17,12 @@
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        primary: '#9D58FF',
-                        secondary: '#FF6EA7',
-                        tertiary: '#4FC3F7',
-                        darkBg: '#09040D',
-                        cardBg: 'rgba(25, 14, 38, 0.45)',
-                        borderBg: 'rgba(255, 255, 255, 0.08)'
+                        primary: '#F472B6',
+                        secondary: '#FBCFE8',
+                        tertiary: '#FDA4AF',
+                        darkBg: '#1A0A13',
+                        cardBg: 'rgba(35, 13, 24, 0.65)',
+                        borderBg: 'rgba(226, 183, 206, 0.12)'
                     }
                 }
             }
@@ -30,54 +30,54 @@
     </script>
     <style>
         body {
-            background-color: #09040D;
-            background-image: radial-gradient(at top right, rgba(157, 88, 255, 0.15) 0px, transparent 50%),
-                              radial-gradient(at bottom left, rgba(255, 110, 167, 0.12) 0px, transparent 50%),
-                              radial-gradient(at center center, rgba(79, 195, 247, 0.05) 0px, transparent 60%);
+            background-color: #1A0A13;
+            background-image: radial-gradient(at top right, rgba(244, 114, 182, 0.15) 0px, transparent 50%),
+                              radial-gradient(at bottom left, rgba(253, 164, 175, 0.12) 0px, transparent 50%),
+                              radial-gradient(at center center, rgba(54, 21, 37, 0.45) 0px, transparent 60%);
             background-attachment: fixed;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #E2D9EB;
+            color: #FFF0F5;
         }
         .glass-card {
-            background: rgba(25, 14, 38, 0.55);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(35, 13, 24, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 183, 206, 0.12);
             border-radius: 20px;
         }
         .glass-input {
-            background: rgba(10, 5, 15, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #E2D9EB;
+            background: rgba(26, 10, 19, 0.85);
+            border: 1px solid rgba(226, 183, 206, 0.18);
+            color: #FFF0F5;
             border-radius: 12px;
             transition: all 0.2s ease;
         }
         .glass-input:focus {
             outline: none;
-            border-color: #9D58FF;
-            box-shadow: 0 0 0 3px rgba(157, 88, 255, 0.2);
-            background: rgba(20, 10, 30, 0.8);
+            border-color: #F472B6;
+            box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.25);
+            background: rgba(54, 21, 37, 0.8);
         }
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(9, 4, 13, 0.8);
+            background: rgba(26, 10, 19, 0.8);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(157, 88, 255, 0.3);
+            background: rgba(244, 114, 182, 0.3);
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(157, 88, 255, 0.5);
+            background: rgba(244, 114, 182, 0.5);
         }
     </style>
 </head>
 <body class="h-full flex flex-col md:flex-row overflow-hidden">
 
     <!-- LOGIN PANEL -->
-    <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040D]/95 backdrop-blur-md">
+    <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A0A13]/95 backdrop-blur-md">
         <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
             <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
             <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary/15 rounded-full blur-2xl"></div>
@@ -259,8 +259,8 @@
                             <div class="flex justify-center my-4 relative h-36">
                                 <svg class="w-32 h-32 transform -rotate-90">
                                     <circle cx="64" cy="64" r="50" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
-                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#9D58FF" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="150" id="svg-pie-1"/>
-                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#FF6EA7" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="250" id="svg-pie-2"/>
+                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#F472B6" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="150" id="svg-pie-1"/>
+                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#FBCFE8" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="250" id="svg-pie-2"/>
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center flex-col">
                                     <span class="text-[9px] uppercase font-bold text-purple-200/40">Custos</span>
@@ -995,7 +995,7 @@
             const catListContainer = document.getElementById('pie-categories-list');
             catListContainer.innerHTML = '';
 
-            const colors = ['#9D58FF', '#FF6EA7', '#4FC3F7', '#FFB74D', '#81C784', '#BA68C8'];
+            const colors = ['#F472B6', '#FBCFE8', '#FDA4AF', '#E2B7CE', '#F43F5E', '#361525'];
             let colorIdx = 0;
 
             const categoryBreakdowns = Object.keys(categoriesCostMap).map(k => {
