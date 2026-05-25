@@ -952,7 +952,7 @@ fun TransactionsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val filters = listOf("TUDO" to "Tudo", "ENTRADAS" to "Entradas", "SAIDAS" to "Saídas")
+            val filters = listOf("SAIDAS" to "Custos / Saídas")
             Row(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -2497,12 +2497,15 @@ fun CategoryManagerDialog(
     val categories by viewModel.allCategories.collectAsStateWithLifecycle(emptyList())
 
     var categoryNameInput by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("OUTFLOW") } // "INFLOW" / "OUTFLOW"
+    var editingCategoryId by remember { mutableStateOf<Long?>(null) }
+
+    // Only display/manage OUTFLOW categories since transactions are only outflows
+    val outflowCategories = remember(categories) { categories.filter { it.type == "OUTFLOW" } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Gerenciador de Categorias", fontWeight = FontWeight.Bold, color = Primary)
+            Text("Gerenciador de Categorias (Custos)", fontWeight = FontWeight.Bold, color = Primary)
         },
         containerColor = SurfaceContainerHigh,
         text = {
@@ -2510,9 +2513,9 @@ fun CategoryManagerDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 420.dp)
+                    .heightIn(max = 450.dp)
             ) {
-                // Add category form
+                // Add / Edit form
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
@@ -2522,11 +2525,17 @@ fun CategoryManagerDialog(
                         .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
-                    Text("ADICIONAR CATEGORIA", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Primary)
+                    val isEditing = editingCategoryId != null
+                    Text(
+                        text = if (isEditing) "EDITAR CATEGORIA" else "ADICIONAR CATEGORIA",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
                     OutlinedTextField(
                         value = categoryNameInput,
                         onValueChange = { categoryNameInput = it },
-                        placeholder = { Text("Ex: Forro de Algodão", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        placeholder = { Text("Ex: Forros de Malha", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = OnSurface,
                             unfocusedTextColor = OnSurface,
@@ -2540,62 +2549,59 @@ fun CategoryManagerDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Entrance chip
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (selectedType == "INFLOW") Tertiary.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
-                                .border(1.dp, if (selectedType == "INFLOW") Tertiary else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { selectedType = "INFLOW" }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Entrada", color = if (selectedType == "INFLOW") Tertiary else OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        // Expense chip
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (selectedType == "OUTFLOW") ErrorColor.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
-                                .border(1.dp, if (selectedType == "OUTFLOW") ErrorColor else Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .clickable { selectedType = "OUTFLOW" }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Saída", color = if (selectedType == "OUTFLOW") ErrorColor else OnSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Button(
-                        onClick = {
-                            if (categoryNameInput.isNotBlank()) {
-                                viewModel.addCategory(categoryNameInput.trim(), selectedType)
-                                categoryNameInput = ""
-                                Toast.makeText(context, "Categoria adicionada!", Toast.LENGTH_SHORT).show()
+                        if (isEditing) {
+                            Button(
+                                onClick = {
+                                    editingCategoryId = null
+                                    categoryNameInput = ""
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Cancelar", color = OnSurface, fontWeight = FontWeight.Bold)
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = categoryNameInput.isNotBlank()
-                    ) {
-                        Text("Adicionar Categoria", fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (categoryNameInput.isNotBlank()) {
+                                    val catName = categoryNameInput.trim()
+                                    val currentId = editingCategoryId
+                                    if (currentId != null) {
+                                        viewModel.updateCategory(currentId, catName, "OUTFLOW")
+                                        Toast.makeText(context, "Categoria atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+                                        editingCategoryId = null
+                                    } else {
+                                        viewModel.addCategory(catName, "OUTFLOW")
+                                        Toast.makeText(context, "Categoria adicionada com sucesso!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    categoryNameInput = ""
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            modifier = Modifier.weight(if (isEditing) 1.5f else 1f),
+                            enabled = categoryNameInput.isNotBlank()
+                        ) {
+                            Text(
+                                text = if (isEditing) "Salvar" else "Adicionar",
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimary
+                            )
+                        }
                     }
                 }
 
                 // List of existing added categories
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("CATEGORIAS PERSONALIZADAS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = OnSurfaceVariant)
-                    if (categories.isEmpty()) {
+                    Text("CATEGORIAS DE CUSTOS CADASTRADAS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = OnSurfaceVariant)
+                    if (outflowCategories.isEmpty()) {
                         Text("Nenhuma categoria customizada ainda.", fontSize = 12.sp, color = OnSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
                     } else {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            items(categories, key = { it.id }) { cat ->
+                            items(outflowCategories, key = { it.id }) { cat ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -2607,30 +2613,57 @@ fun CategoryManagerDialog(
                                 ) {
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.weight(1f),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = if (cat.type == "INFLOW") Icons.Default.Check else Icons.Default.Warning,
+                                            imageVector = Icons.Default.Warning,
                                             contentDescription = null,
-                                            tint = if (cat.type == "INFLOW") Tertiary else ErrorColor,
+                                            tint = ErrorColor,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Text(text = cat.name, fontSize = 14.sp, color = OnSurface)
                                     }
 
-                                    IconButton(
-                                        onClick = {
-                                            viewModel.deleteCategory(cat.id)
-                                            Toast.makeText(context, "Categoria excluída!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        modifier = Modifier.size(24.dp)
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Excluir Categoria",
-                                            tint = ErrorColor.copy(alpha = 0.8f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        // Edit Button
+                                        IconButton(
+                                            onClick = {
+                                                editingCategoryId = cat.id
+                                                categoryNameInput = cat.name
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Editar Categoria",
+                                                tint = Tertiary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+
+                                        // Delete Button
+                                        IconButton(
+                                            onClick = {
+                                                if (editingCategoryId == cat.id) {
+                                                    editingCategoryId = null
+                                                    categoryNameInput = ""
+                                                }
+                                                viewModel.deleteCategory(cat.id)
+                                                Toast.makeText(context, "Categoria excluída!", Toast.LENGTH_SHORT).show()
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Excluir Categoria",
+                                                tint = ErrorColor.copy(alpha = 0.8f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2936,8 +2969,8 @@ fun NewTransactionScreen(
 ) {
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("Vendas") }
-    var type by remember { mutableStateOf("INFLOW") } // "INFLOW" / "OUTFLOW"
+    var category by remember { mutableStateOf("Variados") }
+    val type = "OUTFLOW"
     val toggleSync = remember { mutableStateOf(isCloudBackupEnabled) }
     var selectedWeek by remember { mutableStateOf("1ª Semana") }
 
@@ -3021,70 +3054,13 @@ fun NewTransactionScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Registre entradas e saídas de MS Moda Íntima para manter o fluxo de caixa impecável.",
+                        text = "Registre saídas e custos de MS Moda Íntima para manter as despesas organizadas e controladas.",
                         fontSize = 14.sp,
                         color = OnSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 16.dp),
                         lineHeight = 20.sp
                     )
-                }
-            }
-
-            // Inflow/Outflow tab toggle selector row
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(22.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(22.dp))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(if (type == "INFLOW") Tertiary.copy(alpha = 0.15f) else Color.Transparent)
-                            .border(
-                                1.dp,
-                                if (type == "INFLOW") Tertiary.copy(alpha = 0.4f) else Color.Transparent,
-                                RoundedCornerShape(18.dp)
-                            )
-                            .clickable { type = "INFLOW" },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Entrada",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (type == "INFLOW") Tertiary else OnSurfaceVariant
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(if (type == "OUTFLOW") ErrorColor.copy(alpha = 0.15f) else Color.Transparent)
-                            .border(
-                                1.dp,
-                                if (type == "OUTFLOW") ErrorColor.copy(alpha = 0.4f) else Color.Transparent,
-                                RoundedCornerShape(18.dp)
-                            )
-                            .clickable { type = "OUTFLOW" },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Saída",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (type == "OUTFLOW") ErrorColor else OnSurfaceVariant
-                        )
-                    }
                 }
             }
 

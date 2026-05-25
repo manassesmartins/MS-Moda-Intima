@@ -329,22 +329,18 @@
             <section id="tab-transactions" class="space-y-6 tab-content hidden">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Histórico de Lançamentos</h2>
-                        <p class="text-xs text-purple-200/60">Relação completa de recebimentos e custos do atelier</p>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Histórico de Custos (Saídas)</h2>
+                        <p class="text-xs text-purple-200/60">Relação completa de despesas, insumos e saídas do atelier</p>
                     </div>
                     
                     <div class="flex items-center gap-2">
+                        <button onclick="openCategoryManagerModal()" class="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-purple-200/80 text-xs font-bold hover:bg-white/10 active:scale-[0.98] transition-transform">
+                            <i class="fa-solid fa-tags mr-1.5"></i>Categorias
+                        </button>
                         <button onclick="openTransactionModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-transform">
-                            <i class="fa-solid fa-plus mr-1.5"></i>Novo Lançamento
+                            <i class="fa-solid fa-plus mr-1.5"></i>Novo Custo
                         </button>
                     </div>
-                </div>
-
-                <!-- FILTERS BAR -->
-                <div class="flex flex-wrap items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/5 text-xs">
-                    <button onclick="filterTransactions('ALL')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold bg-primary text-white transition-all">Todos</button>
-                    <button onclick="filterTransactions('INFLOW')" id="filter-inflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all">Receitas</button>
-                    <button onclick="filterTransactions('OUTFLOW')" id="filter-outflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all">Custos</button>
                 </div>
 
                 <!-- TRANSACTIONS LIST -->
@@ -574,23 +570,17 @@
     <div id="tx-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
         <div class="glass-card p-6 w-full max-w-lg">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-bold text-white" id="tx-modal-title">Novo Lançamento Financeiro</h3>
+                <h3 class="text-lg font-bold text-white" id="tx-modal-title">Novo Lançamento de Custos (Saídas)</h3>
                 <button onclick="closeTransactionModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form onsubmit="handleTransactionSubmit(event)" class="space-y-4">
                 <input type="hidden" id="tx-edit-id">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4">
+                    <input type="hidden" id="tx-type" value="OUTFLOW">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Tipo</label>
-                        <select id="tx-type" class="glass-input w-full px-3 py-2.5 text-sm" onchange="adjustCategoryOptions()">
-                            <option value="INFLOW">Entrada (Receita)</option>
-                            <option value="OUTFLOW">Saída (Custo)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Categoria</label>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Categoria do Custo</label>
                         <select id="tx-category" class="glass-input w-full px-3 py-2.5 text-sm">
-                            <!-- Populated in JS dynamically based on Inflow/Outflow -->
+                            <!-- Populated in JS dynamically -->
                         </select>
                     </div>
                 </div>
@@ -624,6 +614,39 @@
                     <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Salvar Registro</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- CATEGORY MANAGER MODAL -->
+    <div id="cat-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+        <div class="glass-card p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white">Gerenciar Categorias de Custos</h3>
+                <button onclick="closeCategoryManagerModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <!-- Add / Edit Category Form -->
+            <form id="cat-form" onsubmit="handleCategorySubmit(event)" class="space-y-4 mb-6 p-4 rounded-xl bg-white/5 border border-white/5">
+                <h4 class="text-xs font-bold text-primary uppercase tracking-wide" id="cat-form-title">Adicionar Nova Categoria</h4>
+                <input type="hidden" id="cat-edit-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome da Categoria</label>
+                    <input type="text" id="cat-name" required placeholder="Ex: Forros de Malha" class="glass-input w-full px-4 py-2.5 text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <button type="button" id="btn-cancel-cat-edit" onclick="resetCategoryForm()" class="hidden py-2 px-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-purple-200/75 text-xs font-bold transition-colors">Cancelar</button>
+                    <button type="submit" id="btn-submit-cat" class="flex-1 py-2 px-4 bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold rounded-lg shadow-md hover:brightness-110 active:scale-[0.98] transition-all">Adicionar</button>
+                </div>
+            </form>
+
+            <div class="space-y-3">
+                <h4 class="text-xs font-semibold uppercase text-purple-200/50 tracking-wider">Categorias Cadastradas</h4>
+                <div class="max-h-48 overflow-y-auto space-y-2 pr-1" id="cat-list-container">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -760,6 +783,7 @@
                 transactions = JSON.parse(localStorage.getItem('ms_transactions')) || [];
                 orders = JSON.parse(localStorage.getItem('ms_orders')) || [];
                 pieceCalculations = JSON.parse(localStorage.getItem('ms_calcs')) || [];
+                categories = JSON.parse(localStorage.getItem('ms_categories')) || [...defaultCategories];
                 
                 // If they are brand new, fill with some nice placeholder test data to make the UI populated immediately
                 if (transactions.length === 0 && orders.length === 0 && pieceCalculations.length === 0) {
@@ -791,6 +815,7 @@
             localStorage.setItem('ms_transactions', JSON.stringify(transactions));
             localStorage.setItem('ms_orders', JSON.stringify(orders));
             localStorage.setItem('ms_calcs', JSON.stringify(pieceCalculations));
+            localStorage.setItem('ms_categories', JSON.stringify(categories));
         }
 
         // Define default Supabase instance matching the Mobile app
@@ -1040,10 +1065,13 @@
             let inflowTotal = 0;
             let outflowTotal = 0;
 
+            orders.forEach(o => {
+                inflowTotal += parseFloat(o.totalValue) || 0;
+            });
+
             transactions.forEach(t => {
                 const val = parseFloat(t.amount) || 0;
-                if (t.type === 'INFLOW') inflowTotal += val;
-                else outflowTotal += val;
+                if (t.type === 'OUTFLOW') outflowTotal += val;
             });
 
             const balance = inflowTotal - outflowTotal;
@@ -1142,27 +1170,20 @@
             const banner = document.getElementById('txs-empty-banner');
             tableBody.innerHTML = '';
 
-            // Filter transactions list
-            const filtered = transactions.filter(t => {
-                if (currentTxFilter === 'ALL') return true;
-                return t.type === currentTxFilter;
-            }).sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-            // Setup buttons style
-            document.getElementById('filter-all').className = currentTxFilter === 'ALL' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
-            document.getElementById('filter-inflow').className = currentTxFilter === 'INFLOW' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
-            document.getElementById('filter-outflow').className = currentTxFilter === 'OUTFLOW' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
+            // Filter transactions list (OUTFLOW only)
+            const filtered = transactions.filter(t => t.type === 'OUTFLOW')
+                .sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             if (filtered.length === 0) {
-                banner.style.display = 'block';
+                if (banner) banner.style.display = 'block';
             } else {
-                banner.style.display = 'none';
+                if (banner) banner.style.display = 'none';
                 filtered.forEach(t => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-white/5 border-b border-white/5 transition-all text-xs";
                     
-                    const sign = t.type === 'INFLOW' ? '+' : '-';
-                    const colorSignClass = t.type === 'INFLOW' ? 'text-green-400 font-bold' : 'text-red-400';
+                    const sign = '-';
+                    const colorSignClass = 'text-red-400';
 
                     tr.innerHTML = `
                         <td class="p-4 font-semibold text-white">${t.week || '1ª Semana'}</td>
@@ -1282,6 +1303,100 @@
         function filterTransactions(filterOption) {
             currentTxFilter = filterOption;
             renderTransactionsList();
+        }
+
+        // --- CATEGORIAS MANAGER ---
+        function openCategoryManagerModal() {
+            document.getElementById('cat-modal').classList.remove('hidden');
+            resetCategoryForm();
+            renderCategoryList();
+        }
+
+        function closeCategoryManagerModal() {
+            document.getElementById('cat-modal').classList.add('hidden');
+        }
+
+        function resetCategoryForm() {
+            document.getElementById('cat-edit-id').value = '';
+            document.getElementById('cat-name').value = '';
+            document.getElementById('cat-form-title').innerText = 'Adicionar Nova Categoria';
+            document.getElementById('btn-cancel-cat-edit').classList.add('hidden');
+            document.getElementById('btn-submit-cat').innerText = 'Adicionar';
+        }
+
+        function renderCategoryList() {
+            const container = document.getElementById('cat-list-container');
+            container.innerHTML = '';
+            
+            // Only list OUTFLOW categories
+            const outflowCats = categories.filter(c => c.type === 'OUTFLOW');
+            
+            if (outflowCats.length === 0) {
+                container.innerHTML = '<p class="text-xs text-purple-200/40 py-2">Nenhuma categoria encontrada.</p>';
+                return;
+            }
+
+            outflowCats.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-purple-200';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-tag text-xs text-secondary"></i>
+                        <span class="text-xs font-semibold">${cat.name}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="editCategory(${cat.id})" class="p-1 text-purple-200/50 hover:text-white transition-colors"><i class="fa-solid fa-pencil text-[10px]"></i></button>
+                        <button type="button" onclick="deleteCategory(${cat.id})" class="p-1 text-purple-200/50 hover:text-red-400 transition-colors"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function editCategory(id) {
+            const cat = categories.find(c => c.id == id);
+            if (cat) {
+                document.getElementById('cat-edit-id').value = cat.id;
+                document.getElementById('cat-name').value = cat.name;
+                document.getElementById('cat-form-title').innerText = 'Editar Categoria';
+                document.getElementById('btn-cancel-cat-edit').classList.remove('hidden');
+                document.getElementById('btn-submit-cat').innerText = 'Salvar';
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (confirm('Deseja realmente apagar esta categoria?')) {
+                categories = categories.filter(c => c.id != id);
+                saveLocalData();
+                renderCategoryList();
+                adjustCategoryOptions();
+                renderDashboard();
+            }
+        }
+
+        async function handleCategorySubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('cat-edit-id').value;
+            const name = document.getElementById('cat-name').value.trim();
+            if (!name) return;
+
+            if (editId) {
+                // Edit
+                categories = categories.map(c => c.id == editId ? { ...c, name: name } : c);
+            } else {
+                // Add
+                const newCat = {
+                    id: Date.now(),
+                    name: name,
+                    type: 'OUTFLOW'
+                };
+                categories.push(newCat);
+            }
+            saveLocalData();
+            resetCategoryForm();
+            renderCategoryList();
+            adjustCategoryOptions();
+            renderDashboard();
         }
 
         // --- TRANSACTION FORMS ---
