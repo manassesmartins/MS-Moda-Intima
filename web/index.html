@@ -700,7 +700,7 @@
 
         // Global States
         let user = null;
-        let supabase = null;
+        let supabaseClient = null;
         let categories = [...defaultCategories];
         let transactions = [];
         let orders = [];
@@ -771,7 +771,7 @@
 
             if (cachedUrl && cachedKey && window.supabase) {
                 try {
-                    supabase = window.supabase.createClient(cachedUrl, cachedKey);
+                    supabaseClient = window.supabase.createClient(cachedUrl, cachedKey);
                     console.log("Supabase inicializado.");
                     
                     // Check if we have a saved user
@@ -840,7 +840,7 @@
             localStorage.setItem('ms_supabase_url', customUrl);
             localStorage.setItem('ms_supabase_key', customKey);
             try {
-                supabase = window.supabase.createClient(customUrl, customKey);
+                supabaseClient = window.supabase.createClient(customUrl, customKey);
             } catch (e) {
                 errBlock.innerText = "URL ou chave do Supabase inválidas.";
                 errBlock.classList.remove('hidden');
@@ -850,7 +850,7 @@
             try {
                 if (currentAuthTab === 'login') {
                     // Logic to login
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     
                     user = data.user;
@@ -864,7 +864,7 @@
                     }, 800);
                 } else {
                     // Logic to signup
-                    const { data, error } = await supabase.auth.signUp({ email, password });
+                    const { data, error } = await supabaseClient.auth.signUp({ email, password });
                     if (error) throw error;
                     
                     succBlock.innerText = "Conta criada com sucesso! Verifique seu e-mail para validar.";
@@ -877,8 +877,8 @@
         }
 
         function handleLogout() {
-            if (supabase) {
-                supabase.auth.signOut();
+            if (supabaseClient) {
+                supabaseClient.auth.signOut();
             }
             user = null;
             localStorage.removeItem('ms_user');
@@ -1288,18 +1288,18 @@
             if (editId) {
                 // Update
                 transactions = transactions.map(item => item.id == editId ? transactionObj : item);
-                if (supabase && user) {
+                if (supabaseClient && user) {
                     const cleanObj = { ...transactionObj };
                     delete cleanObj.id; // Let database auto increment or handle edit ID mapping
-                    await supabase.from('transactions').update({
+                    await supabaseClient.from('transactions').update({
                         type, category, description, amount, week, extraText: extra, dateString: formattedDate, timestamp: Date.now()
                     }).eq('id', editId);
                 }
             } else {
                 // Add
                 transactions.unshift(transactionObj);
-                if (supabase && user) {
-                    await supabase.from('transactions').insert({
+                if (supabaseClient && user) {
+                    await supabaseClient.from('transactions').insert({
                         type, category, description, amount, week, extraText: extra, dateString: formattedDate, timestamp: Date.now(), user_id: user.id
                     });
                 }
@@ -1313,8 +1313,8 @@
         async function deleteTransaction(id) {
             if (confirm("Gostaria mesmo de remover este lançamento financeiro?")) {
                 transactions = transactions.filter(t => t.id != id);
-                if (supabase && user) {
-                    await supabase.from('transactions').delete().eq('id', id);
+                if (supabaseClient && user) {
+                    await supabaseClient.from('transactions').delete().eq('id', id);
                 }
                 saveLocalData();
                 renderAll();
@@ -1386,15 +1386,15 @@
 
             if (editId) {
                 orders = orders.map(item => item.id == editId ? orderObj : item);
-                if (supabase && user) {
-                    await supabase.from('orders').update({
+                if (supabaseClient && user) {
+                    await supabaseClient.from('orders').update({
                         clientName, pantyType, pantySize, quantity, pantyValue, totalValue, week
                     }).eq('id', editId);
                 }
             } else {
                 orders.unshift(orderObj);
-                if (supabase && user) {
-                    await supabase.from('orders').insert({
+                if (supabaseClient && user) {
+                    await supabaseClient.from('orders').insert({
                         clientName, pantyType, pantySize, quantity, pantyValue, totalValue, week, user_id: user.id
                     });
                 }
@@ -1408,8 +1408,8 @@
         async function deleteOrder(id) {
             if (confirm("Gostaria mesmo de remover esta encomenda?")) {
                 orders = orders.filter(o => o.id != id);
-                if (supabase && user) {
-                    await supabase.from('orders').delete().eq('id', id);
+                if (supabaseClient && user) {
+                    await supabaseClient.from('orders').delete().eq('id', id);
                 }
                 saveLocalData();
                 renderAll();
@@ -1464,15 +1464,15 @@
 
             if (editId) {
                 pieceCalculations = pieceCalculations.map(item => item.id == editId ? calcObj : item);
-                if (supabase && user) {
-                    await supabase.from('piece_calculations').update({
+                if (supabaseClient && user) {
+                    await supabaseClient.from('piece_calculations').update({
                         pano: cloth, kg, valorKg: valKg, quantidade: produced
                     }).eq('id', editId);
                 }
             } else {
                 pieceCalculations.unshift(calcObj);
-                if (supabase && user) {
-                    await supabase.from('piece_calculations').insert({
+                if (supabaseClient && user) {
+                    await supabaseClient.from('piece_calculations').insert({
                         pano: cloth, kg, valorKg: valKg, quantidade: produced, user_id: user.id
                     });
                 }
@@ -1486,8 +1486,8 @@
         async function deletePieceCalculation(id) {
             if (confirm("Gostaria mesmo de excluir este rendimento de tecido?")) {
                 pieceCalculations = pieceCalculations.filter(c => c.id != id);
-                if (supabase && user) {
-                    await supabase.from('piece_calculations').delete().eq('id', id);
+                if (supabaseClient && user) {
+                    await supabaseClient.from('piece_calculations').delete().eq('id', id);
                 }
                 saveLocalData();
                 renderAll();
@@ -1496,7 +1496,7 @@
 
         // --- BACKEND / CLOUD SYNC ENGINES ---
         async function triggerSyncNow() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 // If keys not loaded, show config fields
                 document.getElementById('auth-panel').classList.remove('hidden');
                 document.getElementById('supabase-config-fields').classList.remove('hidden');
@@ -1516,22 +1516,22 @@
         }
 
         async function fetchFromCloud() {
-            if (!supabase || !user) return;
+            if (!supabaseClient || !user) return;
             try {
                 // Read Transactions
-                const { data: cloudTxs, error: tErr } = await supabase.from('transactions').select('*').eq('user_id', user.id).order('timestamp', { ascending: false });
+                const { data: cloudTxs, error: tErr } = await supabaseClient.from('transactions').select('*').eq('user_id', user.id).order('timestamp', { ascending: false });
                 if (!tErr && cloudTxs) {
                     transactions = cloudTxs;
                 }
 
                 // Read Orders
-                const { data: cloudOrders, error: oErr } = await supabase.from('orders').select('*').eq('user_id', user.id);
+                const { data: cloudOrders, error: oErr } = await supabaseClient.from('orders').select('*').eq('user_id', user.id);
                 if (!oErr && cloudOrders) {
                     orders = cloudOrders;
                 }
 
                 // Read Calcs
-                const { data: cloudCalcs, error: cErr } = await supabase.from('piece_calculations').select('*').eq('user_id', user.id);
+                const { data: cloudCalcs, error: cErr } = await supabaseClient.from('piece_calculations').select('*').eq('user_id', user.id);
                 if (!cErr && cloudCalcs) {
                     pieceCalculations = cloudCalcs;
                 }
@@ -1544,7 +1544,7 @@
         }
 
         async function uploadLocalDataToCloud() {
-            if (!supabase || !user) return;
+            if (!supabaseClient || !user) return;
             try {
                 // Batch sync categories or simple bulk uploads if needed
                 console.log("Upserting local offline state to database tables.");
