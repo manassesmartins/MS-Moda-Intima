@@ -136,7 +136,28 @@
     </div>
 
     <!-- SIDEBAR NAVIGATION (LEFT) -->
-    <aside class="w-full md:w-64 max-h-screen border-b md:border-b-0 md:border-r border-white/10 md:overflow-y-auto flex flex-col glass-card m-0 rounded-none z-10 shrink-0">
+    <header class="flex md:hidden items-center justify-between p-4 bg-[#1A0A13]/90 backdrop-blur-md border-b border-white/10 text-white z-20 shrink-0 select-none">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-primary/25 rounded-lg flex items-center justify-center border border-primary/35">
+                <i class="fa-solid fa-gem text-primary text-xs"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-extrabold text-white tracking-tight leading-none">MS Moda Íntima</h1>
+                <span class="text-[9px] text-purple-200/50 font-mono tracking-wider">Atelier Web</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="online-badge-mobile" class="px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[9px] font-bold flex items-center gap-1">
+                <span class="h-1 w-1 rounded-full bg-purple-400"></span>
+                OFFLINE
+            </div>
+            <button onclick="handleLogout()" class="text-purple-200/50 hover:text-red-400 p-1.5 text-xs bg-white/5 border border-white/5 rounded-lg" title="Sair">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
+
+    <aside class="hidden md:flex md:w-64 max-h-screen border-r border-white/10 md:overflow-y-auto flex-col glass-card m-0 rounded-none z-10 shrink-0">
         <div class="p-5 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
@@ -197,7 +218,7 @@
     </aside>
 
     <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 overflow-y-auto px-4 py-6 md:p-8 flex flex-col justify-between max-h-screen">
+    <main class="flex-1 overflow-y-auto px-4 py-6 md:p-8 pb-24 md:pb-8 flex flex-col justify-between max-h-screen">
         <div class="space-y-6">
 
             <!-- TAB 1: DASHBOARD -->
@@ -524,6 +545,30 @@
             <p>&copy; 2026 MS Moda Íntima Atelier. Todos os direitos reservados.</p>
         </footer>
     </main>
+
+    <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXED (Mobile Bottom Nav) -->
+    <div class="fixed bottom-0 left-0 right-0 h-16 bg-[#1A0A13]/95 backdrop-blur-md border-t border-white/10 flex md:hidden justify-around items-center z-40 select-none pb-safe">
+        <button id="btn-tab-mobile-dashboard" onclick="switchTab('dashboard')" class="tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all">
+            <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+            <span class="text-[9px]">Painel</span>
+        </button>
+        <button id="btn-tab-mobile-transactions" onclick="switchTab('transactions')" class="tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all">
+            <i class="fa-solid fa-receipt text-lg mb-0.5"></i>
+            <span class="text-[9px]">Lançamentos</span>
+        </button>
+        <button id="btn-tab-mobile-orders" onclick="switchTab('orders')" class="tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all">
+            <i class="fa-solid fa-box-archive text-lg mb-0.5"></i>
+            <span class="text-[9px]">Encomendas</span>
+        </button>
+        <button id="btn-tab-mobile-calcs" onclick="switchTab('calcs')" class="tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all">
+            <i class="fa-solid fa-calculator text-lg mb-0.5"></i>
+            <span class="text-[9px]">Cálculos</span>
+        </button>
+        <button id="btn-tab-mobile-sync" onclick="switchTab('sync')" class="tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all">
+            <i class="fa-solid fa-cloud-arrow-up text-lg mb-0.5"></i>
+            <span class="text-[9px]">Nuvem</span>
+        </button>
+    </div>
 
     <!-- TRANSACTION MODAL -->
     <div id="tx-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
@@ -893,6 +938,7 @@
 
         function updateSyncBadge(isOnline) {
             const badge = document.getElementById('online-badge');
+            const badgeMobile = document.getElementById('online-badge-mobile');
             const displayEmail = document.getElementById('user-display-email');
             const displayStatus = document.getElementById('user-display-status');
             
@@ -900,28 +946,44 @@
             const syncEmailText = document.getElementById('sync-email-status');
 
             if (isOnline && user) {
-                badge.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1";
-                badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span> CONECTADO`;
-                displayEmail.innerText = user.email;
-                displayStatus.innerText = "Sync Nuvem Ativo";
+                const connectedHtml = `<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span> CONECTADO`;
+                if (badge) {
+                    badge.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1";
+                    badge.innerHTML = connectedHtml;
+                }
+                if (badgeMobile) {
+                    badgeMobile.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[9px] font-bold flex items-center gap-1";
+                    badgeMobile.innerHTML = connectedHtml;
+                }
+                if (displayEmail) displayEmail.innerText = user.email;
+                if (displayStatus) displayStatus.innerText = "Sync Nuvem Ativo";
                 
                 if (syncStatusText) {
                     syncStatusText.className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400";
                     syncStatusText.innerText = "Conectado";
                     syncEmailText.innerText = user.email;
-                    document.getElementById('btn-sync-action').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar`;
+                    const btnSync = document.getElementById('btn-sync-action');
+                    if (btnSync) btnSync.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar`;
                 }
             } else {
-                badge.className = "px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[10px] font-bold flex items-center gap-1";
-                badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-purple-400"></span> OFFLINE`;
-                displayEmail.innerText = "Modo Local";
-                displayStatus.innerText = "Salvo no Navegador";
+                const offlineHtml = `<span class="h-1.5 w-1.5 rounded-full bg-purple-400"></span> OFFLINE`;
+                if (badge) {
+                    badge.className = "px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[10px] font-bold flex items-center gap-1";
+                    badge.innerHTML = offlineHtml;
+                }
+                if (badgeMobile) {
+                    badgeMobile.className = "px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[9px] font-bold flex items-center gap-1";
+                    badgeMobile.innerHTML = offlineHtml;
+                }
+                if (displayEmail) displayEmail.innerText = "Modo Local";
+                if (displayStatus) displayStatus.innerText = "Salvo no Navegador";
 
                 if (syncStatusText) {
                     syncStatusText.className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-500/10 text-pink-400";
                     syncStatusText.innerText = "Modo Local";
                     syncEmailText.innerText = "Nenhuma conta associada";
-                    document.getElementById('btn-sync-action').innerHTML = `<i class="fa-solid fa-key"></i> Conectar Nuvem`;
+                    const btnSync = document.getElementById('btn-sync-action');
+                    if (btnSync) btnSync.innerHTML = `<i class="fa-solid fa-key"></i> Conectar Nuvem`;
                 }
             }
         }
@@ -937,15 +999,26 @@
             const tabEl = document.getElementById(`tab-${tabId}`);
             if (tabEl) tabEl.classList.remove('hidden');
 
-            // Reset navigation active classes
+            // Reset navigation active classes (desktop sidebar)
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white";
             });
 
-            // Set clicked button to highlighted
+            // Set clicked button to highlighted (desktop sidebar)
             const activeBtn = document.getElementById(`btn-tab-${tabId}`);
             if (activeBtn) {
                 activeBtn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white";
+            }
+
+            // Reset mobile navigation active classes (mobile bottom bar)
+            document.querySelectorAll('.tab-btn-mobile').forEach(btn => {
+                btn.className = "tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-medium text-purple-200/50 hover:text-white transition-all";
+            });
+
+            // Set clicked mobile button to highlighted (mobile bottom bar)
+            const activeMobileBtn = document.getElementById(`btn-tab-mobile-${tabId}`);
+            if (activeMobileBtn) {
+                activeMobileBtn.className = "tab-btn-mobile flex flex-col items-center justify-center p-2 text-xs font-bold text-primary transition-all";
             }
 
             renderAll();
@@ -1573,7 +1646,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadLocalData();
             attemptSupabaseInitialization();
-            renderAll();
+            switchTab('dashboard');
         });
     </script>
 </body>
