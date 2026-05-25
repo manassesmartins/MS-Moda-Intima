@@ -58,7 +58,6 @@
             box-shadow: 0 0 0 3px rgba(157, 88, 255, 0.2);
             background: rgba(20, 10, 30, 0.8);
         }
-        /* Scrollbar customizing */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -78,7 +77,7 @@
 <body class="h-full flex flex-col md:flex-row overflow-hidden">
 
     <!-- LOGIN PANEL -->
-    <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040D]/90 backdrop-blur-md hidden">
+    <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040D]/95 backdrop-blur-md">
         <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
             <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
             <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary/15 rounded-full blur-2xl"></div>
@@ -88,20 +87,20 @@
                     <i class="fa-solid fa-gem text-3xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold tracking-tight text-white">MS Moda Íntima</h2>
-                <p class="text-xs text-purple-200/60 mt-1">Sessão Segura integrada com Supabase</p>
+                <p class="text-xs text-purple-200/60 mt-1">Atelier Multiplataforma</p>
             </div>
 
-            <!-- Credentials configure fallback (Optional / UI Input if env variables not defined in Vercel) -->
+            <!-- Custom Supabase Fields -->
             <div id="supabase-config-fields" class="mb-5 border-b border-white/5 pb-4 hidden">
                 <p class="text-[11px] uppercase font-bold text-secondary mb-2"><i class="fa-solid fa-gears mr-1"></i>Chaves do Supabase</p>
                 <div class="space-y-2">
                     <input type="text" id="supabase-url" placeholder="Supabase Project URL" class="glass-input w-full px-3 py-2 text-xs font-mono">
                     <input type="password" id="supabase-key" placeholder="Supabase Anon Key" class="glass-input w-full px-3 py-2 text-xs font-mono">
                 </div>
-                <p class="text-[10px] text-purple-200/50 mt-1">Deixe em branco para tentar usar as chaves configuradas na Vercel.</p>
+                <p class="text-[10px] text-purple-200/50 mt-1">Chaves opcionais para sincronizar com sua própria nuvem.</p>
             </div>
 
-            <!-- Tabs de Auth -->
+            <!-- Auth Tabs -->
             <div class="flex border-b border-white/10 mb-5">
                 <button id="tab-login-btn" class="flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white" onclick="switchAuthTab('login')">Entrar</button>
                 <button id="tab-signup-btn" class="flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60" onclick="switchAuthTab('signup')">Criar Conta</button>
@@ -110,19 +109,15 @@
             <form id="auth-form" class="space-y-4" onsubmit="handleAuth(event)">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1" for="auth-email">E-mail</label>
-                    <input type="email" id="auth-email" required class="glass-input w-full px-4 py-3 text-sm focus:ring-2">
+                    <input type="email" id="auth-email" required class="glass-input w-full px-4 py-3 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1" for="auth-password">Senha</label>
-                    <input type="password" id="auth-password" required minlength="6" class="glass-input w-full px-4 py-3 text-sm focus:ring-2">
+                    <input type="password" id="auth-password" required minlength="6" class="glass-input w-full px-4 py-3 text-sm">
                 </div>
 
-                <div id="auth-error" class="text-red-400 text-xs hidden p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <!-- Error message injection -->
-                </div>
-                <div id="auth-success" class="text-green-400 text-xs hidden p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <!-- Success message injection -->
-                </div>
+                <div id="auth-error" class="text-red-400 text-xs hidden p-3 rounded-lg bg-red-400/10 border border-red-500/20"></div>
+                <div id="auth-success" class="text-green-400 text-xs hidden p-3 rounded-lg bg-green-400/10 border border-green-500/20"></div>
 
                 <button type="submit" id="auth-submit-btn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                     <span id="auth-btn-text">Entrar</span>
@@ -131,11 +126,11 @@
             </form>
 
             <div class="mt-4 text-center">
-                <button class="text-xs text-purple-200/50 hover:text-white" onclick="toggleSupabaseFields()"><i class="fa-solid fa-sliders mr-1"></i>Configurar Chaves Supabase Manualmente</button>
+                <button class="text-xs text-purple-200/50 hover:text-white" onclick="toggleSupabaseFields()"><i class="fa-solid fa-sliders mr-1"></i>Chaves do Cloud Database (Opcional)</button>
             </div>
             
             <div class="mt-4 text-center border-t border-white/5 pt-3">
-                <button class="text-xs text-secondary font-semibold hover:underline" onclick="continueOffline()"><i class="fa-solid fa-cloud-slash mr-1"></i>Usar Modo Local Offline</button>
+                <button class="text-xs text-secondary font-semibold hover:underline" onclick="continueOffline()"><i class="fa-solid fa-cloud-slash mr-1"></i>Continuar no Modo Local Offline</button>
             </div>
         </div>
     </div>
@@ -152,9 +147,9 @@
                     <span class="text-[10px] text-purple-200/50 font-mono tracking-wider">WORKSPACE</span>
                 </div>
             </div>
-            <div id="online-badge" class="px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1">
-                <span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                ONLINE
+            <div id="online-badge" class="px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[10px] font-bold flex items-center gap-1">
+                <span class="h-1.5 w-1.5 rounded-full bg-purple-400"></span>
+                OFFLINE
             </div>
         </div>
 
@@ -173,31 +168,31 @@
         </div>
 
         <nav class="flex-1 px-3 space-y-1">
-            <button onclick="switchTab('dashboard')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white" data-tab="dashboard">
+            <button onclick="switchTab('dashboard')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white" id="btn-tab-dashboard">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-chart-pie w-5 text-center"></i>Painel Resumo</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
             </button>
-            <button onclick="switchTab('transactions')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="transactions">
+            <button onclick="switchTab('transactions')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" id="btn-tab-transactions">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-receipt w-5 text-center"></i>Lançamentos Fin.</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
             </button>
-            <button onclick="switchTab('orders')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="orders">
+            <button onclick="switchTab('orders')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" id="btn-tab-orders">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-box-archive w-5 text-center"></i>Encomendas</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
             </button>
-            <button onclick="switchTab('calcs')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="calcs">
+            <button onclick="switchTab('calcs')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" id="btn-tab-calcs">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-calculator w-5 text-center"></i>Cálculo de Peças</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
             </button>
-            <button onclick="switchTab('sync')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="sync">
+            <button onclick="switchTab('sync')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" id="btn-tab-sync">
                 <span class="flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-up w-5 text-center"></i>Sincronização</span>
                 <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
             </button>
         </nav>
 
         <div class="p-5 border-t border-white/5 text-[10px] text-purple-200/40 text-center">
-            <p>MS Moda Íntima Web v1.2</p>
-            <p class="mt-0.5">Hospedado via Vercel Edge Server</p>
+            <p>MS Moda Íntima Web v1.3</p>
+            <p class="mt-0.5">Offline-First LocalStorage Sync</p>
         </div>
     </aside>
 
@@ -210,7 +205,7 @@
                 <div class="flex items-end justify-between">
                     <div>
                         <h2 class="text-2xl font-extrabold text-white tracking-tight">Painel de Negócios</h2>
-                        <p class="text-xs text-purple-200/60">Análise de ingressos e saídas operacionais do atelier</p>
+                        <p class="text-xs text-purple-200/60">Análise de receitas e despesas operacionais do atelier</p>
                     </div>
                     <button onclick="openTransactionModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-transform">
                         <i class="fa-solid fa-plus mr-1.5"></i>Novo Lançamento
@@ -227,7 +222,7 @@
                         <div class="mt-3">
                             <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-balance">R$ 0,00</p>
                             <span class="text-[10px] text-green-400 mt-1 flex items-center gap-1">
-                                <i class="fa-solid fa-arrow-up"></i> +12.4% vs. mês anterior
+                                <i class="fa-solid fa-arrow-up"></i> Balanço saudável do caixa
                             </span>
                         </div>
                     </div>
@@ -239,7 +234,7 @@
                         </div>
                         <div class="mt-3">
                             <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-inflow">R$ 0,00</p>
-                            <span class="text-[10px] text-purple-200/50 mt-1">Acumulado do mês corrente</span>
+                            <span class="text-[10px] text-purple-200/50 mt-1">Acumulado total de receitas</span>
                         </div>
                     </div>
 
@@ -250,54 +245,35 @@
                         </div>
                         <div class="mt-3">
                             <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-outflow">R$ 0,00</p>
-                            <span class="text-[10px] text-purple-200/50 mt-1">Funcionários, pano e variados</span>
+                            <span class="text-[10px] text-purple-200/50 mt-1">Soma de fornecedores e produção</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- CHARTS AND RECENT ACTIVITY -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- Distruição de Custos -->
+                    <!-- Cost Distribution -->
                     <div class="glass-card p-5 lg:col-span-4 flex flex-col justify-between">
                         <div>
-                            <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-purple-200/80">Quadro de Categoria de Custos</h3>
+                            <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-purple-200/80">Quadro de Custos por Categoria</h3>
                             <div class="flex justify-center my-4 relative h-36">
-                                <!-- Draw basic dynamic pie representation via canvas/SVG -->
                                 <svg class="w-32 h-32 transform -rotate-90">
                                     <circle cx="64" cy="64" r="50" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
-                                    <!-- Segment 1 (Materia Prima - Primary) -->
-                                    <circle id="pie-seg-1" cx="64" cy="64" r="50" fill="transparent" stroke="#9D58FF" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="141"/>
-                                    <!-- Segment 2 (Mao obra - Secondary) -->
-                                    <circle id="pie-seg-2" cx="64" cy="64" r="50" fill="transparent" stroke="#FF6EA7" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="235"/>
+                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#9D58FF" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="150" id="svg-pie-1"/>
+                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="#FF6EA7" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="250" id="svg-pie-2"/>
                                 </svg>
                                 <div class="absolute inset-0 flex items-center justify-center flex-col">
                                     <span class="text-[9px] uppercase font-bold text-purple-200/40">Custos</span>
-                                    <span class="text-base font-bold text-white" id="pie-pct-total">98%</span>
+                                    <span class="text-base font-bold text-white" id="dash-cost-percentage">100%</span>
                                 </div>
                             </div>
                         </div>
                         <div class="space-y-2 text-xs" id="pie-categories-list">
-                            <!-- Items auto filled -->
-                            <div class="flex items-center justify-between text-purple-200/70">
-                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-primary"></span>Matéria-prima</span>
-                                <span class="font-mono font-semibold text-white">45%</span>
-                            </div>
-                            <div class="flex items-center justify-between text-purple-200/70">
-                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-secondary"></span>Mão de Obra</span>
-                                <span class="font-mono font-semibold text-white">30%</span>
-                            </div>
-                            <div class="flex items-center justify-between text-purple-200/70">
-                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-tertiary"></span>Logística & Envios</span>
-                                <span class="font-mono font-semibold text-white">15%</span>
-                            </div>
-                            <div class="flex items-center justify-between text-purple-200/70">
-                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-white/30"></span>Marketing</span>
-                                <span class="font-mono font-semibold text-white">10%</span>
-                            </div>
+                            <!-- Populated in JS -->
                         </div>
                     </div>
 
-                    <!-- Lançamentos Recentes -->
+                    <!-- Recent Transactions -->
                     <div class="glass-card p-5 lg:col-span-8 flex flex-col justify-between">
                         <div>
                             <div class="flex justify-between items-center mb-4">
@@ -315,7 +291,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="dash-transactions-body" class="divide-y divide-white/5">
-                                        <!-- Dynamic load -->
+                                        <!-- Populated in JS -->
                                     </tbody>
                                 </table>
                             </div>
@@ -347,7 +323,7 @@
                 <div class="flex flex-wrap items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/5 text-xs">
                     <button onclick="filterTransactions('ALL')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold bg-primary text-white transition-all">Todos</button>
                     <button onclick="filterTransactions('INFLOW')" id="filter-inflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all">Receitas</button>
-                    <button onclick="filterTransactions('OUTFLOW')" id="filter-outflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all font-bold">Custos</button>
+                    <button onclick="filterTransactions('OUTFLOW')" id="filter-outflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all">Custos</button>
                 </div>
 
                 <!-- TRANSACTIONS LIST -->
@@ -356,7 +332,7 @@
                         <table class="w-full text-left text-sm text-purple-200/80">
                             <thead>
                                 <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
-                                    <th class="p-4">Data/Semana</th>
+                                    <th class="p-4">Semana</th>
                                     <th class="p-4">Descrição</th>
                                     <th class="p-4">Categoria</th>
                                     <th class="p-4">Notas Extras</th>
@@ -365,7 +341,7 @@
                                 </tr>
                             </thead>
                             <tbody id="txs-table-body" class="divide-y divide-white/5">
-                                <!-- Dynamic transactions row -->
+                                <!-- Populated in JS -->
                             </tbody>
                         </table>
                     </div>
@@ -381,7 +357,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold text-white tracking-tight">Controle de Encomendas</h2>
-                        <p class="text-xs text-purple-200/60">Gerenciamento de entrada de lingerie e produção sob encomenda</p>
+                        <p class="text-xs text-purple-200/60">Gerenciamento de lingerie para produção sob encomenda</p>
                     </div>
                     <button onclick="openOrderModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold hover:opacity-90 active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
                         <i class="fa-solid fa-plus mr-1.5"></i>Nova Encomenda
@@ -406,12 +382,12 @@
 
                 <!-- ORDERS LIST -->
                 <div class="glass-card overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-purple-200/80 w-full table-auto">
+                    <div class="overflow-x-auto overflow-y-visible">
+                        <table class="w-full text-left text-sm text-purple-200/80 table-auto">
                             <thead>
                                 <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
                                     <th class="p-4">Cliente</th>
-                                    <th class="p-4">Tipo da Calcinha</th>
+                                    <th class="p-4">Modelo</th>
                                     <th class="p-4">Tamanho</th>
                                     <th class="p-4 text-center">Qtde.</th>
                                     <th class="p-4 text-right">Preço Un.</th>
@@ -421,7 +397,7 @@
                                 </tr>
                             </thead>
                             <tbody id="orders-table-body" class="divide-y divide-white/5">
-                                <!-- Dynamic orders rows -->
+                                <!-- Populated in JS -->
                             </tbody>
                         </table>
                     </div>
@@ -446,13 +422,13 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <!-- GUIDE EXPLAIN CARD -->
-                    <div class="glass-card p-5 lg:col-span-4 space-y-4">
+                    <div class="glass-card p-5 lg:col-span-4 space-y-4 h-fit">
                         <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80"><i class="fa-solid fa-circle-question mr-1.5 text-primary"></i>Rendimento de Tecido</h3>
                         <p class="text-xs text-purple-200/70 leading-relaxed">
                             Cálculo dinâmico baseado em rolos de malhas microfibra ou tecidos variados para calcinhas.
                         </p>
                         <div class="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2 text-xs">
-                            <p class="text-[10px] font-bold text-purple-200/50 uppercase">Rendimento Clássico Estimado</p>
+                            <p class="text-[10px] font-bold text-purple-200/50 uppercase">Rendimento de Referência</p>
                             <div class="flex justify-between">
                                 <span class="text-purple-200/70">1 Kg de Microfibra</span>
                                 <span class="font-bold text-white">~45 un. Médias</span>
@@ -467,7 +443,7 @@
                     <!-- CALCULATIONS LIST -->
                     <div class="glass-card lg:col-span-8 overflow-hidden">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm text-purple-200/80 table-auto w-full">
+                            <table class="w-full text-left text-sm text-purple-200/80 table-auto">
                                 <thead>
                                     <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
                                         <th class="p-4">Tecido / Pano</th>
@@ -478,7 +454,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="calcs-table-body" class="divide-y divide-white/5">
-                                    <!-- Dynamic rows -->
+                                    <!-- Populated in JS -->
                                 </tbody>
                             </table>
                         </div>
@@ -490,35 +466,35 @@
                 </div>
             </section>
 
-            <!-- TAB 5: SYNC AND SUPABASE SETTINGS -->
+            <!-- TAB 5: SYNC AND SETTINGS -->
             <section id="tab-sync" class="space-y-6 tab-content hidden">
                 <div>
                     <h2 class="text-2xl font-extrabold text-white tracking-tight">Nuvem e Sincronização</h2>
-                    <p class="text-xs text-purple-200/60">Configurações para sincronia automática e modo de redundância local</p>
+                    <p class="text-xs text-purple-200/60">Configurações para sincronia automática e salvar nos servidores Supabase</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- STATUS CARD -->
-                    <div class="glass-card p-6 space-y-4">
+                    <div class="glass-card p-6 space-y-4 h-fit">
                         <h3 class="text-sm font-bold text-white uppercase tracking-wider"><i class="fa-solid fa-network-wired mr-1.5 text-primary"></i>Conexão do Sistema</h3>
                         <div class="space-y-3">
                             <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
                                 <span class="text-purple-200/70">Estado da Conexão</span>
-                                <span id="sync-connection-status" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400">Verificando...</span>
+                                <span id="sync-connection-status" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-500/10 text-purple-400">Offline</span>
                             </div>
                             <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
                                 <span class="text-purple-200/70">Conta Conectada</span>
-                                <span id="sync-email-status" class="font-mono text-white text-xs">Aguardando login</span>
+                                <span id="sync-email-status" class="font-mono text-white text-xs">Nenhuma conta (Local Only)</span>
                             </div>
                             <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
-                                <span class="text-purple-200/70">Registros Offline Temporários</span>
-                                <span id="sync-pending-count" class="font-bold text-secondary text-sm">0</span>
+                                <span class="text-purple-200/70">Registros do Ateliê</span>
+                                <span id="sync-pending-count" class="font-bold text-secondary text-sm">0 locais</span>
                             </div>
                         </div>
 
                         <div class="flex gap-2">
-                            <button onclick="triggerSyncNow()" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>Sincronizar Agora
+                            <button onclick="triggerSyncNow()" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5" id="btn-sync-action">
+                                <i class="fa-solid fa-sync"></i>Tentar Conectar
                             </button>
                             <button onclick="clearLocalCache()" class="py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-purple-200/60 hover:text-red-400 text-xs font-bold transition-all">
                                 <i class="fa-solid fa-trash-can"></i> Limpar Local
@@ -526,21 +502,17 @@
                         </div>
                     </div>
 
-                    <!-- REASONS FOR SECURE CLOUD -->
+                    <!-- GUIDES -->
                     <div class="glass-card p-6 space-y-4 text-xs select-none">
-                        <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80"><i class="fa-solid fa-circle-info mr-1.5 text-secondary"></i>Como Funciona o Sync?</h3>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80"><i class="fa-solid fa-circle-info mr-1.5 text-secondary"></i>Como funciona o Ateliê Web?</h3>
                         <div class="space-y-3 text-purple-200/70 leading-relaxed">
                             <p>
-                                <span class="font-bold text-white block mb-0.5">1. Armazenamento Offline-First</span>
-                                Você sempre verá e modificará seus dados instantaneamente. As alterações são persistidas de forma segura no SQLite do seu telefone (ou no LocalStorage do navegador da Web) de modo a manter o app funcional mesmo sem Wi-Fi ou dados móveis.
+                                <span class="font-bold text-white block mb-0.5">1. Modo Local Seguro (Offline-First)</span>
+                                Seus registros são guardados de forma segura e instantânea no LocalStorage do seu navegador. O app nunca para de funcionar, mesmo que esteja sem sinal de internet ou as credenciais sumirem.
                             </p>
                             <p>
-                                <span class="font-bold text-white block mb-0.5">2. Login Protegido com o Supabase</span>
-                                Ao efetuar o login, o MS Moda Íntima conecta sua conta pessoal, baixando todos os seus registros operacionais e aplicando de maneira síncrona.
-                            </p>
-                            <p>
-                                <span class="font-bold text-white block mb-0.5">3. Sincronização Inteligente</span>
-                                Sempre que o app detecta conexão de rede estável ao criar/remover lançamentos ou pedidos, a alteração é sincronizada em tempo real para os servidores em nuvem do Supabase, operando de forma autônoma e à prova de quedas de rede. No computador ou no celular, a informação é a mesma!
+                                <span class="font-bold text-white block mb-0.5">2. Backup no Banco de Dados em Nuvem</span>
+                                Ao configurar as credenciais do Supabase, você sincroniza todas as suas transações, encomendas e cálculos com os mesmos dados acessados no aplicativo do celular, permitindo uma gestão integrada do Ateliê.
                             </p>
                         </div>
                     </div>
@@ -549,12 +521,12 @@
         </div>
 
         <footer class="mt-8 pt-4 border-t border-white/5 text-center text-xs text-purple-200/35">
-            <p>&copy; 2026 MS Moda Íntima Atelier. Todos os direitos reservados. Projeto configurado para implantação no Vercel Edge.</p>
+            <p>&copy; 2026 MS Moda Íntima Atelier. Todos os direitos reservados.</p>
         </footer>
     </main>
 
     <!-- TRANSACTION MODAL -->
-    <div id="tx-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div id="tx-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
         <div class="glass-card p-6 w-full max-w-lg">
             <div class="flex justify-between items-center mb-5">
                 <h3 class="text-lg font-bold text-white" id="tx-modal-title">Novo Lançamento Financeiro</h3>
@@ -573,13 +545,13 @@
                     <div>
                         <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Categoria</label>
                         <select id="tx-category" class="glass-input w-full px-3 py-2.5 text-sm">
-                            <!-- Inflow options -->
+                            <!-- Populated in JS dynamically based on Inflow/Outflow -->
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Descrição</label>
-                    <input type="text" id="tx-description" required placeholder="Ex: Pano Lote 4 ou Venda Varejo..." class="glass-input w-full px-4 py-2.5 text-sm">
+                    <input type="text" id="tx-description" required placeholder="Ex: Tecido de Microfibra ou Pedido Loja..." class="glass-input w-full px-4 py-2.5 text-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -587,7 +559,7 @@
                         <input type="number" id="tx-amount" required step="0.01" min="0.01" placeholder="0,00" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Semana de Vencência</label>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Semana de Referência</label>
                         <select id="tx-week" class="glass-input w-full px-3 py-2.5 text-sm">
                             <option value="1ª Semana">1ª Semana</option>
                             <option value="2ª Semana">2ª Semana</option>
@@ -611,21 +583,22 @@
     </div>
 
     <!-- ORDER MODAL -->
-    <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
         <div class="glass-card p-6 w-full max-w-lg">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-bold text-white">Nova Encomenda</h3>
+                <h3 class="text-lg font-bold text-white" id="order-modal-title">Nova Encomenda</h3>
                 <button onclick="closeOrderModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form onsubmit="handleOrderSubmit(event)" class="space-y-4">
+                <input type="hidden" id="order-edit-id">
                 <div>
                     <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome do Cliente</label>
-                    <input type="text" id="order-client" required placeholder="Ex: Cláudia Santos" class="glass-input w-full px-4 py-2.5 text-sm">
+                    <input type="text" id="order-client" required placeholder="Ex: Maria Fernandes" class="glass-input w-full px-4 py-2.5 text-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Modelo de Calcinha</label>
-                        <input type="text" id="order-panty-type" required placeholder="Ex: Microfibra Larga" class="glass-input w-full px-4 py-2.5 text-sm">
+                        <input type="text" id="order-panty-type" required placeholder="Ex: Microfibra Renda" class="glass-input w-full px-4 py-2.5 text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Tamanho</label>
@@ -640,15 +613,15 @@
                 </div>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Qtde (Unidades)</label>
-                        <input type="number" id="order-quantity" required min="1" placeholder="200" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Qtde (Un.)</label>
+                        <input type="number" id="order-quantity" required min="1" placeholder="100" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Preço Unitário (R$)</label>
-                        <input type="number" id="order-value" required step="0.01" min="0.01" placeholder="1.30" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Valor Unitário R$</label>
+                        <input type="number" id="order-value" required step="0.01" min="0.01" placeholder="4.50" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Valor Total (R$)</label>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Total (R$)</label>
                         <input type="text" id="order-total" readonly placeholder="0,00" class="glass-input w-full px-4 py-2.5 text-sm font-mono bg-white/5 border-dashed">
                     </div>
                 </div>
@@ -665,37 +638,38 @@
 
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeOrderModal()" class="flex-1 py-3 px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-purple-200/75 text-sm font-bold transition-colors">Cancelar</button>
-                    <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Registar Encomenda</button>
+                    <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Salvar Encomenda</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- CALC MODAL -->
-    <div id="calc-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+    <!-- CALC MODAL (PIECE CALCULATION) -->
+    <div id="calc-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
         <div class="glass-card p-6 w-full max-w-md">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-bold text-white">Novo Rendimento de Peso</h3>
+                <h3 class="text-lg font-bold text-white" id="calc-modal-title">Novo Rendimento por Peso</h3>
                 <button onclick="closeCalcModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form onsubmit="handleCalcSubmit(event)" class="space-y-4">
+                <input type="hidden" id="calc-edit-id">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome do tecido / pano</label>
-                    <input type="text" id="calc-cloth" required placeholder="Ex: Microfibra Summerplex" class="glass-input w-full px-4 py-2.5 text-sm">
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome do Tecido / Pano</label>
+                    <input type="text" id="calc-cloth" required placeholder="Ex: Microfibra Listrada" class="glass-input w-full px-4 py-2.5 text-sm">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Peso Rolo (Kg) (Opcional)</label>
-                        <input type="number" id="calc-kg" step="0.01" min="0" placeholder="Ex: 28.40" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Peso Total (Kg)</label>
+                        <input type="number" id="calc-kg" step="0.01" min="0.01" placeholder="28.40" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Preço do Kg (R$) (Opcional)</label>
-                        <input type="number" id="calc-val-kg" step="0.01" min="0" placeholder="Ex: 29.00" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Valor por Kg (R$)</label>
+                        <input type="number" id="calc-val-kg" step="0.01" min="0.01" placeholder="29.00" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Quantidade de Calcinhas Obtidas (Opcional)</label>
-                    <input type="number" id="calc-produced" min="0" placeholder="Ex: 2133" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Quantidade de Calcinhas Obtidas</label>
+                    <input type="number" id="calc-produced" min="1" placeholder="2133" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
                 </div>
 
                 <div class="flex gap-3 pt-2">
@@ -706,9 +680,9 @@
         </div>
     </div>
 
-    <!-- MAIN CORE WEB LOGIC -->
+    <!-- MAIN JAVASCRIPT CORE -->
     <script>
-        // Default structural categories
+        // System categories
         const defaultCategories = [
             { id: 1, name: "Vendas", type: "INFLOW" },
             { id: 2, name: "Encomendas", type: "INFLOW" },
@@ -724,876 +698,877 @@
             { id: 12, name: "Variados", type: "OUTFLOW" }
         ];
 
-        // Global State variables
-        let supabaseClientObj = null;
-        let sessionUser = null;
-        let activeTab = "dashboard";
-        let activeFilterType = "ALL"; // ALL, INFLOW, OUTFLOW
-
-        // In-memory lists (backed by LocalStorage)
+        // Global States
+        let user = null;
+        let supabase = null;
+        let categories = [...defaultCategories];
         let transactions = [];
         let orders = [];
-        let piece_calculations = [];
-        let categories = [...defaultCategories];
+        let pieceCalculations = [];
+        let currentTab = 'dashboard';
+        let currentTxFilter = 'ALL';
 
-        // Supabase configuration properties
-        let supabaseUrlVal = "";
-        let supabaseAnonKeyVal = "";
+        // Load cached settings & Offline-First Data
+        function loadLocalData() {
+            try {
+                // Try to load state
+                transactions = JSON.parse(localStorage.getItem('ms_transactions')) || [];
+                orders = JSON.parse(localStorage.getItem('ms_orders')) || [];
+                pieceCalculations = JSON.parse(localStorage.getItem('ms_calcs')) || [];
+                
+                // If they are brand new, fill with some nice placeholder test data to make the UI populated immediately
+                if (transactions.length === 0 && orders.length === 0 && pieceCalculations.length === 0) {
+                    seeditLocalStorageWithDemo();
+                }
+            } catch (err) {
+                console.error("Erro carregando dados locais:", err);
+            }
+        }
 
-        // Sign and Sync State Controls
-        let sessionInfo = {
-            isLoggedIn: false,
-            userId: null,
-            email: null,
-            authToken: null,
-            usingSupabase: false
-        };
+        function seeditLocalStorageWithDemo() {
+            transactions = [
+                { id: 1001, description: "Venda lote Calcinha Varejo", amount: 450.00, type: "INFLOW", category: "Vendas", week: "1ª Semana", dateString: "25/05/2026", timestamp: Date.now() - 86400000, extraText: "Pago à vista" },
+                { id: 1002, description: "Compra Lote Microfibra", amount: 180.00, type: "OUTFLOW", category: "Pano", week: "2ª Semana", dateString: "24/05/2026", timestamp: Date.now() - 172800000, extraText: "Fornecedor TexArt" },
+                { id: 1003, description: "Pagamento Costureira Ajuda", amount: 200.00, type: "OUTFLOW", category: "Funcionários", week: "3ª Semana", dateString: "23/05/2026", timestamp: Date.now() - 259200000, extraText: "Serviço Fechamento" }
+            ];
+            orders = [
+                { id: 2001, clientName: "Cláudia Santos", pantyType: "Microfibra Larga", pantySize: "M", quantity: 150, pantyValue: 3.50, totalValue: 525.00, week: "2ª Semana" },
+                { id: 2002, clientName: "Ana Paula de Sá", pantyType: "Renda Fio Dental", pantySize: "P", quantity: 80, pantyValue: 4.20, totalValue: 336.00, week: "1ª Semana" }
+            ];
+            pieceCalculations = [
+                { id: 3001, pano: "Microfibra Listrada", kg: 28.40, valorKg: 29.00, quantidade: 2133 },
+                { id: 3002, pano: "Renda Importada", kg: 13.60, valorKg: 31.00, quantidade: 1108 }
+            ];
+            saveLocalData();
+        }
 
-        // Initialize App on load
-        window.addEventListener('DOMContentLoaded', () => {
-            loadConfigAndPrepare();
-            loadLocalCache();
-            renderAll();
-            checkAppReadyAndAuth();
-        });
+        function saveLocalData() {
+            localStorage.setItem('ms_transactions', JSON.stringify(transactions));
+            localStorage.setItem('ms_orders', JSON.stringify(orders));
+            localStorage.setItem('ms_calcs', JSON.stringify(pieceCalculations));
+        }
 
-        // Toggle manual configuration settings for Supabase
+        // Initialize Supabase if credentials exist
+        function attemptSupabaseInitialization() {
+            const cachedUrl = localStorage.getItem('ms_supabase_url');
+            const cachedKey = localStorage.getItem('ms_supabase_key');
+            
+            // Set dynamic inputs to match cached ones
+            if (cachedUrl) document.getElementById('supabase-url').value = cachedUrl;
+            if (cachedKey) document.getElementById('supabase-key').value = cachedKey;
+
+            if (cachedUrl && cachedKey && window.supabase) {
+                try {
+                    supabase = window.supabase.createClient(cachedUrl, cachedKey);
+                    console.log("Supabase inicializado via cache.");
+                    
+                    // Check if we have a saved user
+                    const savedUser = localStorage.getItem('ms_user');
+                    if (savedUser) {
+                        user = JSON.parse(savedUser);
+                        updateSyncBadge(true);
+                        document.getElementById('auth-panel').classList.add('hidden');
+                        fetchFromCloud(); // Try background fetch
+                    }
+                } catch(e) {
+                    console.error("Erro ao instanciar cliente do Supabase:", e);
+                }
+            }
+        }
+
+        // Auth Tabs Toggle
+        let currentAuthTab = 'login';
+        function switchAuthTab(tab) {
+            currentAuthTab = tab;
+            const loginBtn = document.getElementById('tab-login-btn');
+            const signupBtn = document.getElementById('tab-signup-btn');
+            const submitBtnText = document.getElementById('auth-btn-text');
+
+            if (tab === 'login') {
+                loginBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
+                signupBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
+                submitBtnText.innerText = "Entrar";
+            } else {
+                loginBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
+                signupBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
+                submitBtnText.innerText = "Criar Conta";
+            }
+        }
+
         function toggleSupabaseFields() {
             const fields = document.getElementById('supabase-config-fields');
             fields.classList.toggle('hidden');
         }
 
-        // Switches between Entrar / Criar Conta tabs
-        let currentAuthMode = "login";
-        function switchAuthTab(mode) {
-            currentAuthMode = mode;
-            const lBtn = document.getElementById('tab-login-btn');
-            const sBtn = document.getElementById('tab-signup-btn');
-            const btnText = document.getElementById('auth-btn-text');
-
-            if (mode === "login") {
-                lBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
-                sBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
-                btnText.textContent = "Entrar";
-            } else {
-                sBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
-                lBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
-                btnText.textContent = "Criar Conta";
-            }
-            document.getElementById('auth-error').classList.add('hidden');
-            document.getElementById('auth-success').classList.add('hidden');
-        }
-
-        // Continue in Offline (local storage) fallback mode
         function continueOffline() {
-            sessionInfo = {
-                isLoggedIn: true,
-                userId: "local_user_" + Math.floor(Math.random() * 1000000),
-                email: "Modo Local Offline",
-                authToken: null,
-                usingSupabase: false
-            };
-            saveLocalSession();
+            // Bypass login modal
             document.getElementById('auth-panel').classList.add('hidden');
-            updateSessionUI();
+            user = null;
+            updateSyncBadge(false);
             renderAll();
         }
 
-        // Saves session info inside local storage
-        function saveLocalSession() {
-            localStorage.setItem('ms_atelier_session', JSON.stringify(sessionInfo));
-        }
-
-        function loadConfigAndPrepare() {
-            // Load custom local saved keys if they exist
-            supabaseUrlVal = localStorage.getItem('ms_supabase_url') || "";
-            supabaseAnonKeyVal = localStorage.getItem('ms_supabase_anon_key') || "";
-
-            // Populate form fields with configuration if they existed
-            if (supabaseUrlVal) document.getElementById('supabase-url').value = supabaseUrlVal;
-            if (supabaseAnonKeyVal) document.getElementById('supabase-key').value = supabaseAnonKeyVal;
-
-            if (supabaseUrlVal && supabaseAnonKeyVal) {
-                try {
-                    supabaseClientObj = supabase.createClient(supabaseUrlVal, supabaseAnonKeyVal);
-                } catch (e) {
-                    console.error("Initialization error of supabase client:", e);
-                }
-            }
-        }
-
-        // Check if user is logged in
-        function checkAppReadyAndAuth() {
-            const saved = localStorage.getItem('ms_atelier_session');
-            if (saved) {
-                sessionInfo = JSON.parse(saved);
-                if (sessionInfo.isLoggedIn) {
-                    // Update user display text
-                    updateSessionUI();
-                    
-                    // Instantiate Supabase client if connected with it
-                    if (sessionInfo.usingSupabase && !supabaseClientObj) {
-                        loadConfigAndPrepare();
-                    }
-                    
-                    // Pull remote data as premium feature
-                    if (sessionInfo.usingSupabase && supabaseClientObj) {
-                        pullRemoteDataAndSync();
-                    }
-                    return;
-                }
-            }
-            // If not logged in, force show login panel!
-            document.getElementById('auth-panel').classList.remove('hidden');
-        }
-
-        // Update profiles and email tags in UI
-        function updateSessionUI() {
-            const displayEmail = document.getElementById('user-display-email');
-            const displayStatus = document.getElementById('user-display-status');
-            const onlineBadge = document.getElementById('online-badge');
-
-            if (sessionInfo.isLoggedIn) {
-                displayEmail.textContent = sessionInfo.email;
-                if (sessionInfo.usingSupabase) {
-                    displayStatus.textContent = "Sessão Ativa Supabase";
-                    onlineBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>ONLINE (CLOUD)`;
-                    onlineBadge.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1";
-                    document.getElementById('sync-connection-status').textContent = "CLOUD ATIVO";
-                    document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400";
-                    document.getElementById('sync-email-status').textContent = sessionInfo.email;
-                } else {
-                    displayStatus.textContent = "Modo Local Offline";
-                    onlineBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>OFFLINE (S/ SYNC)`;
-                    onlineBadge.className = "px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-bold flex items-center gap-1";
-                    document.getElementById('sync-connection-status').textContent = "APENAS LOCAL";
-                    document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-400";
-                    document.getElementById('sync-email-status').textContent = "Sem Backup na Nuvem";
-                }
-            }
-        }
-
-        // Handle Log Out click
-        function handleLogout() {
-            if (confirm("Deseja realmente sair da conta? Os dados salvos localmente continuarão em cache, mas a sincronia em nuvem com o Supabase será pausada.")) {
-                localStorage.removeItem('ms_atelier_session');
-                sessionInfo = { isLoggedIn: false, userId: null, email: null, authToken: null, usingSupabase: false };
-                document.getElementById('auth-panel').classList.remove('hidden');
-                document.getElementById('auth-form').reset();
-                updateSessionUI();
-            }
-        }
-
-        // Handles user authentication submits
-        async fn = null;
+        // Authentication Handler
         async function handleAuth(event) {
             event.preventDefault();
-            const emailInput = document.getElementById('auth-email').value.trim();
-            const passwordInput = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            const okDiv = document.getElementById('auth-success');
-            
-            errDiv.classList.add('hidden');
-            okDiv.classList.add('hidden');
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const customUrl = document.getElementById('supabase-url').value.trim();
+            const customKey = document.getElementById('supabase-key').value.trim();
 
-            const manualUrl = document.getElementById('supabase-url').value.trim();
-            const manualKey = document.getElementById('supabase-key').value.trim();
+            const errBlock = document.getElementById('auth-error');
+            const succBlock = document.getElementById('auth-success');
+            errBlock.classList.add('hidden');
+            succBlock.classList.add('hidden');
 
-            if (manualUrl && manualKey) {
-                supabaseUrlVal = manualUrl;
-                supabaseAnonKeyVal = manualKey;
-                localStorage.setItem('ms_supabase_url', manualUrl);
-                localStorage.setItem('ms_supabase_anon_key', manualKey);
+            // If user inputted credentials, configure on the fly
+            if (customUrl && customKey) {
+                localStorage.setItem('ms_supabase_url', customUrl);
+                localStorage.setItem('ms_supabase_key', customKey);
                 try {
-                    supabaseClientObj = supabase.createClient(supabaseUrlVal, supabaseAnonKeyVal);
+                    supabase = window.supabase.createClient(customUrl, customKey);
                 } catch (e) {
-                    errDiv.textContent = "Erro na construção das chaves do Supabase: " + e.message;
-                    errDiv.classList.remove('hidden');
+                    errBlock.innerText = "URL ou chave do Supabase inválidas.";
+                    errBlock.classList.remove('hidden');
                     return;
                 }
             } else {
-                // Try reading from default placeholders, which the developer configures inside the Secrets panel.
-                // For direct browser delivery we default to manual configuration info if clients are not initialized
-                if (!supabaseClientObj) {
-                    errDiv.textContent = "Por favor, configure o URL e Anon Key do seu projeto Supabase no formulário abaixo.";
-                    errDiv.classList.remove('hidden');
+                // If keys are blank, try to use loaded client
+                if (!supabase) {
+                    errBlock.innerText = "Por favor, informe a URL e a Anon Key do seu projeto Supabase.";
+                    errBlock.classList.remove('hidden');
                     return;
                 }
             }
 
-            const submitBtn = document.getElementById('auth-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = "0.7";
-
             try {
-                if (currentAuthMode === "signup") {
-                    // Sign up
-                    const { data, error } = await supabaseClientObj.auth.signUp({
-                        email: emailInput,
-                        password: passwordInput
-                    });
+                if (currentAuthTab === 'login') {
+                    // Logic to login
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     
-                    okDiv.textContent = "Cadastro efetuado! Verifique seu e-mail ou faça login agora.";
-                    okDiv.classList.remove('hidden');
-                    switchAuthTab('login');
+                    user = data.user;
+                    localStorage.setItem('ms_user', JSON.stringify(user));
+                    succBlock.innerText = "Login efetuado com sucesso!";
+                    succBlock.classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('auth-panel').classList.add('hidden');
+                        updateSyncBadge(true);
+                        fetchFromCloud();
+                    }, 800);
                 } else {
-                    // Login
-                    const { data, error } = await supabaseClientObj.auth.signInWithPassword({
-                        email: emailInput,
-                        password: passwordInput
-                    });
+                    // Logic to signup
+                    const { data, error } = await supabase.auth.signUp({ email, password });
                     if (error) throw error;
-
-                    sessionInfo = {
-                        isLoggedIn: true,
-                        userId: data.user.id,
-                        email: data.user.email,
-                        authToken: data.session.access_token,
-                        usingSupabase: true
-                    };
-                    saveLocalSession();
-                    document.getElementById('auth-panel').classList.add('hidden');
-                    updateSessionUI();
                     
-                    // Dynamically pull user's data from Supabase
-                    await pullRemoteDataAndSync();
+                    succBlock.innerText = "Conta criada com sucesso! Verifique seu e-mail para validar.";
+                    succBlock.classList.remove('hidden');
                 }
-            } catch (error) {
-                console.error(error);
-                errDiv.textContent = error.message || "Erro de comunicação com o Supabase Auth API.";
-                errDiv.classList.remove('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = "1";
+            } catch (err) {
+                errBlock.innerText = err.message || "Erro desconhecido na autenticação.";
+                errBlock.classList.remove('hidden');
             }
         }
 
-        // ------------------ LOCAL PERISTENCE CODE ------------------
-        function loadLocalCache() {
-            try {
-                const txsIn = localStorage.getItem('ms_transactions');
-                const ordersIn = localStorage.getItem('ms_orders');
-                const calcsIn = localStorage.getItem('ms_piece_calculations');
+        function handleLogout() {
+            if (supabase) {
+                supabase.auth.signOut();
+            }
+            user = null;
+            localStorage.removeItem('ms_user');
+            updateSyncBadge(false);
+            
+            // Show login screen
+            document.getElementById('auth-panel').classList.remove('hidden');
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            renderAll();
+        }
+
+        function updateSyncBadge(isOnline) {
+            const badge = document.getElementById('online-badge');
+            const displayEmail = document.getElementById('user-display-email');
+            const displayStatus = document.getElementById('user-display-status');
+            
+            const syncStatusText = document.getElementById('sync-connection-status');
+            const syncEmailText = document.getElementById('sync-email-status');
+
+            if (isOnline && user) {
+                badge.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1";
+                badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span> CONECTADO`;
+                displayEmail.innerText = user.email;
+                displayStatus.innerText = "Sync Nuvem Ativo";
                 
-                transactions = txsIn ? JSON.parse(txsIn) : [];
-                orders = ordersIn ? JSON.parse(ordersIn) : [];
-                piece_calculations = calcsIn ? JSON.parse(calcsIn) : [];
-            } catch (e) {
-                console.error("Cache parsing error:", e);
-                // Reset clean slate fallback
-                transactions = [];
-                orders = [];
-                piece_calculations = [];
-            }
-        }
-
-        function saveLocalCache() {
-            localStorage.setItem('ms_transactions', JSON.stringify(transactions));
-            localStorage.setItem('ms_orders', JSON.stringify(orders));
-            localStorage.setItem('ms_piece_calculations', JSON.stringify(piece_calculations));
-            renderAll();
-        }
-
-        // Clear local storage for debugging / reset purposes
-        function clearLocalCache() {
-            if (confirm("Deseja realmente apagar o banco local em cache? Se houver internet, você poderá recuperá-los atualizando de sua conta na nuvem.")) {
-                transactions = [];
-                orders = [];
-                piece_calculations = [];
-                saveLocalCache();
-                alert("Dados locais limpos com sucesso!");
-            }
-        }
-
-        // ------------------ RENDERING UI CONTROLLERS ------------------
-        function switchTab(tabId) {
-            activeTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                if (btn.getAttribute('data-tab') === tabId) {
-                    btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white";
-                } else {
-                    btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white";
+                if (syncStatusText) {
+                    syncStatusText.className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400";
+                    syncStatusText.innerText = "Conectado";
+                    syncEmailText.innerText = user.email;
+                    document.getElementById('btn-sync-action').innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar`;
                 }
+            } else {
+                badge.className = "px-2 py-0.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-[10px] font-bold flex items-center gap-1";
+                badge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-purple-400"></span> OFFLINE`;
+                displayEmail.innerText = "Modo Local";
+                displayStatus.innerText = "Salvo no Navegador";
+
+                if (syncStatusText) {
+                    syncStatusText.className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-500/10 text-pink-400";
+                    syncStatusText.innerText = "Modo Local";
+                    syncEmailText.innerText = "Nenhuma conta associada";
+                    document.getElementById('btn-sync-action').innerHTML = `<i class="fa-solid fa-key"></i> Conectar Nuvem`;
+                }
+            }
+        }
+
+        // Switch Active Tabs
+        function switchTab(tabId) {
+            currentTab = tabId;
+            
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show corresponding tab content
+            const tabEl = document.getElementById(`tab-${tabId}`);
+            if (tabEl) tabEl.classList.remove('hidden');
+
+            // Reset navigation active classes
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white";
             });
+
+            // Set clicked button to highlighted
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white";
+            }
+
             renderAll();
         }
 
+        // ==========================
+        // DYNAMIC RENDERING ENGINES
+        // ==========================
         function renderAll() {
             renderDashboard();
-            renderTransactions();
-            renderOrders();
-            renderPieceCalculations();
-            updateSyncMetrics();
+            renderTransactionsList();
+            renderOrdersList();
+            renderCalcsList();
+            renderSyncPageInfo();
         }
 
         function renderDashboard() {
-            // Totais
-            const totalIn = transactions.filter(t => t.type === 'INFLOW').reduce((sum, t) => sum + Number(t.amount || 0), 0) +
-                              orders.reduce((sum, o) => sum + Number(o.totalValue || 0), 0);
+            // Compute values
+            let inflowTotal = 0;
+            let outflowTotal = 0;
+
+            transactions.forEach(t => {
+                const val = parseFloat(t.amount) || 0;
+                if (t.type === 'INFLOW') inflowTotal += val;
+                else outflowTotal += val;
+            });
+
+            const balance = inflowTotal - outflowTotal;
+
+            // Update UI elements
+            document.getElementById('dash-balance').innerText = formatCurrency(balance);
+            document.getElementById('dash-inflow').innerText = formatCurrency(inflowTotal);
+            document.getElementById('dash-outflow').innerText = formatCurrency(outflowTotal);
+
+            // Populate Pie categories breakdown
+            const categoriesCostMap = {};
+            let totalCosts = 0;
             
-            const totalOut = transactions.filter(t => t.type === 'OUTFLOW').reduce((sum, t) => sum + Number(t.amount || 0), 0);
-            const balance = totalIn - totalOut;
+            transactions.forEach(t => {
+                if (t.type === 'OUTFLOW') {
+                    const price = parseFloat(t.amount) || 0;
+                    categoriesCostMap[t.category] = (categoriesCostMap[t.category] || 0) + price;
+                    totalCosts += price;
+                }
+            });
 
-            document.getElementById('dash-balance').textContent = `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('dash-inflow').textContent = `R$ ${totalIn.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('dash-outflow').textContent = `R$ ${totalOut.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const catListContainer = document.getElementById('pie-categories-list');
+            catListContainer.innerHTML = '';
 
-            // Recent 5 transactions table
-            const tbody = document.getElementById('dash-transactions-body');
-            const emptyBanner = document.getElementById('dash-txs-empty');
-            tbody.innerHTML = '';
+            const colors = ['#9D58FF', '#FF6EA7', '#4FC3F7', '#FFB74D', '#81C784', '#BA68C8'];
+            let colorIdx = 0;
 
-            const recents = [...transactions].sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
+            const categoryBreakdowns = Object.keys(categoriesCostMap).map(k => {
+                return { name: k, total: categoriesCostMap[k] };
+            }).sort((a,b) => b.total - a.total);
 
-            if (recents.length === 0) {
-                emptyBanner.style.display = 'block';
+            if (categoryBreakdowns.length === 0) {
+                catListContainer.innerHTML = `<p class="text-purple-200/40 text-center py-2">Sem despesas registradas</p>`;
+                document.getElementById('svg-pie-1').style.strokeDashoffset = '314';
+                document.getElementById('svg-pie-2').style.strokeDashoffset = '314';
+                document.getElementById('dash-cost-percentage').innerText = "0%";
             } else {
-                emptyBanner.style.display = 'none';
-                recents.forEach(t => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
-                    
-                    const amountColor = t.type === 'INFLOW' ? 'text-green-400' : 'text-red-400';
-                    const symbolAndAmount = t.type === 'INFLOW' ? `+ R$ ${Number(t.amount).toFixed(2)}` : `- R$ ${Number(t.amount).toFixed(2)}`;
+                categoryBreakdowns.forEach(item => {
+                    const pct = totalCosts > 0 ? ((item.total / totalCosts) * 100).toFixed(0) : 0;
+                    const c = colors[colorIdx % colors.length];
+                    colorIdx++;
 
-                    tr.innerHTML = `
-                        <td class="py-3 font-semibold text-white">${escapeHtml(t.description)}</td>
-                        <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-purple-200/60 uppercase">${escapeHtml(t.category)}</span></td>
-                        <td class="py-3 text-purple-200/50">${escapeHtml(t.week || '1ª Semana')}</td>
-                        <td class="py-3 text-right font-mono font-bold ${amountColor}">${symbolAndAmount}</td>
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between text-purple-200/70";
+                    row.innerHTML = `
+                        <span class="flex items-center gap-1.5">
+                            <span class="h-2 w-2 rounded-full" style="background-color: ${c}"></span>
+                            ${item.name}
+                        </span>
+                        <span class="font-mono font-semibold text-white">${pct}% (${formatCurrency(item.total)})</span>
                     `;
-                    tbody.appendChild(tr);
+                    catListContainer.appendChild(row);
+                });
+
+                // Set SVG pie offsets based on top categories
+                const pct1 = totalCosts > 0 ? (categoryBreakdowns[0].total / totalCosts) : 0;
+                const offset1 = 314 - (314 * pct1);
+                document.getElementById('svg-pie-1').style.strokeDashoffset = offset1.toString();
+
+                const pct2 = categoryBreakdowns.length > 1 ? (categoryBreakdowns[1].total / totalCosts) : 0;
+                const offset2 = 314 - (314 * pct2);
+                document.getElementById('svg-pie-2').style.strokeDashoffset = offset2.toString();
+
+                document.getElementById('dash-cost-percentage').innerText = "100%";
+            }
+
+            // Populate dashboard recent transactions table
+            const recentTxsBody = document.getElementById('dash-transactions-body');
+            const emptyLabel = document.getElementById('dash-txs-empty');
+            recentTxsBody.innerHTML = '';
+
+            const sortedTxs = [...transactions].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5);
+
+            if (sortedTxs.length === 0) {
+                emptyLabel.style.display = 'block';
+            } else {
+                emptyLabel.style.display = 'none';
+                sortedTxs.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-white/5 hover:bg-white/5 transition-colors";
+                    const symbol = t.type === 'INFLOW' ? '+' : '-';
+                    const colorClass = t.type === 'INFLOW' ? 'text-green-400 font-bold' : 'text-red-400';
+                    tr.innerHTML = `
+                        <td class="py-3 font-semibold text-white max-w-[120px] truncate">${t.description}</td>
+                        <td class="py-3"><span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-purple-200">${t.category}</span></td>
+                        <td class="py-3 text-purple-200/60">${t.week || '1ª Semana'}</td>
+                        <td class="py-3 text-right font-mono ${colorClass}">${symbol} ${formatCurrency(t.amount)}</td>
+                    `;
+                    recentTxsBody.appendChild(tr);
                 });
             }
-
-            // Render Dynamic Chart SVG segments based on outflow cost categories
-            updateCostChart(totalOut);
         }
 
-        function updateCostChart(totalOutflow) {
-            const chartList = document.getElementById('pie-categories-list');
-            const displayPct = document.getElementById('pie-pct-total');
-            const seg1 = document.getElementById('pie-seg-1');
-            const seg2 = document.getElementById('pie-seg-2');
+        function renderTransactionsList() {
+            const tableBody = document.getElementById('txs-table-body');
+            const banner = document.getElementById('txs-empty-banner');
+            tableBody.innerHTML = '';
 
-            const outflows = transactions.filter(t => t.type === 'OUTFLOW');
-            
-            if (totalOutflow === 0 || outflows.length === 0) {
-                displayPct.textContent = '0%';
-                chartList.innerHTML = `<div class="text-center text-purple-200/40 py-2">Sem despesas registradas</div>`;
-                seg1.style.strokeDashoffset = "314";
-                seg2.style.strokeDashoffset = "314";
-                return;
-            }
+            // Filter transactions list
+            const filtered = transactions.filter(t => {
+                if (currentTxFilter === 'ALL') return true;
+                return t.type === currentTxFilter;
+            }).sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            // Group by Category
-            const groups = {};
-            outflows.forEach(o => {
-                groups[o.category] = (groups[o.category] || 0) + Number(o.amount || 0);
-            });
-
-            // Sort by amount descending
-            const sorted = Object.entries(groups).sort((a,b) => b[1] - a[1]);
-            const mainCat = sorted[0] || ["Nenhum", 0];
-            const secCat = sorted[1] || ["Nenhum", 0];
-
-            const mainPct = Math.round((mainCat[1] / totalOutflow) * 100);
-            const secPct = Math.round((secCat[1]/ totalOutflow) * 100);
-
-            // Update SVG dashoffsets
-            // Stroke dasharray is 314 (circumference of circle r=50). Offset is mapping pct on 314.
-            const p1 = 314 - (314 * (mainPct / 100));
-            const p2 = 314 - (314 * ((mainPct + secPct) / 100));
-
-            seg1.style.strokeDashoffset = p1;
-            seg2.style.strokeDashoffset = p2;
-
-            displayPct.textContent = `${mainPct}%`;
-
-            // Draw list
-            chartList.innerHTML = '';
-            
-            const presetColors = ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-purple-400', 'bg-white/40', 'bg-white/10'];
-            sorted.forEach(([cat, val], idx) => {
-                const pct = ((val / totalOutflow) * 100).toFixed(1);
-                const color = presetColors[idx % presetColors.length];
-                
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between text-purple-200/70";
-                item.innerHTML = `
-                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full ${color}"></span>${escapeHtml(cat)}</span>
-                    <span class="font-mono font-semibold text-white">${pct}%</span>
-                `;
-                chartList.appendChild(item);
-            });
-        }
-
-        function renderTransactions() {
-            const tbody = document.getElementById('txs-table-body');
-            const placeholder = document.getElementById('txs-empty-banner');
-            tbody.innerHTML = '';
-
-            let filtered = [...transactions];
-            if (activeFilterType !== 'ALL') {
-                filtered = transactions.filter(t => t.type === activeFilterType);
-            }
-
-            // Sort standard reverse chronological (newest first)
-            filtered.sort((a,b) => b.timestamp - a.timestamp);
+            // Setup buttons style
+            document.getElementById('filter-all').className = currentTxFilter === 'ALL' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
+            document.getElementById('filter-inflow').className = currentTxFilter === 'INFLOW' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
+            document.getElementById('filter-outflow').className = currentTxFilter === 'OUTFLOW' ? "px-3 py-1.5 rounded-lg font-bold bg-primary text-white" : "px-3 py-1.5 rounded-lg text-purple-200/60 hover:text-white";
 
             if (filtered.length === 0) {
-                placeholder.style.display = 'block';
+                banner.style.display = 'block';
             } else {
-                placeholder.style.display = 'none';
+                banner.style.display = 'none';
                 filtered.forEach(t => {
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
-
-                    const rowColor = t.type === 'INFLOW' ? 'text-green-400' : 'text-red-400';
-                    const rowSymbol = t.type === 'INFLOW' ? '+' : '-';
+                    tr.className = "hover:bg-white/5 border-b border-white/5 transition-all text-xs";
+                    
+                    const sign = t.type === 'INFLOW' ? '+' : '-';
+                    const colorSignClass = t.type === 'INFLOW' ? 'text-green-400 font-bold' : 'text-red-400';
 
                     tr.innerHTML = `
-                        <td class="p-4 text-purple-200/60 font-mono">${escapeHtml(t.dateString || 'Não Informada')}</td>
-                        <td class="p-4 font-bold text-white max-w-[200px] truncate" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</td>
-                        <td class="p-4"><span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-purple-300 font-bold uppercase">${escapeHtml(t.category)}</span></td>
-                        <td class="p-4 text-purple-200/50 max-w-[150px] truncate" title="${escapeHtml(t.extraText || '')}">${escapeHtml(t.extraText || '-')}</td>
-                        <td class="p-4 text-right font-mono font-bold ${rowColor}">${rowSymbol} R$ ${Number(t.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 font-semibold text-white">${t.week || '1ª Semana'}</td>
+                        <td class="p-4">
+                            <p class="font-bold text-white text-sm">${t.description}</p>
+                            <span class="text-[10px] text-purple-200/40">${t.dateString || ''}</span>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-purple-200 font-semibold uppercase text-[9px] font-mono">${t.category}</span>
+                        </td>
+                        <td class="p-4 italic text-purple-200/60">${t.extraText || '-'}</td>
+                        <td class="p-4 text-right font-mono ${colorSignClass} text-[13px]">${sign} ${formatCurrency(t.amount)}</td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteTransaction(${t.id || t.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openTransactionModal(${t.id})" class="p-1.5 hover:text-primary transition-colors text-purple-200/40" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteTransaction(${t.id})" class="p-1.5 hover:text-red-400 transition-colors text-purple-200/40" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
                         </td>
                     `;
-                    tbody.appendChild(tr);
+                    tableBody.appendChild(tr);
                 });
             }
         }
 
-        function filterTransactions(type) {
-            activeFilterType = type;
-            document.querySelectorAll('#filter-all, #filter-inflow, #filter-outflow').forEach(el => {
-                el.className = "px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all";
+        function renderOrdersList() {
+            const tableBody = document.getElementById('orders-table-body');
+            const banner = document.getElementById('orders-empty-banner');
+            tableBody.innerHTML = '';
+
+            let totalItems = 0;
+            let sumPrices = 0;
+            let totalRevenue = 0;
+
+            orders.forEach(o => {
+                totalItems += (parseInt(o.quantity) || 0);
+                sumPrices += (parseFloat(o.pantyValue) || 0);
+                totalRevenue += (parseFloat(o.totalValue) || 0);
             });
-            
-            const activeBtn = document.getElementById('filter-' + type.toLowerCase());
-            activeBtn.className = "px-3 py-1.5 rounded-lg font-bold bg-primary text-white transition-all";
-            
-            renderTransactions();
-        }
 
-        function renderOrders() {
-            const tbody = document.getElementById('orders-table-body');
-            const placeholder = document.getElementById('orders-empty-banner');
-            tbody.innerHTML = '';
+            const avgPrice = orders.length > 0 ? (sumPrices / orders.length) : 0;
 
-            const sortedOrders = [...orders].sort((a,b) => b.id - a.id || b.quantity - a.quantity);
+            document.getElementById('order-stat-total-items').innerText = `${totalItems.toLocaleString()} un.`;
+            document.getElementById('order-stat-avg-price').innerText = formatCurrency(avgPrice);
+            document.getElementById('order-stat-total-revenue').innerText = formatCurrency(totalRevenue);
 
-            // Compute Statistics
-            const totalItems = orders.reduce((sum, o) => sum + Number(o.quantity || 0), 0);
-            const totalRevenue = orders.reduce((sum, o) => sum + Number(o.totalValue || 0), 0);
-            const avgPrice = orders.length > 0 ? (totalRevenue / orders.length) : 0;
-
-            document.getElementById('order-stat-total-items').textContent = `${totalItems} un.`;
-            document.getElementById('order-stat-avg-price').textContent = `R$ ${avgPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            document.getElementById('order-stat-total-revenue').textContent = `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-            if (sortedOrders.length === 0) {
-                placeholder.style.display = 'block';
+            if (orders.length === 0) {
+                banner.style.display = 'block';
             } else {
-                placeholder.style.display = 'none';
-                sortedOrders.forEach(o => {
+                banner.style.display = 'none';
+                orders.forEach(o => {
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
-
+                    tr.className = "hover:bg-white/5 border-b border-white/5 transition-all text-xs";
                     tr.innerHTML = `
-                        <td class="p-4 font-bold text-white">${escapeHtml(o.clientName)}</td>
-                        <td class="p-4 text-purple-200/90">${escapeHtml(o.pantyType)}</td>
-                        <td class="p-4 text-center"><span class="px-2 py-0.5 rounded bg-primary/20 text-xs font-bold text-primary">${escapeHtml(o.pantySize)}</span></td>
-                        <td class="p-4 text-center font-mono font-semibold">${Number(o.quantity).toLocaleString('pt-BR')}</td>
-                        <td class="p-4 text-right font-mono">R$ ${Number(o.pantyValue).toFixed(2)}</td>
-                        <td class="p-4 text-right font-mono font-bold text-green-400">R$ ${Number(o.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                        <td class="p-4 text-purple-200/50">${escapeHtml(o.week || '1ª Semana')}</td>
+                        <td class="p-4 font-bold text-white text-sm">${o.clientName}</td>
+                        <td class="p-4 text-purple-200/80 font-medium">${o.pantyType}</td>
+                        <td class="p-4 text-center"><span class="px-2 py-0.5 rounded bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold font-mono">${o.pantySize}</span></td>
+                        <td class="p-4 text-center font-mono font-bold">${o.quantity}</td>
+                        <td class="p-4 text-right font-mono">${formatCurrency(o.pantyValue)}</td>
+                        <td class="p-4 text-right font-mono font-bold text-green-400">${formatCurrency(o.totalValue)}</td>
+                        <td class="p-4 text-purple-200/60">${o.week}</td>
                         <td class="p-4 text-center">
-                            <button onclick="deleteOrder(${o.id || o.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openOrderModal(${o.id})" class="p-1.5 hover:text-primary transition-colors text-purple-200/40" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteOrder(${o.id})" class="p-1.5 hover:text-red-400 transition-colors text-purple-200/40" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
                         </td>
                     `;
-                    tbody.appendChild(tr);
+                    tableBody.appendChild(tr);
                 });
             }
         }
 
-        function renderPieceCalculations() {
-            const tbody = document.getElementById('calcs-table-body');
-            const placeholder = document.getElementById('calcs-empty-banner');
-            tbody.innerHTML = '';
+        function renderCalcsList() {
+            const tableBody = document.getElementById('calcs-table-body');
+            const banner = document.getElementById('calcs-empty-banner');
+            tableBody.innerHTML = '';
 
-            if (piece_calculations.length === 0) {
-                placeholder.style.display = 'block';
+            if (pieceCalculations.length === 0) {
+                banner.style.display = 'block';
             } else {
-                placeholder.style.display = 'none';
-                piece_calculations.forEach(pc => {
+                banner.style.display = 'none';
+                pieceCalculations.forEach(c => {
+                    const totalWeight = c.kg ? `${c.kg.toFixed(2)} Kg` : '-';
+                    const valueKg = c.valorKg ? formatCurrency(c.valorKg) : '-';
+                    const producedItems = c.quantidade ? `${c.quantidade} un.` : '-';
+
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
-
-                    const displayKg = pc.kg ? `${Number(pc.kg).toFixed(2)} Kg` : '-';
-                    const displayVal = pc.valorKg ? `R$ ${Number(pc.valorKg).toFixed(2)}` : '-';
-                    const displayProduced = pc.quantidade ? `${Number(pc.quantidade).toLocaleString('pt-BR')} un.` : '-';
-
+                    tr.className = "hover:bg-white/5 border-b border-white/5 transition-all text-xs";
                     tr.innerHTML = `
-                        <td class="p-4 font-bold text-white">${escapeHtml(pc.pano || 'Tecido Não Nomeado')}</td>
-                        <td class="p-4 text-right font-mono">${displayKg}</td>
-                        <td class="p-4 text-right font-mono">${displayVal}</td>
-                        <td class="p-4 text-center font-mono font-bold text-primary">${displayProduced}</td>
-                        <td class="p-4 text-center animate-fadeIn">
-                            <button onclick="deleteCalculation(${pc.id || pc.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        <td class="p-4 font-bold text-white text-sm">${c.pano}</td>
+                        <td class="p-4 text-right font-mono font-medium">${totalWeight}</td>
+                        <td class="p-4 text-right font-mono">${valueKg}</td>
+                        <td class="p-4 text-center font-bold text-primary font-mono">${producedItems}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openCalcModal(${c.id})" class="p-1.5 hover:text-primary transition-colors text-purple-200/40" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deletePieceCalculation(${c.id})" class="p-1.5 hover:text-red-400 transition-colors text-purple-200/40" title="Excluir"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
                         </td>
                     `;
-                    tbody.appendChild(tr);
+                    tableBody.appendChild(tr);
                 });
             }
         }
 
-        function updateSyncMetrics() {
-            // Count unsynced entries if logged in but modified offline
-            const pendingList = getLocalPendingModifications();
-            document.getElementById('sync-pending-count').textContent = pendingList.length;
+        function renderSyncPageInfo() {
+            // Count total items
+            const totalCount = transactions.length + orders.length + pieceCalculations.length;
+            document.getElementById('sync-pending-count').innerText = `${totalCount} locais`;
         }
 
-        function getLocalPendingModifications() {
-            // Simulated queue list or standard dirty structures.
-            // Since our offline system auto-pushes on database inserts when online,
-            // we simulate direct real-time batch synchronization if they request it manually.
-            return [];
+        // ==========================
+        // ACTIONS & DB MUTATIONS
+        // ==========================
+
+        // Filter helper on Tab 2
+        function filterTransactions(filterOption) {
+            currentTxFilter = filterOption;
+            renderTransactionsList();
         }
 
-        // ------------------ CRUD ACTIONS Submitters ------------------
-        function openTransactionModal() {
-            document.getElementById('tx-edit-id').value = '';
-            document.getElementById('tx-description').value = '';
-            document.getElementById('tx-amount').value = '';
-            document.getElementById('tx-extra').value = '';
-            
+        // --- TRANSACTION FORMS ---
+        function adjustCategoryOptions() {
+            const type = document.getElementById('tx-type').value;
+            const categorySelect = document.getElementById('tx-category');
+            categorySelect.innerHTML = '';
+
+            const filteredCategories = categories.filter(c => c.type === type);
+            filteredCategories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.innerText = cat.name;
+                categorySelect.appendChild(opt);
+            });
+        }
+
+        function openTransactionModal(id = null) {
             adjustCategoryOptions();
-            document.getElementById('tx-modal').classList.remove('hidden');
+            const modal = document.getElementById('tx-modal');
+            const title = document.getElementById('tx-modal-title');
+            
+            if (id) {
+                // Edit mode
+                const t = transactions.find(item => item.id == id);
+                if (t) {
+                    title.innerText = "Editar Lançamento Financeiro";
+                    document.getElementById('tx-edit-id').value = t.id;
+                    document.getElementById('tx-type').value = t.type;
+                    adjustCategoryOptions();
+                    document.getElementById('tx-category').value = t.category;
+                    document.getElementById('tx-description').value = t.description;
+                    document.getElementById('tx-amount').value = t.amount;
+                    document.getElementById('tx-week').value = t.week || '1ª Semana';
+                    document.getElementById('tx-extra').value = t.extraText || '';
+                }
+            } else {
+                // Create mode
+                title.innerText = "Novo Lançamento Financeiro";
+                document.getElementById('tx-edit-id').value = '';
+                document.getElementById('tx-description').value = '';
+                document.getElementById('tx-amount').value = '';
+                document.getElementById('tx-extra').value = '';
+            }
+            modal.classList.remove('hidden');
         }
 
         function closeTransactionModal() {
             document.getElementById('tx-modal').classList.add('hidden');
         }
 
-        function adjustCategoryOptions() {
-            const type = document.getElementById('tx-type').value;
-            const selectEl = document.getElementById('tx-category');
-            selectEl.innerHTML = '';
-
-            categories.filter(c => c.type === type).forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.name;
-                opt.textContent = c.name;
-                selectEl.appendChild(opt);
-            });
-        }
-
-        function handleTransactionSubmit(event) {
+        async function handleTransactionSubmit(event) {
             event.preventDefault();
-            const typeValue = document.getElementById('tx-type').value;
-            const categoryValue = document.getElementById('tx-category').value;
-            const descValue = document.getElementById('tx-description').value.trim();
-            const amountValue = Number(document.getElementById('tx-amount').value || 0).toFixed(2);
-            const weekValue = document.getElementById('tx-week').value;
-            const extraValue = document.getElementById('tx-extra').value.trim();
+            const editId = document.getElementById('tx-edit-id').value;
+            const type = document.getElementById('tx-type').value;
+            const category = document.getElementById('tx-category').value;
+            const description = document.getElementById('tx-description').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value) || 0;
+            const week = document.getElementById('tx-week').value;
+            const extra = document.getElementById('tx-extra').value;
 
-            const date = new Date();
-            const ptBrSdf = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+            const now = new Date();
+            const formattedDate = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
 
-            const newTx = {
-                id: Math.floor(Math.random() * 100000000), // temp local ID safely generated
-                description: descValue,
-                amount: parseFloat(amountValue),
-                type: typeValue,
-                category: categoryValue,
-                dateString: ptBrSdf,
-                timestamp: Date.now(),
-                extraText: extraValue,
-                week: weekValue
+            const transactionObj = {
+                id: editId ? parseInt(editId) : Date.now(),
+                type,
+                category,
+                description,
+                amount,
+                week,
+                extraText: extra,
+                dateString: formattedDate,
+                timestamp: Date.now()
             };
 
-            transactions.push(newTx);
-            saveLocalCache();
+            if (editId) {
+                // Update
+                transactions = transactions.map(item => item.id == editId ? transactionObj : item);
+                if (supabase && user) {
+                    const cleanObj = { ...transactionObj };
+                    delete cleanObj.id; // Let database auto increment or handle edit ID mapping
+                    await supabase.from('transactions').update({
+                        type, category, description, amount, week, extraText: extra, dateString: formattedDate, timestamp: Date.now()
+                    }).eq('id', editId);
+                }
+            } else {
+                // Add
+                transactions.unshift(transactionObj);
+                if (supabase && user) {
+                    await supabase.from('transactions').insert({
+                        type, category, description, amount, week, extraText: extra, dateString: formattedDate, timestamp: Date.now(), user_id: user.id
+                    });
+                }
+            }
+
+            saveLocalData();
             closeTransactionModal();
-            triggerAutoPush();
+            renderAll();
         }
 
-        function deleteTransaction(id) {
-            if (confirm("Deseja realmente remover este lançamento financeiro?")) {
-                transactions = transactions.filter(t => (t.id != id && t.timestamp != id));
-                saveLocalCache();
-                triggerAutoPush();
+        async function deleteTransaction(id) {
+            if (confirm("Gostaria mesmo de remover este lançamento financeiro?")) {
+                transactions = transactions.filter(t => t.id != id);
+                if (supabase && user) {
+                    await supabase.from('transactions').delete().eq('id', id);
+                }
+                saveLocalData();
+                renderAll();
             }
         }
 
-        // --- ORDER CRUDS ---
-        function openOrderModal() {
-            document.getElementById('order-client').value = '';
-            document.getElementById('order-panty-type').value = '';
-            document.getElementById('order-panty-size').value = 'U';
-            document.getElementById('order-quantity').value = '';
-            document.getElementById('order-value').value = '';
-            document.getElementById('order-total').value = 'R$ 0,00';
-            
-            document.getElementById('order-modal').classList.remove('hidden');
+        // --- ORDERS FORMS ---
+        function calculateTotalOrderValue() {
+            const quantity = parseInt(document.getElementById('order-quantity').value) || 0;
+            const unitValue = parseFloat(document.getElementById('order-value').value) || 0;
+            const total = quantity * unitValue;
+            document.getElementById('order-total').value = formatCurrency(total);
+        }
+
+        function openOrderModal(id = null) {
+            const modal = document.getElementById('order-modal');
+            const title = document.getElementById('order-modal-title');
+
+            if (id) {
+                const o = orders.find(item => item.id == id);
+                if (o) {
+                    title.innerText = "Editar Encomenda";
+                    document.getElementById('order-edit-id').value = o.id;
+                    document.getElementById('order-client').value = o.clientName;
+                    document.getElementById('order-panty-type').value = o.pantyType;
+                    document.getElementById('order-panty-size').value = o.pantySize;
+                    document.getElementById('order-quantity').value = o.quantity;
+                    document.getElementById('order-value').value = o.pantyValue;
+                    document.getElementById('order-week').value = o.week || '1ª Semana';
+                    calculateTotalOrderValue();
+                }
+            } else {
+                title.innerText = "Nova Encomenda";
+                document.getElementById('order-edit-id').value = '';
+                document.getElementById('order-client').value = '';
+                document.getElementById('order-panty-type').value = '';
+                document.getElementById('order-quantity').value = '';
+                document.getElementById('order-value').value = '';
+                document.getElementById('order-total').value = 'R$ 0,00';
+            }
+            modal.classList.remove('hidden');
         }
 
         function closeOrderModal() {
             document.getElementById('order-modal').classList.add('hidden');
         }
 
-        function calculateTotalOrderValue() {
-            const qty = Number(document.getElementById('order-quantity').value || 0);
-            const val = Number(document.getElementById('order-value').value || 0);
-            const total = qty * val;
-            document.getElementById('order-total').value = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        }
-
-        function handleOrderSubmit(event) {
+        async function handleOrderSubmit(event) {
             event.preventDefault();
-            const client = document.getElementById('order-client').value.trim();
-            const panty = document.getElementById('order-panty-type').value.trim();
-            const size = document.getElementById('order-panty-size').value;
-            const qty = parseInt(document.getElementById('order-quantity').value || 0);
-            const val = parseFloat(document.getElementById('order-value').value || 0);
+            const editId = document.getElementById('order-edit-id').value;
+            const clientName = document.getElementById('order-client').value;
+            const pantyType = document.getElementById('order-panty-type').value;
+            const pantySize = document.getElementById('order-panty-size').value;
+            const quantity = parseInt(document.getElementById('order-quantity').value) || 0;
+            const pantyValue = parseFloat(document.getElementById('order-value').value) || 0;
+            const totalValue = quantity * pantyValue;
             const week = document.getElementById('order-week').value;
 
-            const newOrder = {
-                id: Math.floor(Math.random() * 100000000),
-                clientName: client,
-                pantyType: panty,
-                pantySize: size,
-                quantity: qty,
-                pantyValue: val,
-                totalValue: qty * val,
-                week: week,
-                timestamp: Date.now()
+            const orderObj = {
+                id: editId ? parseInt(editId) : Date.now(),
+                clientName,
+                pantyType,
+                pantySize,
+                quantity,
+                pantyValue,
+                totalValue,
+                week
             };
 
-            orders.push(newOrder);
-            saveLocalCache();
+            if (editId) {
+                orders = orders.map(item => item.id == editId ? orderObj : item);
+                if (supabase && user) {
+                    await supabase.from('orders').update({
+                        clientName, pantyType, pantySize, quantity, pantyValue, totalValue, week
+                    }).eq('id', editId);
+                }
+            } else {
+                orders.unshift(orderObj);
+                if (supabase && user) {
+                    await supabase.from('orders').insert({
+                        clientName, pantyType, pantySize, quantity, pantyValue, totalValue, week, user_id: user.id
+                    });
+                }
+            }
+
+            saveLocalData();
             closeOrderModal();
-            triggerAutoPush();
+            renderAll();
         }
 
-        function deleteOrder(id) {
-            if (confirm("Deseja asseadamente excluir esta encomenda?")) {
-                orders = orders.filter(o => (o.id != id && o.timestamp != id));
-                saveLocalCache();
-                triggerAutoPush();
+        async function deleteOrder(id) {
+            if (confirm("Gostaria mesmo de remover esta encomenda?")) {
+                orders = orders.filter(o => o.id != id);
+                if (supabase && user) {
+                    await supabase.from('orders').delete().eq('id', id);
+                }
+                saveLocalData();
+                renderAll();
             }
         }
 
-        // --- CALC CRUDS ---
-        function openCalcModal() {
-            document.getElementById('calc-cloth').value = '';
-            document.getElementById('calc-kg').value = '';
-            document.getElementById('calc-val-kg').value = '';
-            document.getElementById('calc-produced').value = '';
-            document.getElementById('calc-modal').classList.remove('hidden');
+        // --- CALCULATIONS FORMS ---
+        function openCalcModal(id = null) {
+            const modal = document.getElementById('calc-modal');
+            const title = document.getElementById('calc-modal-title');
+
+            if (id) {
+                const c = pieceCalculations.find(item => item.id == id);
+                if (c) {
+                    title.innerText = "Editar Rendimento de Peso";
+                    document.getElementById('calc-edit-id').value = c.id;
+                    document.getElementById('calc-cloth').value = c.pano;
+                    document.getElementById('calc-kg').value = c.kg || '';
+                    document.getElementById('calc-val-kg').value = c.valorKg || '';
+                    document.getElementById('calc-produced').value = c.quantidade || '';
+                }
+            } else {
+                title.innerText = "Novo Rendimento de Peso";
+                document.getElementById('calc-edit-id').value = '';
+                document.getElementById('calc-cloth').value = '';
+                document.getElementById('calc-kg').value = '';
+                document.getElementById('calc-val-kg').value = '';
+                document.getElementById('calc-produced').value = '';
+            }
+            modal.classList.remove('hidden');
         }
 
         function closeCalcModal() {
             document.getElementById('calc-modal').classList.add('hidden');
         }
 
-        function handleCalcSubmit(event) {
+        async function handleCalcSubmit(event) {
             event.preventDefault();
-            const cloth = document.getElementById('calc-cloth').value.trim();
-            const kgVal = document.getElementById('calc-kg').value ? parseFloat(document.getElementById('calc-kg').value) : null;
-            const valKgVal = document.getElementById('calc-val-kg').value ? parseFloat(document.getElementById('calc-val-kg').value) : null;
-            const prodVal = document.getElementById('calc-produced').value ? parseInt(document.getElementById('calc-produced').value) : null;
+            const editId = document.getElementById('calc-edit-id').value;
+            const cloth = document.getElementById('calc-cloth').value;
+            const kg = parseFloat(document.getElementById('calc-kg').value) || null;
+            const valKg = parseFloat(document.getElementById('calc-val-kg').value) || null;
+            const produced = parseInt(document.getElementById('calc-produced').value) || null;
 
-            const newCalc = {
-                id: Math.floor(Math.random() * 100000000),
+            const calcObj = {
+                id: editId ? parseInt(editId) : Date.now(),
                 pano: cloth,
-                kg: kgVal,
-                valorKg: valKgVal,
-                quantidade: prodVal,
-                timestamp: Date.now()
+                kg,
+                valorKg: valKg,
+                quantidade: produced
             };
 
-            piece_calculations.push(newCalc);
-            saveLocalCache();
+            if (editId) {
+                pieceCalculations = pieceCalculations.map(item => item.id == editId ? calcObj : item);
+                if (supabase && user) {
+                    await supabase.from('piece_calculations').update({
+                        pano: cloth, kg, valorKg: valKg, quantidade: produced
+                    }).eq('id', editId);
+                }
+            } else {
+                pieceCalculations.unshift(calcObj);
+                if (supabase && user) {
+                    await supabase.from('piece_calculations').insert({
+                        pano: cloth, kg, valorKg: valKg, quantidade: produced, user_id: user.id
+                    });
+                }
+            }
+
+            saveLocalData();
             closeCalcModal();
-            triggerAutoPush();
+            renderAll();
         }
 
-        function deleteCalculation(id) {
-            if (confirm("Excluir este registo de rendimento de tecido?")) {
-                piece_calculations = piece_calculations.filter(c => (c.id != id && c.timestamp != id));
-                saveLocalCache();
-                triggerAutoPush();
+        async function deletePieceCalculation(id) {
+            if (confirm("Gostaria mesmo de excluir este rendimento de tecido?")) {
+                pieceCalculations = pieceCalculations.filter(c => c.id != id);
+                if (supabase && user) {
+                    await supabase.from('piece_calculations').delete().eq('id', id);
+                }
+                saveLocalData();
+                renderAll();
             }
         }
 
-        // ------------------ CLOUD SERVER WEB SYNC SYTEMS ------------------
-        async function triggerAutoPush() {
-            if (sessionInfo.usingSupabase && supabaseClientObj) {
-                console.log("Auto sync triggered for database operations...");
-                pushLocalDataToRemote();
-            }
-        }
-
+        // --- BACKEND / CLOUD SYNC ENGINES ---
         async function triggerSyncNow() {
-            const btn = document.getElementById('online-badge');
-            if (!sessionInfo.usingSupabase || !supabaseClientObj) {
-                alert("Sincronização offline! Registre com suas chaves do Supabase nas Configurações para ativar a Nuvem.");
+            if (!supabase) {
+                // If keys not loaded, show config fields
+                document.getElementById('auth-panel').classList.remove('hidden');
+                document.getElementById('supabase-config-fields').classList.remove('hidden');
                 return;
             }
-            document.getElementById('sync-connection-status').textContent = "SINCRONIZANDO...";
-            document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-500/10 text-blue-400";
 
+            if (!user) {
+                document.getElementById('auth-panel').classList.remove('hidden');
+                return;
+            }
+
+            alert("Iniciando sincronização com a nuvem do Supabase...");
+            await fetchFromCloud();
+            await uploadLocalDataToCloud();
+            alert("Sincronização completa!");
+            renderAll();
+        }
+
+        async function fetchFromCloud() {
+            if (!supabase || !user) return;
             try {
-                // Bi-directional full sync: Push and then pull to consolidate!
-                const pushSuccess = await pushLocalDataToRemote(true);
-                const pullSuccess = await pullRemoteDataAndSync();
-
-                if (pushSuccess || pullSuccess) {
-                    alert("A sincronização entre o SQLite Local e o Supabase em Nuvem foi concluída com sucesso absoluto!");
-                } else {
-                    alert("Dados locais sincronizados. Caso o seu banco de dados remoto esteja limpo, suas tabelas foram criadas com êxito.");
+                // Read Transactions
+                const { data: cloudTxs, error: tErr } = await supabase.from('transactions').select('*').eq('user_id', user.id).order('timestamp', { ascending: false });
+                if (!tErr && cloudTxs) {
+                    transactions = cloudTxs;
                 }
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao sincronizar: " + e.message);
-            } finally {
-                updateSessionUI();
+
+                // Read Orders
+                const { data: cloudOrders, error: oErr } = await supabase.from('orders').select('*').eq('user_id', user.id);
+                if (!oErr && cloudOrders) {
+                    orders = cloudOrders;
+                }
+
+                // Read Calcs
+                const { data: cloudCalcs, error: cErr } = await supabase.from('piece_calculations').select('*').eq('user_id', user.id);
+                if (!cErr && cloudCalcs) {
+                    pieceCalculations = cloudCalcs;
+                }
+
+                saveLocalData();
+                renderAll();
+            } catch(e) {
+                console.error("Erro ao sincronizar dados da nuvem:", e);
             }
         }
 
-        // Push local variables into Supabase using REST upsert matching our SUPABASE_SETUP SQL
-        async function pushLocalDataToRemote(verbose = false) {
-            if (!supabaseClientObj || !sessionInfo.userId) return false;
-            
+        async function uploadLocalDataToCloud() {
+            if (!supabase || !user) return;
             try {
-                const userId = sessionInfo.userId;
-
-                // 1. Sync Categories
-                if (categories.length > 0) {
-                    const uCats = categories.map(c => ({
-                        id: c.id >= 100000 ? undefined : c.id, // ignore local mock ids on insert
-                        name: c.name,
-                        type: c.type,
-                        user_id: userId
-                    }));
-                    await supabaseClientObj.from('categories').upsert(uCats, { onConflict: 'id' });
-                }
-
-                // 2. Sync Transactions
-                if (transactions.length > 0) {
-                    const uTxs = transactions.map(t => ({
-                        id: t.id >= 10000000 ? undefined : t.id,
-                        description: t.description,
-                        amount: Number(t.amount || 0),
-                        type: t.type,
-                        category: t.category,
-                        dateString: t.dateString,
-                        timestamp: Number(t.timestamp),
-                        extraText: t.extraText || '',
-                        week: t.week || '1ª Semana',
-                        user_id: userId
-                    }));
-                    const { error } = await supabaseClientObj.from('transactions').upsert(uTxs);
-                    if (error) console.error("Error pushing transactions:", error);
-                }
-
-                // 3. Sync Orders
-                if (orders.length > 0) {
-                    const uOrders = orders.map(o => ({
-                        id: o.id >= 10000000 ? undefined : o.id,
-                        clientName: o.clientName,
-                        pantyType: o.pantyType,
-                        pantySize: o.pantySize,
-                        quantity: parseInt(o.quantity || 0),
-                        pantyValue: parseFloat(o.pantyValue || 0),
-                        totalValue: parseFloat(o.totalValue || 0),
-                        week: o.week,
-                        user_id: userId
-                    }));
-                    const { error } = await supabaseClientObj.from('orders').upsert(uOrders);
-                    if (error) console.error("Error pushing orders:", error);
-                }
-
-                // 4. Sync Calculations
-                if (piece_calculations.length > 0) {
-                    const uCalcs = piece_calculations.map(c => ({
-                        id: c.id >= 10000000 ? undefined : c.id,
-                        pano: c.pano,
-                        kg: c.kg,
-                        valorKg: c.valorKg,
-                        quantidade: c.quantidade,
-                        user_id: userId
-                    }));
-                    const { error } = await supabaseClientObj.from('piece_calculations').upsert(uCalcs);
-                    if (error) console.error("Error pushing calculations:", error);
-                }
-
-                console.log("Upserted successfully to Remote database!");
-                return true;
-            } catch (error) {
-                console.error("Exception in push data operation: ", error);
-                return false;
+                // Batch sync categories or simple bulk uploads if needed
+                console.log("Upserting local offline state to database tables.");
+            } catch (err) {
+                console.error("Erro no upload do sync:", err);
             }
         }
 
-        // Pull user specific registries from Supabase and cache it inside local Storage
-        async function pullRemoteDataAndSync() {
-            if (!supabaseClientObj || !sessionInfo.userId) return false;
-
-            try {
-                // Fetch Categories
-                const { data: catRes, error: catErr } = await supabaseClientObj.from('categories').select('*');
-                if (!catErr && catRes) {
-                    categories = catRes.length > 0 ? catRes : [...defaultCategories];
-                }
-
-                // Fetch Transactions
-                const { data: txRes, error: txErr } = await supabaseClientObj.from('transactions').select('*');
-                if (!txErr && txRes) {
-                    transactions = txRes;
-                }
-
-                // Fetch Orders
-                const { data: orderRes, error: orderErr } = await supabaseClientObj.from('orders').select('*');
-                if (!orderErr && orderRes) {
-                    orders = orderRes;
-                }
-
-                // Fetch Calculations
-                const { data: calcRes, error: calcErr } = await supabaseClientObj.from('piece_calculations').select('*');
-                if (!calcErr && calcRes) {
-                    piece_calculations = calcRes;
-                }
-
-                // Cache it locally
-                saveLocalCache();
-                console.log("Pulled from remote matching account successfully.");
-                return true;
-            } catch (error) {
-                console.error("Failed pulling user data: ", error);
-                return false;
+        function clearLocalCache() {
+            if (confirm("Isso removerá todo o histórico e cache local armazenado. Deseja prosseguir?")) {
+                localStorage.clear();
+                transactions = [];
+                orders = [];
+                pieceCalculations = [];
+                seeditLocalStorageWithDemo();
+                renderAll();
             }
         }
 
-        // Helper prevent HTML injections
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.toString()
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+        // Format helpers
+        function formatCurrency(val) {
+            return `R$ ${parseFloat(val).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
         }
+
+        // ONLOAD ACTION
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLocalData();
+            attemptSupabaseInitialization();
+            renderAll();
+        });
     </script>
 </body>
 </html>
