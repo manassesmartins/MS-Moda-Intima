@@ -748,19 +748,31 @@
             localStorage.setItem('ms_calcs', JSON.stringify(pieceCalculations));
         }
 
+        // Define default Supabase instance matching the Mobile app
+        const DEFAULT_SUPABASE_URL = "https://iaykxwwgczlmznbjeaqn.supabase.co";
+        const DEFAULT_SUPABASE_KEY = "sb_publishable_pVCHAW8EI-tMqbMIOYa4sQ_hjhseR-u";
+
         // Initialize Supabase if credentials exist
         function attemptSupabaseInitialization() {
-            const cachedUrl = localStorage.getItem('ms_supabase_url');
-            const cachedKey = localStorage.getItem('ms_supabase_key');
+            let cachedUrl = localStorage.getItem('ms_supabase_url');
+            let cachedKey = localStorage.getItem('ms_supabase_key');
             
-            // Set dynamic inputs to match cached ones
+            // Set default settings if cache is empty
+            if (!cachedUrl || !cachedKey) {
+                cachedUrl = DEFAULT_SUPABASE_URL;
+                cachedKey = DEFAULT_SUPABASE_KEY;
+                localStorage.setItem('ms_supabase_url', DEFAULT_SUPABASE_URL);
+                localStorage.setItem('ms_supabase_key', DEFAULT_SUPABASE_KEY);
+            }
+            
+            // Set dynamic inputs to match active ones
             if (cachedUrl) document.getElementById('supabase-url').value = cachedUrl;
             if (cachedKey) document.getElementById('supabase-key').value = cachedKey;
 
             if (cachedUrl && cachedKey && window.supabase) {
                 try {
                     supabase = window.supabase.createClient(cachedUrl, cachedKey);
-                    console.log("Supabase inicializado via cache.");
+                    console.log("Supabase inicializado.");
                     
                     // Check if we have a saved user
                     const savedUser = localStorage.getItem('ms_user');
@@ -813,32 +825,26 @@
             event.preventDefault();
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            const customUrl = document.getElementById('supabase-url').value.trim();
-            const customKey = document.getElementById('supabase-key').value.trim();
+            let customUrl = document.getElementById('supabase-url').value.trim();
+            let customKey = document.getElementById('supabase-key').value.trim();
+
+            if (!customUrl) customUrl = DEFAULT_SUPABASE_URL;
+            if (!customKey) customKey = DEFAULT_SUPABASE_KEY;
 
             const errBlock = document.getElementById('auth-error');
             const succBlock = document.getElementById('auth-success');
             errBlock.classList.add('hidden');
             succBlock.classList.add('hidden');
 
-            // If user inputted credentials, configure on the fly
-            if (customUrl && customKey) {
-                localStorage.setItem('ms_supabase_url', customUrl);
-                localStorage.setItem('ms_supabase_key', customKey);
-                try {
-                    supabase = window.supabase.createClient(customUrl, customKey);
-                } catch (e) {
-                    errBlock.innerText = "URL ou chave do Supabase inválidas.";
-                    errBlock.classList.remove('hidden');
-                    return;
-                }
-            } else {
-                // If keys are blank, try to use loaded client
-                if (!supabase) {
-                    errBlock.innerText = "Por favor, informe a URL e a Anon Key do seu projeto Supabase.";
-                    errBlock.classList.remove('hidden');
-                    return;
-                }
+            // Configure client on the fly
+            localStorage.setItem('ms_supabase_url', customUrl);
+            localStorage.setItem('ms_supabase_key', customKey);
+            try {
+                supabase = window.supabase.createClient(customUrl, customKey);
+            } catch (e) {
+                errBlock.innerText = "URL ou chave do Supabase inválidas.";
+                errBlock.classList.remove('hidden');
+                return;
             }
 
             try {
