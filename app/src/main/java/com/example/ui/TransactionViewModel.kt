@@ -608,17 +608,6 @@ class TransactionViewModel(
     fun clearCalculationsAndReseed() {
         viewModelScope.launch {
             repository.clearCalculations()
-            val defaultCalcs = listOf(
-                com.example.data.PieceCalculationEntity(pano = "Listrada", kg = null, valorKg = null, quantidade = 1191),
-                com.example.data.PieceCalculationEntity(pano = "Summerplex", kg = 28.40, valorKg = 29.00, quantidade = 2133),
-                com.example.data.PieceCalculationEntity(pano = "Listrada", kg = null, valorKg = 31.00, quantidade = 1108),
-                com.example.data.PieceCalculationEntity(pano = "Summerplex", kg = 41.20, valorKg = 27.90, quantidade = 2880),
-                com.example.data.PieceCalculationEntity(pano = "listrada", kg = 13.60, valorKg = 31.00, quantidade = null),
-                com.example.data.PieceCalculationEntity(pano = "", kg = null, valorKg = null, quantidade = null)
-            )
-            for (calc in defaultCalcs) {
-                repository.insertCalculation(calc)
-            }
             triggerSyncSimulation()
         }
     }

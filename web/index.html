@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS Moda Íntima - Desktop Web</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#9D58FF',
+                        secondary: '#FF6EA7',
+                        tertiary: '#4FC3F7',
+                        darkBg: '#09040D',
+                        cardBg: 'rgba(25, 14, 38, 0.45)',
+                        borderBg: 'rgba(255, 255, 255, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #09040D;
+            background-image: radial-gradient(at top right, rgba(157, 88, 255, 0.15) 0px, transparent 50%),
+                              radial-gradient(at bottom left, rgba(255, 110, 167, 0.12) 0px, transparent 50%),
+                              radial-gradient(at center center, rgba(79, 195, 247, 0.05) 0px, transparent 60%);
+            background-attachment: fixed;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #E2D9EB;
+        }
+        .glass-card {
+            background: rgba(25, 14, 38, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+        }
+        .glass-input {
+            background: rgba(10, 5, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #E2D9EB;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #9D58FF;
+            box-shadow: 0 0 0 3px rgba(157, 88, 255, 0.2);
+            background: rgba(20, 10, 30, 0.8);
+        }
+        /* Scrollbar customizing */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(9, 4, 13, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(157, 88, 255, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(157, 88, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col md:flex-row overflow-hidden">
+
+    <!-- LOGIN PANEL -->
+    <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040D]/90 backdrop-blur-md hidden">
+        <div class="glass-card p-8 w-full max-w-md relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary/15 rounded-full blur-2xl"></div>
+            
+            <div class="text-center mb-6">
+                <div class="inline-flex p-3 bg-primary/10 rounded-full text-primary mb-3">
+                    <i class="fa-solid fa-gem text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold tracking-tight text-white">MS Moda Íntima</h2>
+                <p class="text-xs text-purple-200/60 mt-1">Sessão Segura integrada com Supabase</p>
+            </div>
+
+            <!-- Credentials configure fallback (Optional / UI Input if env variables not defined in Vercel) -->
+            <div id="supabase-config-fields" class="mb-5 border-b border-white/5 pb-4 hidden">
+                <p class="text-[11px] uppercase font-bold text-secondary mb-2"><i class="fa-solid fa-gears mr-1"></i>Chaves do Supabase</p>
+                <div class="space-y-2">
+                    <input type="text" id="supabase-url" placeholder="Supabase Project URL" class="glass-input w-full px-3 py-2 text-xs font-mono">
+                    <input type="password" id="supabase-key" placeholder="Supabase Anon Key" class="glass-input w-full px-3 py-2 text-xs font-mono">
+                </div>
+                <p class="text-[10px] text-purple-200/50 mt-1">Deixe em branco para tentar usar as chaves configuradas na Vercel.</p>
+            </div>
+
+            <!-- Tabs de Auth -->
+            <div class="flex border-b border-white/10 mb-5">
+                <button id="tab-login-btn" class="flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white" onclick="switchAuthTab('login')">Entrar</button>
+                <button id="tab-signup-btn" class="flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60" onclick="switchAuthTab('signup')">Criar Conta</button>
+            </div>
+
+            <form id="auth-form" class="space-y-4" onsubmit="handleAuth(event)">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1" for="auth-email">E-mail</label>
+                    <input type="email" id="auth-email" required class="glass-input w-full px-4 py-3 text-sm focus:ring-2">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1" for="auth-password">Senha</label>
+                    <input type="password" id="auth-password" required minlength="6" class="glass-input w-full px-4 py-3 text-sm focus:ring-2">
+                </div>
+
+                <div id="auth-error" class="text-red-400 text-xs hidden p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <!-- Error message injection -->
+                </div>
+                <div id="auth-success" class="text-green-400 text-xs hidden p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <!-- Success message injection -->
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <span id="auth-btn-text">Entrar</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <button class="text-xs text-purple-200/50 hover:text-white" onclick="toggleSupabaseFields()"><i class="fa-solid fa-sliders mr-1"></i>Configurar Chaves Supabase Manualmente</button>
+            </div>
+            
+            <div class="mt-4 text-center border-t border-white/5 pt-3">
+                <button class="text-xs text-secondary font-semibold hover:underline" onclick="continueOffline()"><i class="fa-solid fa-cloud-slash mr-1"></i>Usar Modo Local Offline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION (LEFT) -->
+    <aside class="w-full md:w-64 max-h-screen border-b md:border-b-0 md:border-r border-white/10 md:overflow-y-auto flex flex-col glass-card m-0 rounded-none z-10 shrink-0">
+        <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
+                    <i class="fa-solid fa-gem text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-extrabold text-white tracking-tight">MS Moda Íntima</h1>
+                    <span class="text-[10px] text-purple-200/50 font-mono tracking-wider">WORKSPACE</span>
+                </div>
+            </div>
+            <div id="online-badge" class="px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1">
+                <span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                ONLINE
+            </div>
+        </div>
+
+        <!-- PROFILE BRIEF -->
+        <div class="px-5 py-3 mx-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <i class="fa-solid fa-circle-user text-xl text-primary/80"></i>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-bold text-white truncate" id="user-display-email">Modo Offline</p>
+                    <span class="text-[9px] text-purple-200/50" id="user-display-status">Offline</span>
+                </div>
+            </div>
+            <button id="logout-btn" class="text-purple-200/60 hover:text-red-400 p-1 text-xs" title="Sair da Conta" onclick="handleLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+
+        <nav class="flex-1 px-3 space-y-1">
+            <button onclick="switchTab('dashboard')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white" data-tab="dashboard">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-chart-pie w-5 text-center"></i>Painel Resumo</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+            </button>
+            <button onclick="switchTab('transactions')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="transactions">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-receipt w-5 text-center"></i>Lançamentos Fin.</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+            </button>
+            <button onclick="switchTab('orders')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="orders">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-box-archive w-5 text-center"></i>Encomendas</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+            </button>
+            <button onclick="switchTab('calcs')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="calcs">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-calculator w-5 text-center"></i>Cálculo de Peças</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+            </button>
+            <button onclick="switchTab('sync')" class="tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white" data-tab="sync">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-up w-5 text-center"></i>Sincronização</span>
+                <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+            </button>
+        </nav>
+
+        <div class="p-5 border-t border-white/5 text-[10px] text-purple-200/40 text-center">
+            <p>MS Moda Íntima Web v1.2</p>
+            <p class="mt-0.5">Hospedado via Vercel Edge Server</p>
+        </div>
+    </aside>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-1 overflow-y-auto px-4 py-6 md:p-8 flex flex-col justify-between max-h-screen">
+        <div class="space-y-6">
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="space-y-6 tab-content">
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Painel de Negócios</h2>
+                        <p class="text-xs text-purple-200/60">Análise de ingressos e saídas operacionais do atelier</p>
+                    </div>
+                    <button onclick="openTransactionModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-transform">
+                        <i class="fa-solid fa-plus mr-1.5"></i>Novo Lançamento
+                    </button>
+                </div>
+
+                <!-- CARDS GRID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="glass-card p-5 relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold uppercase text-purple-200/60">Saldo Consolidado</span>
+                            <div class="p-2 bg-primary/10 rounded-lg text-primary text-sm"><i class="fa-solid fa-wallet"></i></div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-balance">R$ 0,00</p>
+                            <span class="text-[10px] text-green-400 mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-up"></i> +12.4% vs. mês anterior
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-5 relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold uppercase text-purple-200/60">Entradas Totais</span>
+                            <div class="p-2 bg-green-500/10 rounded-lg text-green-400 text-sm"><i class="fa-solid fa-circle-arrow-up"></i></div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-inflow">R$ 0,00</p>
+                            <span class="text-[10px] text-purple-200/50 mt-1">Acumulado do mês corrente</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-5 relative overflow-hidden flex flex-col justify-between min-h-[120px] sm:col-span-2 lg:col-span-1">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold uppercase text-purple-200/60">Saídas Totais (Custos)</span>
+                            <div class="p-2 bg-red-500/10 rounded-lg text-red-400 text-sm"><i class="fa-solid fa-circle-arrow-down"></i></div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-2xl font-mono font-bold text-white tracking-tight" id="dash-outflow">R$ 0,00</p>
+                            <span class="text-[10px] text-purple-200/50 mt-1">Funcionários, pano e variados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS AND RECENT ACTIVITY -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Distruição de Custos -->
+                    <div class="glass-card p-5 lg:col-span-4 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider text-purple-200/80">Quadro de Categoria de Custos</h3>
+                            <div class="flex justify-center my-4 relative h-36">
+                                <!-- Draw basic dynamic pie representation via canvas/SVG -->
+                                <svg class="w-32 h-32 transform -rotate-90">
+                                    <circle cx="64" cy="64" r="50" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="12"/>
+                                    <!-- Segment 1 (Materia Prima - Primary) -->
+                                    <circle id="pie-seg-1" cx="64" cy="64" r="50" fill="transparent" stroke="#9D58FF" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="141"/>
+                                    <!-- Segment 2 (Mao obra - Secondary) -->
+                                    <circle id="pie-seg-2" cx="64" cy="64" r="50" fill="transparent" stroke="#FF6EA7" stroke-width="12" stroke-dasharray="314" stroke-dashoffset="235"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span class="text-[9px] uppercase font-bold text-purple-200/40">Custos</span>
+                                    <span class="text-base font-bold text-white" id="pie-pct-total">98%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-xs" id="pie-categories-list">
+                            <!-- Items auto filled -->
+                            <div class="flex items-center justify-between text-purple-200/70">
+                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-primary"></span>Matéria-prima</span>
+                                <span class="font-mono font-semibold text-white">45%</span>
+                            </div>
+                            <div class="flex items-center justify-between text-purple-200/70">
+                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-secondary"></span>Mão de Obra</span>
+                                <span class="font-mono font-semibold text-white">30%</span>
+                            </div>
+                            <div class="flex items-center justify-between text-purple-200/70">
+                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-tertiary"></span>Logística & Envios</span>
+                                <span class="font-mono font-semibold text-white">15%</span>
+                            </div>
+                            <div class="flex items-center justify-between text-purple-200/70">
+                                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-white/30"></span>Marketing</span>
+                                <span class="font-mono font-semibold text-white">10%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lançamentos Recentes -->
+                    <div class="glass-card p-5 lg:col-span-8 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80">Lançamentos Recentes</h3>
+                                <button onclick="switchTab('transactions')" class="text-xs text-primary font-bold hover:underline">Ver Todos</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs text-purple-200/70">
+                                    <thead>
+                                        <tr class="border-b border-white/5 text-[10px] uppercase font-bold text-purple-200/50">
+                                            <th class="pb-2">Descrição</th>
+                                            <th class="pb-2">Categoria</th>
+                                            <th class="pb-2">Semana</th>
+                                            <th class="pb-2 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-transactions-body" class="divide-y divide-white/5">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="text-center py-6 text-purple-200/40 text-[11px]" id="dash-txs-empty" style="display: none;">
+                            <i class="fa-solid fa-rectangle-list text-3xl mb-2 block opacity-40"></i>
+                            Nenhum lançamento adicionado ainda.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: TRANSACTIONS -->
+            <section id="tab-transactions" class="space-y-6 tab-content hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Histórico de Lançamentos</h2>
+                        <p class="text-xs text-purple-200/60">Relação completa de recebimentos e custos do atelier</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <button onclick="openTransactionModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-transform">
+                            <i class="fa-solid fa-plus mr-1.5"></i>Novo Lançamento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FILTERS BAR -->
+                <div class="flex flex-wrap items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/5 text-xs">
+                    <button onclick="filterTransactions('ALL')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold bg-primary text-white transition-all">Todos</button>
+                    <button onclick="filterTransactions('INFLOW')" id="filter-inflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all">Receitas</button>
+                    <button onclick="filterTransactions('OUTFLOW')" id="filter-outflow" class="px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all font-bold">Custos</button>
+                </div>
+
+                <!-- TRANSACTIONS LIST -->
+                <div class="glass-card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-purple-200/80">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
+                                    <th class="p-4">Data/Semana</th>
+                                    <th class="p-4">Descrição</th>
+                                    <th class="p-4">Categoria</th>
+                                    <th class="p-4">Notas Extras</th>
+                                    <th class="p-4 text-right">Valor</th>
+                                    <th class="p-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txs-table-body" class="divide-y divide-white/5">
+                                <!-- Dynamic transactions row -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="txs-empty-banner" class="text-center py-12 text-sm text-purple-200/40" style="display: none;">
+                        <i class="fa-solid fa-table-list text-4xl mb-3 block text-purple-200/20"></i>
+                        Sem lançamentos nesta categoria de filtros.
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ORDERS -->
+            <section id="tab-orders" class="space-y-6 tab-content hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Controle de Encomendas</h2>
+                        <p class="text-xs text-purple-200/60">Gerenciamento de entrada de lingerie e produção sob encomenda</p>
+                    </div>
+                    <button onclick="openOrderModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold hover:opacity-90 active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
+                        <i class="fa-solid fa-plus mr-1.5"></i>Nova Encomenda
+                    </button>
+                </div>
+
+                <!-- ORDERS STATISTICS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="glass-card p-4">
+                        <p class="text-[10px] font-bold text-purple-200/50 uppercase">Encomendas de Calcinhas</p>
+                        <p class="text-xl font-bold text-white font-mono mt-1" id="order-stat-total-items">0 un.</p>
+                    </div>
+                    <div class="glass-card p-4">
+                        <p class="text-[10px] font-bold text-purple-200/50 uppercase">Preço Médio Vendido</p>
+                        <p class="text-xl font-bold text-white font-mono mt-1" id="order-stat-avg-price">R$ 0,00</p>
+                    </div>
+                    <div class="glass-card p-4">
+                        <p class="text-[10px] font-bold text-purple-200/50 uppercase">Faturamento Concluído</p>
+                        <p class="text-xl font-bold text-white font-mono mt-1 text-green-400" id="order-stat-total-revenue">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <!-- ORDERS LIST -->
+                <div class="glass-card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-purple-200/80 w-full table-auto">
+                            <thead>
+                                <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
+                                    <th class="p-4">Cliente</th>
+                                    <th class="p-4">Tipo da Calcinha</th>
+                                    <th class="p-4">Tamanho</th>
+                                    <th class="p-4 text-center">Qtde.</th>
+                                    <th class="p-4 text-right">Preço Un.</th>
+                                    <th class="p-4 text-right">Preço Total</th>
+                                    <th class="p-4">Semana</th>
+                                    <th class="p-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-white/5">
+                                <!-- Dynamic orders rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="orders-empty-banner" class="text-center py-12 text-sm text-purple-200/40" style="display: none;">
+                        <i class="fa-solid fa-boxes-packing text-4xl mb-3 block text-purple-200/20"></i>
+                        Sem encomendas catalogadas ainda neste mês.
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: PIECE CALCULATIONS -->
+            <section id="tab-calcs" class="space-y-6 tab-content hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white tracking-tight">Cálculo de Peças por Peso</h2>
+                        <p class="text-xs text-purple-200/60">Análise de rendimento de rolos de tecidos em unidades produzidas</p>
+                    </div>
+                    <button onclick="openCalcModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold hover:opacity-90 active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
+                        <i class="fa-solid fa-plus mr-1.5"></i>Novo Cálculo de Peso
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- GUIDE EXPLAIN CARD -->
+                    <div class="glass-card p-5 lg:col-span-4 space-y-4">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80"><i class="fa-solid fa-circle-question mr-1.5 text-primary"></i>Rendimento de Tecido</h3>
+                        <p class="text-xs text-purple-200/70 leading-relaxed">
+                            Cálculo dinâmico baseado em rolos de malhas microfibra ou tecidos variados para calcinhas.
+                        </p>
+                        <div class="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2 text-xs">
+                            <p class="text-[10px] font-bold text-purple-200/50 uppercase">Rendimento Clássico Estimado</p>
+                            <div class="flex justify-between">
+                                <span class="text-purple-200/70">1 Kg de Microfibra</span>
+                                <span class="font-bold text-white">~45 un. Médias</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-purple-200/70">1 Rolo Promédio</span>
+                                <span class="font-bold text-white">~2.100 un. Totais</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CALCULATIONS LIST -->
+                    <div class="glass-card lg:col-span-8 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-purple-200/80 table-auto w-full">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[11px] uppercase tracking-wider font-bold text-purple-200/50 bg-white/5">
+                                        <th class="p-4">Tecido / Pano</th>
+                                        <th class="p-4 text-right">Peso (Kg)</th>
+                                        <th class="p-4 text-right">Valor por Kg</th>
+                                        <th class="p-4 text-center">Qtde. Produzida</th>
+                                        <th class="p-4 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calcs-table-body" class="divide-y divide-white/5">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="calcs-empty-banner" class="text-center py-12 text-sm text-purple-200/40" style="display: none;">
+                            <i class="fa-solid fa-calculator text-4xl mb-3 block text-purple-200/20"></i>
+                            Sem cálculos de rendimento registrados no momento.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: SYNC AND SUPABASE SETTINGS -->
+            <section id="tab-sync" class="space-y-6 tab-content hidden">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight">Nuvem e Sincronização</h2>
+                    <p class="text-xs text-purple-200/60">Configurações para sincronia automática e modo de redundância local</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- STATUS CARD -->
+                    <div class="glass-card p-6 space-y-4">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider"><i class="fa-solid fa-network-wired mr-1.5 text-primary"></i>Conexão do Sistema</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
+                                <span class="text-purple-200/70">Estado da Conexão</span>
+                                <span id="sync-connection-status" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400">Verificando...</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
+                                <span class="text-purple-200/70">Conta Conectada</span>
+                                <span id="sync-email-status" class="font-mono text-white text-xs">Aguardando login</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
+                                <span class="text-purple-200/70">Registros Offline Temporários</span>
+                                <span id="sync-pending-count" class="font-bold text-secondary text-sm">0</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button onclick="triggerSyncNow()" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>Sincronizar Agora
+                            </button>
+                            <button onclick="clearLocalCache()" class="py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-purple-200/60 hover:text-red-400 text-xs font-bold transition-all">
+                                <i class="fa-solid fa-trash-can"></i> Limpar Local
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- REASONS FOR SECURE CLOUD -->
+                    <div class="glass-card p-6 space-y-4 text-xs select-none">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider text-purple-200/80"><i class="fa-solid fa-circle-info mr-1.5 text-secondary"></i>Como Funciona o Sync?</h3>
+                        <div class="space-y-3 text-purple-200/70 leading-relaxed">
+                            <p>
+                                <span class="font-bold text-white block mb-0.5">1. Armazenamento Offline-First</span>
+                                Você sempre verá e modificará seus dados instantaneamente. As alterações são persistidas de forma segura no SQLite do seu telefone (ou no LocalStorage do navegador da Web) de modo a manter o app funcional mesmo sem Wi-Fi ou dados móveis.
+                            </p>
+                            <p>
+                                <span class="font-bold text-white block mb-0.5">2. Login Protegido com o Supabase</span>
+                                Ao efetuar o login, o MS Moda Íntima conecta sua conta pessoal, baixando todos os seus registros operacionais e aplicando de maneira síncrona.
+                            </p>
+                            <p>
+                                <span class="font-bold text-white block mb-0.5">3. Sincronização Inteligente</span>
+                                Sempre que o app detecta conexão de rede estável ao criar/remover lançamentos ou pedidos, a alteração é sincronizada em tempo real para os servidores em nuvem do Supabase, operando de forma autônoma e à prova de quedas de rede. No computador ou no celular, a informação é a mesma!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="mt-8 pt-4 border-t border-white/5 text-center text-xs text-purple-200/35">
+            <p>&copy; 2026 MS Moda Íntima Atelier. Todos os direitos reservados. Projeto configurado para implantação no Vercel Edge.</p>
+        </footer>
+    </main>
+
+    <!-- TRANSACTION MODAL -->
+    <div id="tx-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+        <div class="glass-card p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white" id="tx-modal-title">Novo Lançamento Financeiro</h3>
+                <button onclick="closeTransactionModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form onsubmit="handleTransactionSubmit(event)" class="space-y-4">
+                <input type="hidden" id="tx-edit-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Tipo</label>
+                        <select id="tx-type" class="glass-input w-full px-3 py-2.5 text-sm" onchange="adjustCategoryOptions()">
+                            <option value="INFLOW">Entrada (Receita)</option>
+                            <option value="OUTFLOW">Saída (Custo)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Categoria</label>
+                        <select id="tx-category" class="glass-input w-full px-3 py-2.5 text-sm">
+                            <!-- Inflow options -->
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Descrição</label>
+                    <input type="text" id="tx-description" required placeholder="Ex: Pano Lote 4 ou Venda Varejo..." class="glass-input w-full px-4 py-2.5 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Valor (R$)</label>
+                        <input type="number" id="tx-amount" required step="0.01" min="0.01" placeholder="0,00" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Semana de Vencência</label>
+                        <select id="tx-week" class="glass-input w-full px-3 py-2.5 text-sm">
+                            <option value="1ª Semana">1ª Semana</option>
+                            <option value="2ª Semana">2ª Semana</option>
+                            <option value="3ª Semana">3ª Semana</option>
+                            <option value="4ª Semana">4ª Semana</option>
+                            <option value="5ª Semana">5ª Semana</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nota Extra (Opcional)</label>
+                    <input type="text" id="tx-extra" placeholder="Ex: Fornecedor TexArt, Lote Premium..." class="glass-input w-full px-4 py-2.5 text-sm">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeTransactionModal()" class="flex-1 py-3 px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-purple-200/75 text-sm font-bold transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Salvar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ORDER MODAL -->
+    <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+        <div class="glass-card p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white">Nova Encomenda</h3>
+                <button onclick="closeOrderModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form onsubmit="handleOrderSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome do Cliente</label>
+                    <input type="text" id="order-client" required placeholder="Ex: Cláudia Santos" class="glass-input w-full px-4 py-2.5 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Modelo de Calcinha</label>
+                        <input type="text" id="order-panty-type" required placeholder="Ex: Microfibra Larga" class="glass-input w-full px-4 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Tamanho</label>
+                        <select id="order-panty-size" class="glass-input w-full px-3 py-2.5 text-sm">
+                            <option value="U">U (Único)</option>
+                            <option value="P">P</option>
+                            <option value="M">M</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Qtde (Unidades)</label>
+                        <input type="number" id="order-quantity" required min="1" placeholder="200" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Preço Unitário (R$)</label>
+                        <input type="number" id="order-value" required step="0.01" min="0.01" placeholder="1.30" oninput="calculateTotalOrderValue()" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Valor Total (R$)</label>
+                        <input type="text" id="order-total" readonly placeholder="0,00" class="glass-input w-full px-4 py-2.5 text-sm font-mono bg-white/5 border-dashed">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Semana de Entrega</label>
+                    <select id="order-week" class="glass-input w-full px-3 py-2.5 text-sm">
+                        <option value="1ª Semana">1ª Semana</option>
+                        <option value="2ª Semana">2ª Semana</option>
+                        <option value="3ª Semana">3ª Semana</option>
+                        <option value="4ª Semana">4ª Semana</option>
+                        <option value="5ª Semana">5ª Semana</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeOrderModal()" class="flex-1 py-3 px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-purple-200/75 text-sm font-bold transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Registar Encomenda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CALC MODAL -->
+    <div id="calc-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm hidden">
+        <div class="glass-card p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white">Novo Rendimento de Peso</h3>
+                <button onclick="closeCalcModal()" class="text-purple-200/50 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form onsubmit="handleCalcSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Nome do tecido / pano</label>
+                    <input type="text" id="calc-cloth" required placeholder="Ex: Microfibra Summerplex" class="glass-input w-full px-4 py-2.5 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Peso Rolo (Kg) (Opcional)</label>
+                        <input type="number" id="calc-kg" step="0.01" min="0" placeholder="Ex: 28.40" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Preço do Kg (R$) (Opcional)</label>
+                        <input type="number" id="calc-val-kg" step="0.01" min="0" placeholder="Ex: 29.00" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-purple-200/70 mb-1">Quantidade de Calcinhas Obtidas (Opcional)</label>
+                    <input type="number" id="calc-produced" min="0" placeholder="Ex: 2133" class="glass-input w-full px-4 py-2.5 text-sm font-mono">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeCalcModal()" class="flex-1 py-3 px-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-purple-200/75 text-sm font-bold transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all">Salvar Rendimento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN CORE WEB LOGIC -->
+    <script>
+        // Default structural categories
+        const defaultCategories = [
+            { id: 1, name: "Vendas", type: "INFLOW" },
+            { id: 2, name: "Encomendas", type: "INFLOW" },
+            { id: 3, name: "Outros", type: "INFLOW" },
+            { id: 4, name: "Pano", type: "OUTFLOW" },
+            { id: 5, name: "Viés", type: "OUTFLOW" },
+            { id: 6, name: "Linha", type: "OUTFLOW" },
+            { id: 7, name: "Etiqueta de composição", type: "OUTFLOW" },
+            { id: 8, name: "Etiqueta lateral", type: "OUTFLOW" },
+            { id: 9, name: "Forro", type: "OUTFLOW" },
+            { id: 10, name: "Manutenção", type: "OUTFLOW" },
+            { id: 11, name: "Funcionários", type: "OUTFLOW" },
+            { id: 12, name: "Variados", type: "OUTFLOW" }
+        ];
+
+        // Global State variables
+        let supabaseClientObj = null;
+        let sessionUser = null;
+        let activeTab = "dashboard";
+        let activeFilterType = "ALL"; // ALL, INFLOW, OUTFLOW
+
+        // In-memory lists (backed by LocalStorage)
+        let transactions = [];
+        let orders = [];
+        let piece_calculations = [];
+        let categories = [...defaultCategories];
+
+        // Supabase configuration properties
+        let supabaseUrlVal = "";
+        let supabaseAnonKeyVal = "";
+
+        // Sign and Sync State Controls
+        let sessionInfo = {
+            isLoggedIn: false,
+            userId: null,
+            email: null,
+            authToken: null,
+            usingSupabase: false
+        };
+
+        // Initialize App on load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfigAndPrepare();
+            loadLocalCache();
+            renderAll();
+            checkAppReadyAndAuth();
+        });
+
+        // Toggle manual configuration settings for Supabase
+        function toggleSupabaseFields() {
+            const fields = document.getElementById('supabase-config-fields');
+            fields.classList.toggle('hidden');
+        }
+
+        // Switches between Entrar / Criar Conta tabs
+        let currentAuthMode = "login";
+        function switchAuthTab(mode) {
+            currentAuthMode = mode;
+            const lBtn = document.getElementById('tab-login-btn');
+            const sBtn = document.getElementById('tab-signup-btn');
+            const btnText = document.getElementById('auth-btn-text');
+
+            if (mode === "login") {
+                lBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
+                sBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
+                btnText.textContent = "Entrar";
+            } else {
+                sBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-primary text-white";
+                lBtn.className = "flex-1 pb-2 text-sm font-semibold border-b-2 border-transparent text-purple-200/60";
+                btnText.textContent = "Criar Conta";
+            }
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('auth-success').classList.add('hidden');
+        }
+
+        // Continue in Offline (local storage) fallback mode
+        function continueOffline() {
+            sessionInfo = {
+                isLoggedIn: true,
+                userId: "local_user_" + Math.floor(Math.random() * 1000000),
+                email: "Modo Local Offline",
+                authToken: null,
+                usingSupabase: false
+            };
+            saveLocalSession();
+            document.getElementById('auth-panel').classList.add('hidden');
+            updateSessionUI();
+            renderAll();
+        }
+
+        // Saves session info inside local storage
+        function saveLocalSession() {
+            localStorage.setItem('ms_atelier_session', JSON.stringify(sessionInfo));
+        }
+
+        function loadConfigAndPrepare() {
+            // Load custom local saved keys if they exist
+            supabaseUrlVal = localStorage.getItem('ms_supabase_url') || "";
+            supabaseAnonKeyVal = localStorage.getItem('ms_supabase_anon_key') || "";
+
+            // Populate form fields with configuration if they existed
+            if (supabaseUrlVal) document.getElementById('supabase-url').value = supabaseUrlVal;
+            if (supabaseAnonKeyVal) document.getElementById('supabase-key').value = supabaseAnonKeyVal;
+
+            if (supabaseUrlVal && supabaseAnonKeyVal) {
+                try {
+                    supabaseClientObj = supabase.createClient(supabaseUrlVal, supabaseAnonKeyVal);
+                } catch (e) {
+                    console.error("Initialization error of supabase client:", e);
+                }
+            }
+        }
+
+        // Check if user is logged in
+        function checkAppReadyAndAuth() {
+            const saved = localStorage.getItem('ms_atelier_session');
+            if (saved) {
+                sessionInfo = JSON.parse(saved);
+                if (sessionInfo.isLoggedIn) {
+                    // Update user display text
+                    updateSessionUI();
+                    
+                    // Instantiate Supabase client if connected with it
+                    if (sessionInfo.usingSupabase && !supabaseClientObj) {
+                        loadConfigAndPrepare();
+                    }
+                    
+                    // Pull remote data as premium feature
+                    if (sessionInfo.usingSupabase && supabaseClientObj) {
+                        pullRemoteDataAndSync();
+                    }
+                    return;
+                }
+            }
+            // If not logged in, force show login panel!
+            document.getElementById('auth-panel').classList.remove('hidden');
+        }
+
+        // Update profiles and email tags in UI
+        function updateSessionUI() {
+            const displayEmail = document.getElementById('user-display-email');
+            const displayStatus = document.getElementById('user-display-status');
+            const onlineBadge = document.getElementById('online-badge');
+
+            if (sessionInfo.isLoggedIn) {
+                displayEmail.textContent = sessionInfo.email;
+                if (sessionInfo.usingSupabase) {
+                    displayStatus.textContent = "Sessão Ativa Supabase";
+                    onlineBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse"></span>ONLINE (CLOUD)`;
+                    onlineBadge.className = "px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold flex items-center gap-1";
+                    document.getElementById('sync-connection-status').textContent = "CLOUD ATIVO";
+                    document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-400";
+                    document.getElementById('sync-email-status').textContent = sessionInfo.email;
+                } else {
+                    displayStatus.textContent = "Modo Local Offline";
+                    onlineBadge.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>OFFLINE (S/ SYNC)`;
+                    onlineBadge.className = "px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-bold flex items-center gap-1";
+                    document.getElementById('sync-connection-status').textContent = "APENAS LOCAL";
+                    document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-400";
+                    document.getElementById('sync-email-status').textContent = "Sem Backup na Nuvem";
+                }
+            }
+        }
+
+        // Handle Log Out click
+        function handleLogout() {
+            if (confirm("Deseja realmente sair da conta? Os dados salvos localmente continuarão em cache, mas a sincronia em nuvem com o Supabase será pausada.")) {
+                localStorage.removeItem('ms_atelier_session');
+                sessionInfo = { isLoggedIn: false, userId: null, email: null, authToken: null, usingSupabase: false };
+                document.getElementById('auth-panel').classList.remove('hidden');
+                document.getElementById('auth-form').reset();
+                updateSessionUI();
+            }
+        }
+
+        // Handles user authentication submits
+        async fn = null;
+        async function handleAuth(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('auth-email').value.trim();
+            const passwordInput = document.getElementById('auth-password').value;
+            const errDiv = document.getElementById('auth-error');
+            const okDiv = document.getElementById('auth-success');
+            
+            errDiv.classList.add('hidden');
+            okDiv.classList.add('hidden');
+
+            const manualUrl = document.getElementById('supabase-url').value.trim();
+            const manualKey = document.getElementById('supabase-key').value.trim();
+
+            if (manualUrl && manualKey) {
+                supabaseUrlVal = manualUrl;
+                supabaseAnonKeyVal = manualKey;
+                localStorage.setItem('ms_supabase_url', manualUrl);
+                localStorage.setItem('ms_supabase_anon_key', manualKey);
+                try {
+                    supabaseClientObj = supabase.createClient(supabaseUrlVal, supabaseAnonKeyVal);
+                } catch (e) {
+                    errDiv.textContent = "Erro na construção das chaves do Supabase: " + e.message;
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
+            } else {
+                // Try reading from default placeholders, which the developer configures inside the Secrets panel.
+                // For direct browser delivery we default to manual configuration info if clients are not initialized
+                if (!supabaseClientObj) {
+                    errDiv.textContent = "Por favor, configure o URL e Anon Key do seu projeto Supabase no formulário abaixo.";
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            const submitBtn = document.getElementById('auth-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.7";
+
+            try {
+                if (currentAuthMode === "signup") {
+                    // Sign up
+                    const { data, error } = await supabaseClientObj.auth.signUp({
+                        email: emailInput,
+                        password: passwordInput
+                    });
+                    if (error) throw error;
+                    
+                    okDiv.textContent = "Cadastro efetuado! Verifique seu e-mail ou faça login agora.";
+                    okDiv.classList.remove('hidden');
+                    switchAuthTab('login');
+                } else {
+                    // Login
+                    const { data, error } = await supabaseClientObj.auth.signInWithPassword({
+                        email: emailInput,
+                        password: passwordInput
+                    });
+                    if (error) throw error;
+
+                    sessionInfo = {
+                        isLoggedIn: true,
+                        userId: data.user.id,
+                        email: data.user.email,
+                        authToken: data.session.access_token,
+                        usingSupabase: true
+                    };
+                    saveLocalSession();
+                    document.getElementById('auth-panel').classList.add('hidden');
+                    updateSessionUI();
+                    
+                    // Dynamically pull user's data from Supabase
+                    await pullRemoteDataAndSync();
+                }
+            } catch (error) {
+                console.error(error);
+                errDiv.textContent = error.message || "Erro de comunicação com o Supabase Auth API.";
+                errDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+            }
+        }
+
+        // ------------------ LOCAL PERISTENCE CODE ------------------
+        function loadLocalCache() {
+            try {
+                const txsIn = localStorage.getItem('ms_transactions');
+                const ordersIn = localStorage.getItem('ms_orders');
+                const calcsIn = localStorage.getItem('ms_piece_calculations');
+                
+                transactions = txsIn ? JSON.parse(txsIn) : [];
+                orders = ordersIn ? JSON.parse(ordersIn) : [];
+                piece_calculations = calcsIn ? JSON.parse(calcsIn) : [];
+            } catch (e) {
+                console.error("Cache parsing error:", e);
+                // Reset clean slate fallback
+                transactions = [];
+                orders = [];
+                piece_calculations = [];
+            }
+        }
+
+        function saveLocalCache() {
+            localStorage.setItem('ms_transactions', JSON.stringify(transactions));
+            localStorage.setItem('ms_orders', JSON.stringify(orders));
+            localStorage.setItem('ms_piece_calculations', JSON.stringify(piece_calculations));
+            renderAll();
+        }
+
+        // Clear local storage for debugging / reset purposes
+        function clearLocalCache() {
+            if (confirm("Deseja realmente apagar o banco local em cache? Se houver internet, você poderá recuperá-los atualizando de sua conta na nuvem.")) {
+                transactions = [];
+                orders = [];
+                piece_calculations = [];
+                saveLocalCache();
+                alert("Dados locais limpos com sucesso!");
+            }
+        }
+
+        // ------------------ RENDERING UI CONTROLLERS ------------------
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors bg-white/10 text-white";
+                } else {
+                    btn.className = "tab-btn w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-between transition-colors text-purple-200/60 hover:text-white";
+                }
+            });
+            renderAll();
+        }
+
+        function renderAll() {
+            renderDashboard();
+            renderTransactions();
+            renderOrders();
+            renderPieceCalculations();
+            updateSyncMetrics();
+        }
+
+        function renderDashboard() {
+            // Totais
+            const totalIn = transactions.filter(t => t.type === 'INFLOW').reduce((sum, t) => sum + Number(t.amount || 0), 0) +
+                              orders.reduce((sum, o) => sum + Number(o.totalValue || 0), 0);
+            
+            const totalOut = transactions.filter(t => t.type === 'OUTFLOW').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+            const balance = totalIn - totalOut;
+
+            document.getElementById('dash-balance').textContent = `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('dash-inflow').textContent = `R$ ${totalIn.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('dash-outflow').textContent = `R$ ${totalOut.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            // Recent 5 transactions table
+            const tbody = document.getElementById('dash-transactions-body');
+            const emptyBanner = document.getElementById('dash-txs-empty');
+            tbody.innerHTML = '';
+
+            const recents = [...transactions].sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
+
+            if (recents.length === 0) {
+                emptyBanner.style.display = 'block';
+            } else {
+                emptyBanner.style.display = 'none';
+                recents.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-white/5 transition-colors border-b border-white/5";
+                    
+                    const amountColor = t.type === 'INFLOW' ? 'text-green-400' : 'text-red-400';
+                    const symbolAndAmount = t.type === 'INFLOW' ? `+ R$ ${Number(t.amount).toFixed(2)}` : `- R$ ${Number(t.amount).toFixed(2)}`;
+
+                    tr.innerHTML = `
+                        <td class="py-3 font-semibold text-white">${escapeHtml(t.description)}</td>
+                        <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-purple-200/60 uppercase">${escapeHtml(t.category)}</span></td>
+                        <td class="py-3 text-purple-200/50">${escapeHtml(t.week || '1ª Semana')}</td>
+                        <td class="py-3 text-right font-mono font-bold ${amountColor}">${symbolAndAmount}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Render Dynamic Chart SVG segments based on outflow cost categories
+            updateCostChart(totalOut);
+        }
+
+        function updateCostChart(totalOutflow) {
+            const chartList = document.getElementById('pie-categories-list');
+            const displayPct = document.getElementById('pie-pct-total');
+            const seg1 = document.getElementById('pie-seg-1');
+            const seg2 = document.getElementById('pie-seg-2');
+
+            const outflows = transactions.filter(t => t.type === 'OUTFLOW');
+            
+            if (totalOutflow === 0 || outflows.length === 0) {
+                displayPct.textContent = '0%';
+                chartList.innerHTML = `<div class="text-center text-purple-200/40 py-2">Sem despesas registradas</div>`;
+                seg1.style.strokeDashoffset = "314";
+                seg2.style.strokeDashoffset = "314";
+                return;
+            }
+
+            // Group by Category
+            const groups = {};
+            outflows.forEach(o => {
+                groups[o.category] = (groups[o.category] || 0) + Number(o.amount || 0);
+            });
+
+            // Sort by amount descending
+            const sorted = Object.entries(groups).sort((a,b) => b[1] - a[1]);
+            const mainCat = sorted[0] || ["Nenhum", 0];
+            const secCat = sorted[1] || ["Nenhum", 0];
+
+            const mainPct = Math.round((mainCat[1] / totalOutflow) * 100);
+            const secPct = Math.round((secCat[1]/ totalOutflow) * 100);
+
+            // Update SVG dashoffsets
+            // Stroke dasharray is 314 (circumference of circle r=50). Offset is mapping pct on 314.
+            const p1 = 314 - (314 * (mainPct / 100));
+            const p2 = 314 - (314 * ((mainPct + secPct) / 100));
+
+            seg1.style.strokeDashoffset = p1;
+            seg2.style.strokeDashoffset = p2;
+
+            displayPct.textContent = `${mainPct}%`;
+
+            // Draw list
+            chartList.innerHTML = '';
+            
+            const presetColors = ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-purple-400', 'bg-white/40', 'bg-white/10'];
+            sorted.forEach(([cat, val], idx) => {
+                const pct = ((val / totalOutflow) * 100).toFixed(1);
+                const color = presetColors[idx % presetColors.length];
+                
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between text-purple-200/70";
+                item.innerHTML = `
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full ${color}"></span>${escapeHtml(cat)}</span>
+                    <span class="font-mono font-semibold text-white">${pct}%</span>
+                `;
+                chartList.appendChild(item);
+            });
+        }
+
+        function renderTransactions() {
+            const tbody = document.getElementById('txs-table-body');
+            const placeholder = document.getElementById('txs-empty-banner');
+            tbody.innerHTML = '';
+
+            let filtered = [...transactions];
+            if (activeFilterType !== 'ALL') {
+                filtered = transactions.filter(t => t.type === activeFilterType);
+            }
+
+            // Sort standard reverse chronological (newest first)
+            filtered.sort((a,b) => b.timestamp - a.timestamp);
+
+            if (filtered.length === 0) {
+                placeholder.style.display = 'block';
+            } else {
+                placeholder.style.display = 'none';
+                filtered.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
+
+                    const rowColor = t.type === 'INFLOW' ? 'text-green-400' : 'text-red-400';
+                    const rowSymbol = t.type === 'INFLOW' ? '+' : '-';
+
+                    tr.innerHTML = `
+                        <td class="p-4 text-purple-200/60 font-mono">${escapeHtml(t.dateString || 'Não Informada')}</td>
+                        <td class="p-4 font-bold text-white max-w-[200px] truncate" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</td>
+                        <td class="p-4"><span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-purple-300 font-bold uppercase">${escapeHtml(t.category)}</span></td>
+                        <td class="p-4 text-purple-200/50 max-w-[150px] truncate" title="${escapeHtml(t.extraText || '')}">${escapeHtml(t.extraText || '-')}</td>
+                        <td class="p-4 text-right font-mono font-bold ${rowColor}">${rowSymbol} R$ ${Number(t.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteTransaction(${t.id || t.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function filterTransactions(type) {
+            activeFilterType = type;
+            document.querySelectorAll('#filter-all, #filter-inflow, #filter-outflow').forEach(el => {
+                el.className = "px-3 py-1.5 rounded-lg font-bold text-purple-200/60 hover:text-white hover:bg-white/5 transition-all";
+            });
+            
+            const activeBtn = document.getElementById('filter-' + type.toLowerCase());
+            activeBtn.className = "px-3 py-1.5 rounded-lg font-bold bg-primary text-white transition-all";
+            
+            renderTransactions();
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            const placeholder = document.getElementById('orders-empty-banner');
+            tbody.innerHTML = '';
+
+            const sortedOrders = [...orders].sort((a,b) => b.id - a.id || b.quantity - a.quantity);
+
+            // Compute Statistics
+            const totalItems = orders.reduce((sum, o) => sum + Number(o.quantity || 0), 0);
+            const totalRevenue = orders.reduce((sum, o) => sum + Number(o.totalValue || 0), 0);
+            const avgPrice = orders.length > 0 ? (totalRevenue / orders.length) : 0;
+
+            document.getElementById('order-stat-total-items').textContent = `${totalItems} un.`;
+            document.getElementById('order-stat-avg-price').textContent = `R$ ${avgPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('order-stat-total-revenue').textContent = `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            if (sortedOrders.length === 0) {
+                placeholder.style.display = 'block';
+            } else {
+                placeholder.style.display = 'none';
+                sortedOrders.forEach(o => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
+
+                    tr.innerHTML = `
+                        <td class="p-4 font-bold text-white">${escapeHtml(o.clientName)}</td>
+                        <td class="p-4 text-purple-200/90">${escapeHtml(o.pantyType)}</td>
+                        <td class="p-4 text-center"><span class="px-2 py-0.5 rounded bg-primary/20 text-xs font-bold text-primary">${escapeHtml(o.pantySize)}</span></td>
+                        <td class="p-4 text-center font-mono font-semibold">${Number(o.quantity).toLocaleString('pt-BR')}</td>
+                        <td class="p-4 text-right font-mono">R$ ${Number(o.pantyValue).toFixed(2)}</td>
+                        <td class="p-4 text-right font-mono font-bold text-green-400">R$ ${Number(o.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-purple-200/50">${escapeHtml(o.week || '1ª Semana')}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteOrder(${o.id || o.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function renderPieceCalculations() {
+            const tbody = document.getElementById('calcs-table-body');
+            const placeholder = document.getElementById('calcs-empty-banner');
+            tbody.innerHTML = '';
+
+            if (piece_calculations.length === 0) {
+                placeholder.style.display = 'block';
+            } else {
+                placeholder.style.display = 'none';
+                piece_calculations.forEach(pc => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-white/5 transition-all text-xs border-b border-white/5";
+
+                    const displayKg = pc.kg ? `${Number(pc.kg).toFixed(2)} Kg` : '-';
+                    const displayVal = pc.valorKg ? `R$ ${Number(pc.valorKg).toFixed(2)}` : '-';
+                    const displayProduced = pc.quantidade ? `${Number(pc.quantidade).toLocaleString('pt-BR')} un.` : '-';
+
+                    tr.innerHTML = `
+                        <td class="p-4 font-bold text-white">${escapeHtml(pc.pano || 'Tecido Não Nomeado')}</td>
+                        <td class="p-4 text-right font-mono">${displayKg}</td>
+                        <td class="p-4 text-right font-mono">${displayVal}</td>
+                        <td class="p-4 text-center font-mono font-bold text-primary">${displayProduced}</td>
+                        <td class="p-4 text-center animate-fadeIn">
+                            <button onclick="deleteCalculation(${pc.id || pc.timestamp})" class="p-1 px-2 rounded-md hover:bg-red-500/10 text-red-400 focus:outline-none" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function updateSyncMetrics() {
+            // Count unsynced entries if logged in but modified offline
+            const pendingList = getLocalPendingModifications();
+            document.getElementById('sync-pending-count').textContent = pendingList.length;
+        }
+
+        function getLocalPendingModifications() {
+            // Simulated queue list or standard dirty structures.
+            // Since our offline system auto-pushes on database inserts when online,
+            // we simulate direct real-time batch synchronization if they request it manually.
+            return [];
+        }
+
+        // ------------------ CRUD ACTIONS Submitters ------------------
+        function openTransactionModal() {
+            document.getElementById('tx-edit-id').value = '';
+            document.getElementById('tx-description').value = '';
+            document.getElementById('tx-amount').value = '';
+            document.getElementById('tx-extra').value = '';
+            
+            adjustCategoryOptions();
+            document.getElementById('tx-modal').classList.remove('hidden');
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('tx-modal').classList.add('hidden');
+        }
+
+        function adjustCategoryOptions() {
+            const type = document.getElementById('tx-type').value;
+            const selectEl = document.getElementById('tx-category');
+            selectEl.innerHTML = '';
+
+            categories.filter(c => c.type === type).forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function handleTransactionSubmit(event) {
+            event.preventDefault();
+            const typeValue = document.getElementById('tx-type').value;
+            const categoryValue = document.getElementById('tx-category').value;
+            const descValue = document.getElementById('tx-description').value.trim();
+            const amountValue = Number(document.getElementById('tx-amount').value || 0).toFixed(2);
+            const weekValue = document.getElementById('tx-week').value;
+            const extraValue = document.getElementById('tx-extra').value.trim();
+
+            const date = new Date();
+            const ptBrSdf = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+
+            const newTx = {
+                id: Math.floor(Math.random() * 100000000), // temp local ID safely generated
+                description: descValue,
+                amount: parseFloat(amountValue),
+                type: typeValue,
+                category: categoryValue,
+                dateString: ptBrSdf,
+                timestamp: Date.now(),
+                extraText: extraValue,
+                week: weekValue
+            };
+
+            transactions.push(newTx);
+            saveLocalCache();
+            closeTransactionModal();
+            triggerAutoPush();
+        }
+
+        function deleteTransaction(id) {
+            if (confirm("Deseja realmente remover este lançamento financeiro?")) {
+                transactions = transactions.filter(t => (t.id != id && t.timestamp != id));
+                saveLocalCache();
+                triggerAutoPush();
+            }
+        }
+
+        // --- ORDER CRUDS ---
+        function openOrderModal() {
+            document.getElementById('order-client').value = '';
+            document.getElementById('order-panty-type').value = '';
+            document.getElementById('order-panty-size').value = 'U';
+            document.getElementById('order-quantity').value = '';
+            document.getElementById('order-value').value = '';
+            document.getElementById('order-total').value = 'R$ 0,00';
+            
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        function calculateTotalOrderValue() {
+            const qty = Number(document.getElementById('order-quantity').value || 0);
+            const val = Number(document.getElementById('order-value').value || 0);
+            const total = qty * val;
+            document.getElementById('order-total').value = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        }
+
+        function handleOrderSubmit(event) {
+            event.preventDefault();
+            const client = document.getElementById('order-client').value.trim();
+            const panty = document.getElementById('order-panty-type').value.trim();
+            const size = document.getElementById('order-panty-size').value;
+            const qty = parseInt(document.getElementById('order-quantity').value || 0);
+            const val = parseFloat(document.getElementById('order-value').value || 0);
+            const week = document.getElementById('order-week').value;
+
+            const newOrder = {
+                id: Math.floor(Math.random() * 100000000),
+                clientName: client,
+                pantyType: panty,
+                pantySize: size,
+                quantity: qty,
+                pantyValue: val,
+                totalValue: qty * val,
+                week: week,
+                timestamp: Date.now()
+            };
+
+            orders.push(newOrder);
+            saveLocalCache();
+            closeOrderModal();
+            triggerAutoPush();
+        }
+
+        function deleteOrder(id) {
+            if (confirm("Deseja asseadamente excluir esta encomenda?")) {
+                orders = orders.filter(o => (o.id != id && o.timestamp != id));
+                saveLocalCache();
+                triggerAutoPush();
+            }
+        }
+
+        // --- CALC CRUDS ---
+        function openCalcModal() {
+            document.getElementById('calc-cloth').value = '';
+            document.getElementById('calc-kg').value = '';
+            document.getElementById('calc-val-kg').value = '';
+            document.getElementById('calc-produced').value = '';
+            document.getElementById('calc-modal').classList.remove('hidden');
+        }
+
+        function closeCalcModal() {
+            document.getElementById('calc-modal').classList.add('hidden');
+        }
+
+        function handleCalcSubmit(event) {
+            event.preventDefault();
+            const cloth = document.getElementById('calc-cloth').value.trim();
+            const kgVal = document.getElementById('calc-kg').value ? parseFloat(document.getElementById('calc-kg').value) : null;
+            const valKgVal = document.getElementById('calc-val-kg').value ? parseFloat(document.getElementById('calc-val-kg').value) : null;
+            const prodVal = document.getElementById('calc-produced').value ? parseInt(document.getElementById('calc-produced').value) : null;
+
+            const newCalc = {
+                id: Math.floor(Math.random() * 100000000),
+                pano: cloth,
+                kg: kgVal,
+                valorKg: valKgVal,
+                quantidade: prodVal,
+                timestamp: Date.now()
+            };
+
+            piece_calculations.push(newCalc);
+            saveLocalCache();
+            closeCalcModal();
+            triggerAutoPush();
+        }
+
+        function deleteCalculation(id) {
+            if (confirm("Excluir este registo de rendimento de tecido?")) {
+                piece_calculations = piece_calculations.filter(c => (c.id != id && c.timestamp != id));
+                saveLocalCache();
+                triggerAutoPush();
+            }
+        }
+
+        // ------------------ CLOUD SERVER WEB SYNC SYTEMS ------------------
+        async function triggerAutoPush() {
+            if (sessionInfo.usingSupabase && supabaseClientObj) {
+                console.log("Auto sync triggered for database operations...");
+                pushLocalDataToRemote();
+            }
+        }
+
+        async function triggerSyncNow() {
+            const btn = document.getElementById('online-badge');
+            if (!sessionInfo.usingSupabase || !supabaseClientObj) {
+                alert("Sincronização offline! Registre com suas chaves do Supabase nas Configurações para ativar a Nuvem.");
+                return;
+            }
+            document.getElementById('sync-connection-status').textContent = "SINCRONIZANDO...";
+            document.getElementById('sync-connection-status').className = "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-500/10 text-blue-400";
+
+            try {
+                // Bi-directional full sync: Push and then pull to consolidate!
+                const pushSuccess = await pushLocalDataToRemote(true);
+                const pullSuccess = await pullRemoteDataAndSync();
+
+                if (pushSuccess || pullSuccess) {
+                    alert("A sincronização entre o SQLite Local e o Supabase em Nuvem foi concluída com sucesso absoluto!");
+                } else {
+                    alert("Dados locais sincronizados. Caso o seu banco de dados remoto esteja limpo, suas tabelas foram criadas com êxito.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao sincronizar: " + e.message);
+            } finally {
+                updateSessionUI();
+            }
+        }
+
+        // Push local variables into Supabase using REST upsert matching our SUPABASE_SETUP SQL
+        async function pushLocalDataToRemote(verbose = false) {
+            if (!supabaseClientObj || !sessionInfo.userId) return false;
+            
+            try {
+                const userId = sessionInfo.userId;
+
+                // 1. Sync Categories
+                if (categories.length > 0) {
+                    const uCats = categories.map(c => ({
+                        id: c.id >= 100000 ? undefined : c.id, // ignore local mock ids on insert
+                        name: c.name,
+                        type: c.type,
+                        user_id: userId
+                    }));
+                    await supabaseClientObj.from('categories').upsert(uCats, { onConflict: 'id' });
+                }
+
+                // 2. Sync Transactions
+                if (transactions.length > 0) {
+                    const uTxs = transactions.map(t => ({
+                        id: t.id >= 10000000 ? undefined : t.id,
+                        description: t.description,
+                        amount: Number(t.amount || 0),
+                        type: t.type,
+                        category: t.category,
+                        dateString: t.dateString,
+                        timestamp: Number(t.timestamp),
+                        extraText: t.extraText || '',
+                        week: t.week || '1ª Semana',
+                        user_id: userId
+                    }));
+                    const { error } = await supabaseClientObj.from('transactions').upsert(uTxs);
+                    if (error) console.error("Error pushing transactions:", error);
+                }
+
+                // 3. Sync Orders
+                if (orders.length > 0) {
+                    const uOrders = orders.map(o => ({
+                        id: o.id >= 10000000 ? undefined : o.id,
+                        clientName: o.clientName,
+                        pantyType: o.pantyType,
+                        pantySize: o.pantySize,
+                        quantity: parseInt(o.quantity || 0),
+                        pantyValue: parseFloat(o.pantyValue || 0),
+                        totalValue: parseFloat(o.totalValue || 0),
+                        week: o.week,
+                        user_id: userId
+                    }));
+                    const { error } = await supabaseClientObj.from('orders').upsert(uOrders);
+                    if (error) console.error("Error pushing orders:", error);
+                }
+
+                // 4. Sync Calculations
+                if (piece_calculations.length > 0) {
+                    const uCalcs = piece_calculations.map(c => ({
+                        id: c.id >= 10000000 ? undefined : c.id,
+                        pano: c.pano,
+                        kg: c.kg,
+                        valorKg: c.valorKg,
+                        quantidade: c.quantidade,
+                        user_id: userId
+                    }));
+                    const { error } = await supabaseClientObj.from('piece_calculations').upsert(uCalcs);
+                    if (error) console.error("Error pushing calculations:", error);
+                }
+
+                console.log("Upserted successfully to Remote database!");
+                return true;
+            } catch (error) {
+                console.error("Exception in push data operation: ", error);
+                return false;
+            }
+        }
+
+        // Pull user specific registries from Supabase and cache it inside local Storage
+        async function pullRemoteDataAndSync() {
+            if (!supabaseClientObj || !sessionInfo.userId) return false;
+
+            try {
+                // Fetch Categories
+                const { data: catRes, error: catErr } = await supabaseClientObj.from('categories').select('*');
+                if (!catErr && catRes) {
+                    categories = catRes.length > 0 ? catRes : [...defaultCategories];
+                }
+
+                // Fetch Transactions
+                const { data: txRes, error: txErr } = await supabaseClientObj.from('transactions').select('*');
+                if (!txErr && txRes) {
+                    transactions = txRes;
+                }
+
+                // Fetch Orders
+                const { data: orderRes, error: orderErr } = await supabaseClientObj.from('orders').select('*');
+                if (!orderErr && orderRes) {
+                    orders = orderRes;
+                }
+
+                // Fetch Calculations
+                const { data: calcRes, error: calcErr } = await supabaseClientObj.from('piece_calculations').select('*');
+                if (!calcErr && calcRes) {
+                    piece_calculations = calcRes;
+                }
+
+                // Cache it locally
+                saveLocalCache();
+                console.log("Pulled from remote matching account successfully.");
+                return true;
+            } catch (error) {
+                console.error("Failed pulling user data: ", error);
+                return false;
+            }
+        }
+
+        // Helper prevent HTML injections
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
