@@ -35,10 +35,12 @@ class ExampleRobolectricTest {
       database.transactionDao,
       database.categoryDao,
       database.orderDao,
-      database.pieceCalculationDao
+      database.pieceCalculationDao,
+      database.userDao
     )
     
-    val viewModel = TransactionViewModel(repository)
+    val sessionManager = com.example.data.SessionManager(context)
+    val viewModel = TransactionViewModel(repository, sessionManager)
     
     composeTestRule.setContent {
       MsModaIntimaApp(viewModel = viewModel)
