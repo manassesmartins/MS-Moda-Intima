@@ -618,10 +618,10 @@ fun MsModaIntimaBottomBar(
             .height(80.dp)
     ) {
         val tabs = listOf(
-            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Dashboard"),
-            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Transações"),
-            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Cálculos"),
+            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel Geral"),
+            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
+            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Encomendas"),
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
             Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
         )
 
@@ -700,10 +700,10 @@ fun MsModaIntimaNavigationRail(
         Spacer(modifier = Modifier.height(32.dp))
 
         val tabs = listOf(
-            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Dashboard"),
-            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Transações"),
-            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Cálculos"),
+            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel Geral"),
+            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
+            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Encomendas"),
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
             Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
         )
 
