@@ -527,6 +527,8 @@
                                         <th class="p-4 text-right">Peso (Kg)</th>
                                         <th class="p-4 text-right">Valor por Kg</th>
                                         <th class="p-4 text-center">Qtde. Produzida</th>
+                                        <th class="p-4 text-right">Rend. (pç/Kg)</th>
+                                        <th class="p-4 text-right">Custo Unitário</th>
                                         <th class="p-4 text-center">Ações</th>
                                     </tr>
                                 </thead>
@@ -1357,6 +1359,9 @@
                     const totalWeight = c.kg ? `${c.kg.toFixed(2)} Kg` : '-';
                     const valueKg = c.valorKg ? formatCurrency(c.valorKg) : '-';
                     const producedItems = c.quantidade ? `${c.quantidade} un.` : '-';
+                    const yieldVal = (c.kg > 0 && c.quantidade > 0) ? (c.quantidade / c.kg).toFixed(1) + ' pç/Kg' : '-';
+                    const totalCost = (c.kg || 0) * (c.valorKg || 0);
+                    const costVal = (c.quantidade > 0) ? formatCurrency(totalCost / c.quantidade) : '-';
 
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-white/5 border-b border-white/5 transition-all text-xs";
@@ -1365,6 +1370,8 @@
                         <td class="p-4 text-right font-mono font-medium">${totalWeight}</td>
                         <td class="p-4 text-right font-mono">${valueKg}</td>
                         <td class="p-4 text-center font-bold text-primary font-mono">${producedItems}</td>
+                        <td class="p-4 text-right font-bold text-tertiary font-mono">${yieldVal}</td>
+                        <td class="p-4 text-right font-bold text-emerald-400 font-mono">${costVal}</td>
                         <td class="p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openCalcModal(${c.id})" class="p-1.5 hover:text-primary transition-colors text-purple-200/40" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>

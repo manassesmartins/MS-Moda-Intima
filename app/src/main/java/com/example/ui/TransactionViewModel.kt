@@ -21,7 +21,6 @@ enum class AppTab {
     DASHBOARD,
     TRANSACTIONS,
     ORDERS,
-    REPORTS,
     CALCS,
     SETTINGS
 }
