@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.example.data.TransactionEntity
 import com.example.ui.theme.*
 import java.util.Locale
@@ -51,6 +52,16 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     }
 
     val context = LocalContext.current
+    val updaterStatus by viewModel.updaterStatus.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val updater = remember { viewModel.getUpdater(context) }
+
+    LaunchedEffect(isUserLoggedIn) {
+        if (isUserLoggedIn) {
+            viewModel.checkForUpdatesSilently(context)
+        }
+    }
+
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val isAddingTransaction by viewModel.isAddingTransaction.collectAsStateWithLifecycle()
     val transactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
@@ -221,7 +232,8 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                     Toast.makeText(context, "Banco local resetado!", Toast.LENGTH_SHORT).show()
                                 },
                                 userEmail = viewModel.sessionManager.userEmail,
-                                onLogout = { viewModel.logoutUser() }
+                                onLogout = { viewModel.logoutUser() },
+                                viewModel = viewModel
                             )
                         }
                     }
@@ -262,6 +274,201 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                     )
                 }
             }
+        }
+
+        // ------------------------------------
+        // OVERLAYS: GitHub App Updater Dialogs
+        // ------------------------------------
+        when (val stat = updaterStatus) {
+            is UpdateStatus.UpdateAvailable -> {
+                AlertDialog(
+                    onDismissRequest = { updater.clearStatus() },
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Nova Atualização!",
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface
+                            )
+                        }
+                    },
+                    containerColor = SurfaceContainerHigh,
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Uma nova versão comitada no GitHub foi detectada!",
+                                fontSize = 14.sp,
+                                color = OnSurface,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("Versão/Tag: ${stat.version}", fontSize = 13.sp, color = Secondary, fontWeight = FontWeight.Bold)
+                                    Text("Data: ${stat.date}", fontSize = 12.sp, color = OnSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Divider(color = Color.White.copy(alpha = 0.08f))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Detalhes / Commits:", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                                    Text(stat.changelog, fontSize = 12.sp, color = OnSurface)
+                                }
+                            }
+                            
+                            Text(
+                                text = "Deseja baixar e instalar esta nova versão agora?",
+                                fontSize = 13.sp,
+                                color = OnSurfaceVariant
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val downloaded = updater.downloadApk(stat.downloadUrl)
+                                    if (downloaded != null) {
+                                        updater.installApk(downloaded)
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Baixar e Instalar", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { updater.clearStatus() }
+                        ) {
+                            Text("Mais Tarde", color = OnSurfaceVariant)
+                        }
+                    }
+                )
+            }
+
+            is UpdateStatus.Downloading -> {
+                AlertDialog(
+                    onDismissRequest = {}, // Force showing download progress
+                    title = {
+                        Text(
+                            text = "Baixando Nova Versão...",
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
+                        )
+                    },
+                    containerColor = SurfaceContainerHigh,
+                    text = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            CircularProgressIndicator(
+                                progress = stat.progress,
+                                color = Primary,
+                                modifier = Modifier.size(56.dp)
+                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Baixando APK da atualização do GitHub...",
+                                    fontSize = 13.sp,
+                                    color = OnSurfaceVariant
+                                )
+                                Text(
+                                    text = "${(stat.progress * 100).toInt()}% concluído",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Primary,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {}
+                )
+            }
+
+            is UpdateStatus.Downloaded -> {
+                AlertDialog(
+                    onDismissRequest = { updater.clearStatus() },
+                    title = {
+                        Text(
+                            text = "Download Concluído!",
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
+                        )
+                    },
+                    containerColor = SurfaceContainerHigh,
+                    text = {
+                        Text(
+                            text = "A nova versão foi baixada com sucesso. Clique em 'Instalar' para atualizar o aplicativo.",
+                            fontSize = 13.sp,
+                            color = OnSurface
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { updater.installApk(stat.apkFile) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Instalar", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { updater.clearStatus() }) {
+                            Text("Cancelar", color = OnSurfaceVariant)
+                        }
+                    }
+                )
+            }
+
+            is UpdateStatus.Error -> {
+                AlertDialog(
+                    onDismissRequest = { updater.clearStatus() },
+                    title = {
+                        Text(
+                            text = "Aviso de Atualização",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFB4AB)
+                        )
+                    },
+                    containerColor = SurfaceContainerHigh,
+                    text = {
+                        Text(
+                            text = stat.message,
+                            fontSize = 13.sp,
+                            color = OnSurface
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { updater.clearStatus() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.08f), contentColor = OnSurface),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Ok", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                )
+            }
+
+            else -> {}
         }
     }
 }
@@ -3710,8 +3917,17 @@ fun SettingsScreen(
     onForceSync: () -> Unit,
     onClearAll: () -> Unit,
     userEmail: String?,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: TransactionViewModel
 ) {
+    val context = LocalContext.current
+    val updater = remember { viewModel.getUpdater(context) }
+    var ownerInput by remember { mutableStateOf(updater.owner) }
+    var repoInput by remember { mutableStateOf(updater.repo) }
+    var branchInput by remember { mutableStateOf(updater.branch) }
+    var apkPathInput by remember { mutableStateOf(updater.apkPath) }
+    val scope = rememberCoroutineScope()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -3912,6 +4128,140 @@ fun SettingsScreen(
                         color = OnSurfaceVariant,
                         lineHeight = 18.sp
                     )
+                }
+            }
+        }
+
+        // GITHUB UPDATER CARD SECTION
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "ATUALIZAÇÃO DE VERSÃO GITHUB",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "O aplicativo pode verificar se novos commits ou novidades foram publicados no repositório GitHub e realizar o download + instalação direta.",
+                    fontSize = 12.sp,
+                    color = OnSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = ownerInput,
+                        onValueChange = {
+                            ownerInput = it
+                            updater.owner = it
+                        },
+                        label = { Text("Usuário / Organização GitHub", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = repoInput,
+                        onValueChange = {
+                            repoInput = it
+                            updater.repo = it
+                        },
+                        label = { Text("Nome do Repositório GitHub", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = branchInput,
+                            onValueChange = {
+                                branchInput = it
+                                updater.branch = it
+                            },
+                            label = { Text("Branch", color = OnSurfaceVariant) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = OnSurface,
+                                unfocusedTextColor = OnSurface,
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = apkPathInput,
+                            onValueChange = {
+                                apkPathInput = it
+                                updater.apkPath = it
+                            },
+                            label = { Text("Nome do APK", color = OnSurfaceVariant) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = OnSurface,
+                                unfocusedTextColor = OnSurface,
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                            ),
+                            modifier = Modifier.weight(1.5f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Versão Atual Instalada:",
+                            fontSize = 11.sp,
+                            color = OnSurfaceVariant
+                        )
+                        Text(
+                            text = updater.getLocalVersion(),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                Toast.makeText(context, "Verificando repositório...", Toast.LENGTH_SHORT).show()
+                                updater.checkForUpdates(forceNotify = true)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text("Verificar Agora", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

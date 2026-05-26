@@ -1,6 +1,7 @@
 package com.example.ui
 
 import androidx.lifecycle.ViewModel
+import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.TransactionEntity
@@ -37,6 +38,28 @@ class TransactionViewModel(
     private val repository: TransactionRepository,
     val sessionManager: com.example.data.SessionManager
 ) : ViewModel() {
+
+    // Dynamic In-App GitHub Updater State Management
+    private var _updater: GitHubUpdater? = null
+    private val _updaterStatus = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
+    val updaterStatus: StateFlow<UpdateStatus> = _updaterStatus.asStateFlow()
+
+    fun getUpdater(context: Context): GitHubUpdater {
+        return _updater ?: GitHubUpdater(context.applicationContext).also {
+            _updater = it
+            viewModelScope.launch {
+                it.status.collect { status ->
+                    _updaterStatus.value = status
+                }
+            }
+        }
+    }
+
+    fun checkForUpdatesSilently(context: Context) {
+        viewModelScope.launch {
+            getUpdater(context).checkForUpdates(forceNotify = false)
+        }
+    }
 
     init {
         viewModelScope.launch {
