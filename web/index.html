@@ -117,10 +117,10 @@
 
             <!-- Custom Supabase Fields -->
             <div id="supabase-config-fields" class="mb-5 border-b border-white/5 pb-4 hidden">
-                <p class="text-[11px] uppercase font-bold text-secondary mb-2"><i class="fa-solid fa-gears mr-1"></i>Chaves do Supabase</p>
+                <p class="text-[11px] uppercase font-bold text-secondary mb-2"><i class="fa-solid fa-gears mr-1"></i>Chaves do Servidor de Dados</p>
                 <div class="space-y-2">
-                    <input type="text" id="supabase-url" placeholder="Supabase Project URL" class="glass-input w-full px-3 py-2 text-xs font-mono">
-                    <input type="password" id="supabase-key" placeholder="Supabase Anon Key" class="glass-input w-full px-3 py-2 text-xs font-mono">
+                    <input type="text" id="supabase-url" placeholder="URL do Servidor Cloud" class="glass-input w-full px-3 py-2 text-xs font-mono">
+                    <input type="password" id="supabase-key" placeholder="Chave de Segurança do Servidor" class="glass-input w-full px-3 py-2 text-xs font-mono">
                 </div>
                 <p class="text-[10px] text-purple-200/50 mt-1">Chaves opcionais para sincronizar com sua própria nuvem.</p>
             </div>
@@ -691,7 +691,7 @@
             <section id="tab-sync" class="space-y-6 tab-content hidden">
                 <div>
                     <h2 class="text-2xl font-extrabold text-white tracking-tight">Nuvem e Sincronização</h2>
-                    <p class="text-xs text-purple-200/60">Configurações para sincronia automática e salvar nos servidores Supabase</p>
+                    <p class="text-xs text-purple-200/60">Configurações para sincronia automática e salvar nos servidores de dados em Nuvem</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -733,7 +733,7 @@
                             </p>
                             <p>
                                 <span class="font-bold text-white block mb-0.5">2. Backup no Banco de Dados em Nuvem</span>
-                                Ao configurar as credenciais do Supabase, você sincroniza todas as suas transações, encomendas e cálculos com os mesmos dados acessados no aplicativo do celular, permitindo uma gestão integrada do Ateliê.
+                                Ao configurar as credenciais do Servidor Cloud, você sincroniza todas as suas transações, encomendas e cálculos com os mesmos dados acessados no aplicativo do celular, permitindo uma gestão integrada do Ateliê.
                             </p>
                         </div>
                     </div>
@@ -2247,7 +2247,7 @@
                 return;
             }
 
-            alert("Iniciando sincronização com a nuvem do Supabase...");
+            alert("Iniciando sincronização com a nuvem...");
             await fetchFromCloud();
             await uploadLocalDataToCloud();
             alert("Sincronização completa!");

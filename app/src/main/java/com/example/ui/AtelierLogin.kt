@@ -359,7 +359,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (isSupabaseActive) "Supabase Ativo (Sincronização Ativada)" else "Modo Off-line Seguro (Sem dependências)",
+                            text = if (isSupabaseActive) "Sincronização em Nuvem Ativa" else "Modo Off-line Seguro (Sem dependências)",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isSupabaseActive) Tertiary else OnSurfaceVariant
@@ -368,9 +368,9 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
 
                     Text(
                         text = if (isSupabaseActive) {
-                            "As contas criadas serão autenticadas via Supabase REST API e as sessões serão mantidas de forma persistente."
+                            "As contas criadas serão autenticadas via servidor seguro e as sessões serão mantidas de forma persistente."
                         } else {
-                            "Seus dados estão protegidos off-line no Room SQL local. Para preparar a integração em nuvem, adicione as chaves SUPABASE_URL e SUPABASE_ANON_KEY no Secrets Panel do AI Studio."
+                            "Seus dados estão protegidos off-line no Room SQL local. Para habilitar o modo de integração em nuvem, configure as chaves de conexão segura do servidor."
                         },
                         fontSize = 10.sp,
                         color = OnSurfaceVariant,

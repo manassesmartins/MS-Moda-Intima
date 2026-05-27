@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -34,10 +37,110 @@ data class FinancialSummary(
     val categoryBreakdown: Map<String, Double>
 )
 
+sealed class PendingDelete {
+    data class Transaction(val entity: com.example.data.TransactionEntity) : PendingDelete()
+    data class Category(val entity: com.example.data.CategoryEntity) : PendingDelete()
+    data class Order(val entity: com.example.data.OrderEntity) : PendingDelete()
+    data class Calculation(val entity: com.example.data.PieceCalculationEntity) : PendingDelete()
+}
+
 class TransactionViewModel(
     private val repository: TransactionRepository,
     val sessionManager: com.example.data.SessionManager
 ) : ViewModel() {
+
+    // Deletion Confirmation and Undo State
+    private val _showDeleteConfirmation = MutableStateFlow<PendingDelete?>(null)
+    val showDeleteConfirmation: StateFlow<PendingDelete?> = _showDeleteConfirmation.asStateFlow()
+
+    private var lastDeletedTransaction: com.example.data.TransactionEntity? = null
+    private var lastDeletedCategory: com.example.data.CategoryEntity? = null
+    private var lastDeletedOrder: com.example.data.OrderEntity? = null
+    private var lastDeletedCalculation: com.example.data.PieceCalculationEntity? = null
+    private var lastDeleteType: String? = null // "TX", "CAT", "ORDER", "CALC"
+
+    private val _showUndoSnackbar = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val showUndoSnackbar = _showUndoSnackbar.asSharedFlow()
+
+    fun cancelDeleteRequest() {
+        _showDeleteConfirmation.value = null
+    }
+
+    fun confirmDelete() {
+        val pending = _showDeleteConfirmation.value ?: return
+        _showDeleteConfirmation.value = null
+        viewModelScope.launch {
+            when (pending) {
+                is PendingDelete.Transaction -> {
+                    lastDeletedTransaction = pending.entity
+                    lastDeleteType = "TX"
+                    repository.deleteById(pending.entity.id)
+                    triggerSyncSimulation()
+                    _showUndoSnackbar.tryEmit("Lançamento removido")
+                }
+                is PendingDelete.Category -> {
+                    lastDeletedCategory = pending.entity
+                    lastDeleteType = "CAT"
+                    repository.deleteCategoryById(pending.entity.id)
+                    triggerSyncSimulation()
+                    _showUndoSnackbar.tryEmit("Categoria removida")
+                }
+                is PendingDelete.Order -> {
+                    lastDeletedOrder = pending.entity
+                    lastDeleteType = "ORDER"
+                    repository.deleteOrderById(pending.entity.id)
+                    triggerSyncSimulation()
+                    _showUndoSnackbar.tryEmit("Pedido removido")
+                }
+                is PendingDelete.Calculation -> {
+                    lastDeletedCalculation = pending.entity
+                    lastDeleteType = "CALC"
+                    repository.deleteCalculationById(pending.entity.id)
+                    triggerSyncSimulation()
+                    _showUndoSnackbar.tryEmit("Cálculo de peça removido")
+                }
+            }
+        }
+    }
+
+    fun undoLastDelete() {
+        viewModelScope.launch {
+            when (lastDeleteType) {
+                "TX" -> {
+                    lastDeletedTransaction?.let { tx ->
+                        repository.insert(tx)
+                        triggerSyncSimulation()
+                        lastDeletedTransaction = null
+                        lastDeleteType = null
+                    }
+                }
+                "CAT" -> {
+                    lastDeletedCategory?.let { cat ->
+                        repository.insertCategory(cat)
+                        triggerSyncSimulation()
+                        lastDeletedCategory = null
+                        lastDeleteType = null
+                    }
+                }
+                "ORDER" -> {
+                    lastDeletedOrder?.let { order ->
+                        repository.insertOrder(order)
+                        triggerSyncSimulation()
+                        lastDeletedOrder = null
+                        lastDeleteType = null
+                    }
+                }
+                "CALC" -> {
+                    lastDeletedCalculation?.let { calc ->
+                        repository.insertCalculation(calc)
+                        triggerSyncSimulation()
+                        lastDeletedCalculation = null
+                        lastDeleteType = null
+                    }
+                }
+            }
+        }
+    }
 
     // Dynamic In-App GitHub Updater State Management
     private var _updater: GitHubUpdater? = null
@@ -61,11 +164,7 @@ class TransactionViewModel(
         }
     }
 
-    init {
-        viewModelScope.launch {
-            repository.seedMockDataIfEmpty()
-        }
-    }
+
 
     // Authentication States and Flow Controllers
     private val _isUserLoggedIn = MutableStateFlow(sessionManager.isLoggedIn)
@@ -139,14 +238,14 @@ class TransactionViewModel(
                             // Populate base data and push initially to start user view beautifully
                             repository.seedMockDataIfEmpty()
                             com.example.data.SupabaseSyncManager.pushLocalData(repository, sessionManager)
-                            _authSuccessMessage.value = "Conta cadastrada com sucesso no Supabase e sincronizada!"
+                            _authSuccessMessage.value = "Conta cadastrada com sucesso e sincronizada com a nuvem!"
                             _isUserLoggedIn.value = true
                         } else {
                             val errorMsg = response.errorBody()?.string() ?: ""
-                            _authError.value = "Falha no Supabase: $errorMsg"
+                            _authError.value = "Falha na conexão: $errorMsg"
                         }
                     } else {
-                        _authError.value = "Erro ao carregar cliente de rede Supabase."
+                        _authError.value = "Erro ao conectar com o servidor em nuvem."
                     }
                 } else {
                     // Safe Offline fallback setup
@@ -168,7 +267,7 @@ class TransactionViewModel(
                             authToken = null,
                             usingSupabase = false
                         )
-                        _authSuccessMessage.value = "Cadastro local concluído! Sem conexão Supabase."
+                        _authSuccessMessage.value = "Cadastro local concluído com sucesso!"
                         _isUserLoggedIn.value = true
                     }
                 }
@@ -216,7 +315,12 @@ class TransactionViewModel(
                                 usingSupabase = true
                             )
                             // Pull user remote data to prevent any data loss across devices
-                            com.example.data.SupabaseSyncManager.pullRemoteData(repository, sessionManager)
+                            isPulling = true
+                            try {
+                                com.example.data.SupabaseSyncManager.pullRemoteData(repository, sessionManager)
+                            } finally {
+                                isPulling = false
+                            }
                             _authSuccessMessage.value = "Autenticação realizada! Dados sincronizados."
                             _isUserLoggedIn.value = true
                         } else {
@@ -237,7 +341,7 @@ class TransactionViewModel(
                             }
                         }
                     } else {
-                        _authError.value = "Erro de canais do Supabase."
+                        _authError.value = "Erro de conexão com o servidor."
                     }
                 } else {
                     // Safe Offline Authentication
@@ -395,6 +499,41 @@ class TransactionViewModel(
         initialValue = FinancialSummary(0.0, 0.0, 0.0, 12.4, emptyMap())
     )
 
+    // Automatic DB Sincronization Control
+    private var isPulling = false
+    private var syncJob: kotlinx.coroutines.Job? = null
+
+    init {
+        viewModelScope.launch {
+            isPulling = true
+            try {
+                repository.seedMockDataIfEmpty()
+            } catch (e: Exception) {
+                android.util.Log.e("TransactionViewModel", "Error seeding data", e)
+            } finally {
+                isPulling = false
+            }
+        }
+
+        // Automatic Cloud Sync observer on Database changes
+        viewModelScope.launch {
+            combine(
+                repository.allTransactions,
+                repository.allCategories,
+                repository.allOrders,
+                repository.allCalculations
+            ) { _, _, _, _ -> true }.collect {
+                if (!isPulling && _isCloudBackupEnabled.value) {
+                    syncJob?.cancel()
+                    syncJob = launch {
+                        kotlinx.coroutines.delay(1000)
+                        triggerSyncSimulation()
+                    }
+                }
+            }
+        }
+    }
+
     fun setTab(tab: AppTab) {
         _currentTab.value = tab
     }
@@ -519,9 +658,9 @@ class TransactionViewModel(
     }
 
     fun deleteCategory(id: Long) {
-        viewModelScope.launch {
-            repository.deleteCategoryById(id)
-            triggerSyncSimulation()
+        val cat = allCategories.value.find { it.id == id }
+        if (cat != null) {
+            _showDeleteConfirmation.value = PendingDelete.Category(cat)
         }
     }
 
@@ -563,25 +702,30 @@ class TransactionViewModel(
     }
 
     fun deleteOrder(id: Long) {
-        viewModelScope.launch {
-            repository.deleteOrderById(id)
-            triggerSyncSimulation()
+        val order = allOrders.value.find { it.id == id }
+        if (order != null) {
+            _showDeleteConfirmation.value = PendingDelete.Order(order)
         }
     }
 
     fun deleteTransaction(id: Long) {
-        viewModelScope.launch {
-            repository.deleteById(id)
-            triggerSyncSimulation()
+        val tx = allTransactions.value.find { it.id == id }
+        if (tx != null) {
+            _showDeleteConfirmation.value = PendingDelete.Transaction(tx)
         }
     }
 
     fun clearAllDataAndReseed() {
         viewModelScope.launch {
-            _isCloudBackupEnabled.value = true
-            repository.clearAll()
-            repository.seedMockDataIfEmpty()
-            _syncState.value = "SYNCED"
+            isPulling = true
+            try {
+                _isCloudBackupEnabled.value = true
+                repository.clearAll()
+                repository.seedMockDataIfEmpty()
+                _syncState.value = "SYNCED"
+            } finally {
+                isPulling = false
+            }
         }
     }
 
@@ -654,9 +798,9 @@ class TransactionViewModel(
     }
 
     fun deleteCalculation(id: Long) {
-        viewModelScope.launch {
-            repository.deleteCalculationById(id)
-            triggerSyncSimulation()
+        val calc = allCalculations.value.find { it.id == id }
+        if (calc != null) {
+            _showDeleteConfirmation.value = PendingDelete.Calculation(calc)
         }
     }
 

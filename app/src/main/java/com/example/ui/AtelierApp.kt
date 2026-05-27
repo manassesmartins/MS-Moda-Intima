@@ -71,6 +71,23 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val filterTab by viewModel.transactionFilter.collectAsStateWithLifecycle()
 
+    val pendingDelete by viewModel.showDeleteConfirmation.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.showUndoSnackbar.collect { message ->
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "Desfazer",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoLastDelete()
+                Toast.makeText(context, "Registro restaurado!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -134,6 +151,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
+                snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
                     MsModaIntimaTopBar(
                         syncState = syncState,
@@ -141,7 +159,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                         onSyncClick = {
                             if (isCloudBackupEnabled) {
                                 viewModel.triggerSyncSimulation()
-                                Toast.makeText(context, "Sincronizando com o Supabase Nuvem...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Sincronizando com a Nuvem...", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, "Ative a sincronização em nuvem nas configurações.", Toast.LENGTH_LONG).show()
                             }
@@ -210,7 +228,6 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                 onFilterChanged = { viewModel.setTransactionFilter(it) },
                                 onDeleteClick = { id ->
                                     viewModel.deleteTransaction(id)
-                                    Toast.makeText(context, "Lançamento removido!", Toast.LENGTH_SHORT).show()
                                 }
                             )
                             AppTab.ORDERS -> OrdersScreen(
@@ -277,7 +294,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
         }
 
         // ------------------------------------
-        // OVERLAYS: GitHub App Updater Dialogs
+        // OVERLAYS: Cloud Sync & System Update Dialogs
         // ------------------------------------
         when (val stat = updaterStatus) {
             is UpdateStatus.UpdateAvailable -> {
@@ -295,7 +312,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "Nova Atualização!",
+                                text = "Nova Atualização do Sistema!",
                                 fontWeight = FontWeight.Bold,
                                 color = OnSurface
                             )
@@ -305,7 +322,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                text = "Uma nova versão comitada no GitHub foi detectada!",
+                                text = "Uma nova atualização de integridade e recursos foi detectada no servidor de dados em nuvem!",
                                 fontSize = 14.sp,
                                 color = OnSurface,
                                 fontWeight = FontWeight.SemiBold
@@ -318,18 +335,18 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                     .padding(10.dp)
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("Versão/Tag: ${stat.version}", fontSize = 13.sp, color = Secondary, fontWeight = FontWeight.Bold)
-                                    Text("Data: ${stat.date}", fontSize = 12.sp, color = OnSurfaceVariant)
+                                    Text("Versão do Servidor: ${stat.version}", fontSize = 13.sp, color = Secondary, fontWeight = FontWeight.Bold)
+                                    Text("Sincronizada em: ${stat.date}", fontSize = 12.sp, color = OnSurfaceVariant)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Divider(color = Color.White.copy(alpha = 0.08f))
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text("Detalhes / Commits:", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                                    Text("Melhorias e Ajustes:", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                     Text(stat.changelog, fontSize = 12.sp, color = OnSurface)
                                 }
                             }
                             
                             Text(
-                                text = "Deseja baixar e instalar esta nova versão agora?",
+                                text = "Deseja baixar e instalar o novo pacote do sistema de forma segura agora?",
                                 fontSize = 13.sp,
                                 color = OnSurfaceVariant
                             )
@@ -348,7 +365,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                             colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("Baixar e Instalar", fontWeight = FontWeight.Bold)
+                            Text("Atualizar Sistema", fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
@@ -366,7 +383,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                     onDismissRequest = {}, // Force showing download progress
                     title = {
                         Text(
-                            text = "Baixando Nova Versão...",
+                            text = "Sincronizando Pacote de Dados...",
                             fontWeight = FontWeight.Bold,
                             color = OnSurface
                         )
@@ -385,7 +402,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                             )
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "Baixando APK da atualização do GitHub...",
+                                    text = "Baixando pacote seguro de atualização de tabelas e recursos do servidor de dados...",
                                     fontSize = 13.sp,
                                     color = OnSurfaceVariant
                                 )
@@ -469,6 +486,69 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
             }
 
             else -> {}
+        }
+
+        val currentPendingDelete = pendingDelete
+        if (currentPendingDelete != null) {
+            AlertDialog(
+                onDismissRequest = { viewModel.cancelDeleteRequest() },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = ErrorColor
+                        )
+                        Text(
+                            text = "Confirmar Exclusão",
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface,
+                            fontSize = 20.sp
+                        )
+                    }
+                },
+                text = {
+                    val descriptionText = when (currentPendingDelete) {
+                        is PendingDelete.Transaction -> {
+                            "Deseja realmente excluir o lançamento '${currentPendingDelete.entity.description}' no valor de ${String.format(Locale("pt", "BR"), "R$ %,.2f", currentPendingDelete.entity.amount)}?"
+                        }
+                        is PendingDelete.Category -> {
+                            "Deseja realmente excluir a categoria '${currentPendingDelete.entity.name}'?"
+                        }
+                        is PendingDelete.Order -> {
+                            "Deseja realmente excluir o pedido de ${currentPendingDelete.entity.clientName} no valor de ${String.format(Locale("pt", "BR"), "R$ %,.2f", currentPendingDelete.entity.totalValue)}?"
+                        }
+                        is PendingDelete.Calculation -> {
+                            "Deseja realmente excluir o cálculo do tecido '${currentPendingDelete.entity.pano}'?"
+                        }
+                    }
+                    Text(
+                        text = descriptionText,
+                        color = OnSurface,
+                        fontSize = 15.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.confirmDelete() },
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrorColor)
+                    ) {
+                        Text("Excluir", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { viewModel.cancelDeleteRequest() }
+                    ) {
+                        Text("Cancelar", color = OnSurfaceVariant)
+                    }
+                },
+                containerColor = SurfaceDark,
+                shape = RoundedCornerShape(24.dp)
+            )
         }
     }
 }
@@ -618,9 +698,9 @@ fun MsModaIntimaBottomBar(
             .height(80.dp)
     ) {
         val tabs = listOf(
-            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel Geral"),
+            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
-            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Encomendas"),
+            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
             Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
             Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
         )
@@ -631,30 +711,32 @@ fun MsModaIntimaBottomBar(
                 selected = isActive,
                 onClick = { onTabSelected(tab) },
                 icon = {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.testTag("${label.lowercase()}_tab")
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier
-                                .size(24.dp)
-                                .then(
-                                    if (isActive) Modifier.glow(Primary) else Modifier
-                                )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .then(
+                                if (isActive) Modifier.glow(Primary) else Modifier
+                            )
+                            .testTag("${label.lowercase()}_tab")
+                    )
                 },
+                label = {
+                    Text(
+                        text = label,
+                        fontSize = 9.sp,
+                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        softWrap = true,
+                        lineHeight = 11.sp,
+                        overflow = TextOverflow.Visible
+                    )
+                },
+                alwaysShowLabel = true,
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = Color.Transparent
                 )
@@ -700,9 +782,9 @@ fun MsModaIntimaNavigationRail(
         Spacer(modifier = Modifier.height(32.dp))
 
         val tabs = listOf(
-            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel Geral"),
+            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
-            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Encomendas"),
+            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
             Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
             Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
         )
@@ -713,32 +795,32 @@ fun MsModaIntimaNavigationRail(
                 selected = isActive,
                 onClick = { onTabSelected(tab) },
                 icon = {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.testTag("${label.lowercase()}_tab")
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier
-                                .size(24.dp)
-                                .then(
-                                    if (isActive) Modifier.glow(Primary) else Modifier
-                                )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = label,
-                            fontSize = 10.sp,
-                            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .then(
+                                if (isActive) Modifier.glow(Primary) else Modifier
+                            )
+                            .testTag("${label.lowercase()}_tab")
+                    )
                 },
+                label = {
+                    Text(
+                        text = label,
+                        fontSize = 9.sp,
+                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isActive) Primary else OnSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        softWrap = true,
+                        lineHeight = 11.sp,
+                        overflow = TextOverflow.Visible
+                    )
+                },
+                alwaysShowLabel = true,
                 colors = NavigationRailItemDefaults.colors(
                     indicatorColor = Color.Transparent
                 )
@@ -1000,6 +1082,10 @@ fun DashboardScreen(
 
                     // Two-Column Grid: Entradas & Saídas
                     item {
+                        val maxTraffic = maxOf(summary.totalInflow, summary.totalOutflow)
+                        val inflowFraction = if (maxTraffic > 0) (summary.totalInflow / maxTraffic).toFloat().coerceIn(0f, 1f) else 0f
+                        val outflowFraction = if (maxTraffic > 0) (summary.totalOutflow / maxTraffic).toFloat().coerceIn(0f, 1f) else 0f
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -1037,19 +1123,21 @@ fun DashboardScreen(
                                         color = OnSurface
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    // Progress bar mockup
+                                    // Progress bar dynamic
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(4.dp)
                                             .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(2.dp))
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.75f)
-                                                .fillMaxHeight()
-                                                .background(Tertiary, RoundedCornerShape(2.dp))
-                                        )
+                                        if (inflowFraction > 0f) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(inflowFraction)
+                                                    .fillMaxHeight()
+                                                    .background(Tertiary, RoundedCornerShape(2.dp))
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1087,19 +1175,21 @@ fun DashboardScreen(
                                         color = OnSurface
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    // Progress bar mockup
+                                    // Progress bar dynamic
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(4.dp)
                                             .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(2.dp))
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.35f)
-                                                .fillMaxHeight()
-                                                .background(ErrorColor, RoundedCornerShape(2.dp))
-                                        )
+                                        if (outflowFraction > 0f) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(outflowFraction)
+                                                    .fillMaxHeight()
+                                                    .background(ErrorColor, RoundedCornerShape(2.dp))
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1992,13 +2082,11 @@ fun TransactionListItem(
     item: TransactionEntity,
     onDeleteClick: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("transaction_item_${item.id}")
-            .clickable { showDeleteDialog = true }
+            .clickable { onDeleteClick() }
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -2101,30 +2189,6 @@ fun TransactionListItem(
             }
         }
     }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Excluir Lançamento", color = OnSurface) },
-            text = { Text("Deseja realmente excluir o lançamento '${item.description}'? Esta operação é armazenada localmente e será sincronizada.", color = OnSurfaceVariant) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteClick()
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Excluir", color = ErrorColor)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar", color = Primary)
-                }
-            },
-            containerColor = SurfaceContainerHigh
-        )
-    }
 }
 
 // ------------------------------------
@@ -2144,6 +2208,19 @@ fun TransactionsScreen(
             .padding(horizontal = 20.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Fluxo de Caixa",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = Primary
+        )
+        Text(
+            text = "Controle de despesas, custos e saídas gerais",
+            fontSize = 13.sp,
+            color = OnSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Large Horizontal Scrolling Filter Tabs
         Row(
@@ -3266,7 +3343,6 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                     IconButton(
                                         onClick = {
                                             viewModel.deleteOrder(order.id)
-                                            Toast.makeText(context, "Pedido apagado!", Toast.LENGTH_SHORT).show()
                                         },
                                         modifier = Modifier
                                             .size(34.dp)
@@ -3851,7 +3927,6 @@ fun CategoryManagerDialog(
                                                     categoryNameInput = ""
                                                 }
                                                 viewModel.deleteCategory(cat.id)
-                                                Toast.makeText(context, "Categoria excluída!", Toast.LENGTH_SHORT).show()
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -3935,6 +4010,24 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
     ) {
+        // Main Screen Title matching tab bar
+        item {
+            Column {
+                Text(
+                    text = "Ajustes",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary
+                )
+                Text(
+                    text = "Gerencie dados, preferências e sincronização em nuvem",
+                    fontSize = 13.sp,
+                    color = OnSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+
         // Account Profile & Supabase Sync status card
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -3973,7 +4066,7 @@ fun SettingsScreen(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = if (userEmail != null) "Sessão Ativa no Supabase" else "Faça Login para salvar na Nuvem",
+                            text = if (userEmail != null) "Sessão Ativa na Nuvem" else "Faça Login para salvar na Nuvem",
                             fontSize = 12.sp,
                             color = OnSurfaceVariant
                         )
@@ -3982,7 +4075,7 @@ fun SettingsScreen(
             }
         }
 
-        // Real-Time Sync toggle & status card centered on Supabase
+        // Real-Time Sync toggle & status card centered
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -3998,7 +4091,7 @@ fun SettingsScreen(
                             color = OnSurface
                         )
                         Text(
-                            text = "Manter dados sincronizados em tempo real na nuvem do Supabase",
+                            text = "Manter dados sincronizados em tempo real na nuvem de forma segura",
                             fontSize = 12.sp,
                             color = OnSurfaceVariant
                         )
@@ -4099,7 +4192,7 @@ fun SettingsScreen(
             }
         }
 
-        // Supabase Status details & secrets explanation inside Settings Screen
+        // Integration Status details & secrets explanation inside Settings Screen
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -4111,7 +4204,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "INTEGRAÇÃO SUPABASE NUIVEM",
+                        text = "INTEGRAÇÃO COM A NUVEM",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Tertiary,
@@ -4120,9 +4213,9 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (com.example.data.api.SupabaseClient.isConfigured) {
-                            "Status: CONECTADO ✅\nO aplicativo está totalmente integrado e pronto para sincronizar dados e contas no Supabase."
+                            "Status: CONECTADO ✅\nO aplicativo está totalmente integrado e pronto para sincronizar dados e contas na Nuvem."
                         } else {
-                            "Status: MODO SEGURO OFF-LINE ⚠️\nOs dados de usuário estão protegidos localmente neste dispositivo (Room DB). Insira SUPABASE_URL e SUPABASE_ANON_KEY no Secrets do AI Studio para ativar as contas seguras em nuvem."
+                            "Status: MODO SEGURO OFF-LINE ⚠️\nOs dados de usuário estão protegidos localmente neste dispositivo (Room DB). Configure as chaves de conexão segura do servidor no AI Studio para ativar as contas seguras em nuvem."
                         },
                         fontSize = 13.sp,
                         color = OnSurfaceVariant,
@@ -4132,11 +4225,11 @@ fun SettingsScreen(
             }
         }
 
-        // GITHUB UPDATER CARD SECTION
+        // VERSION & INTEGRITY SECTION
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "ATUALIZAÇÃO DE VERSÃO GITHUB",
+                    text = "SINCRONIZAÇÃO DE VERSÃO CLOUD",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary,
@@ -4145,83 +4238,11 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 Text(
-                    text = "O aplicativo pode verificar se novos commits ou novidades foram publicados no repositório GitHub e realizar o download + instalação direta.",
+                    text = "O aplicativo integra-se com a nuvem para garantir a integridade total do banco de dados e sincronizar recursos. Verifique se há melhorias de segurança ou patches de otimização de consultas disponíveis para o sistema.",
                     fontSize = 12.sp,
                     color = OnSurfaceVariant,
                     lineHeight = 16.sp
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = ownerInput,
-                        onValueChange = {
-                            ownerInput = it
-                            updater.owner = it
-                        },
-                        label = { Text("Usuário / Organização GitHub", color = OnSurfaceVariant) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = OnSurface,
-                            unfocusedTextColor = OnSurface,
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = repoInput,
-                        onValueChange = {
-                            repoInput = it
-                            updater.repo = it
-                        },
-                        label = { Text("Nome do Repositório GitHub", color = OnSurfaceVariant) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = OnSurface,
-                            unfocusedTextColor = OnSurface,
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = branchInput,
-                            onValueChange = {
-                                branchInput = it
-                                updater.branch = it
-                            },
-                            label = { Text("Branch", color = OnSurfaceVariant) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = OnSurface,
-                                unfocusedTextColor = OnSurface,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        OutlinedTextField(
-                            value = apkPathInput,
-                            onValueChange = {
-                                apkPathInput = it
-                                updater.apkPath = it
-                            },
-                            label = { Text("Nome do APK", color = OnSurfaceVariant) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = OnSurface,
-                                unfocusedTextColor = OnSurface,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                            ),
-                            modifier = Modifier.weight(1.5f)
-                        )
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = Color.White.copy(alpha = 0.05f))
@@ -4234,7 +4255,7 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Versão Atual Instalada:",
+                            text = "Versão Atual do App:",
                             fontSize = 11.sp,
                             color = OnSurfaceVariant
                         )
@@ -4249,7 +4270,7 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             scope.launch {
-                                Toast.makeText(context, "Verificando repositório...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Buscando melhorias na nuvem...", Toast.LENGTH_SHORT).show()
                                 updater.checkForUpdates(forceNotify = true)
                             }
                         },
@@ -4260,7 +4281,7 @@ fun SettingsScreen(
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) {
-                        Text("Verificar Agora", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Buscar Atualização", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -4591,7 +4612,7 @@ fun NewTransactionScreen(
                         )
                         Column {
                             Text(
-                                text = "Sincronizar na Nuvem Supabase",
+                                text = "Sincronizar na Nuvem",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = OnSurface
@@ -4707,7 +4728,20 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Custo de Peças",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = Primary
+        )
+        Text(
+            text = "Calcule o rendimento de peças por quilo de tecido",
+            fontSize = 13.sp,
+            color = OnSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
         
         // Tab switcher
         Row(
@@ -5324,11 +5358,10 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                         onClick = {
                             viewModel.deleteCalculation(entity.id)
                             calculationToEdit = null
-                            Toast.makeText(context, "Linha removida!", Toast.LENGTH_SHORT).show()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = ErrorColor)
                     ) {
-                        Text("Deletar", color = Color.White)
+                        Text("Excluir", color = Color.White)
                     }
                     Button(
                         onClick = {
