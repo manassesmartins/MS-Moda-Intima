@@ -785,7 +785,6 @@ fun MsModaIntimaNavigationRail(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
             Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
         )
 
@@ -4125,13 +4124,17 @@ fun SettingsScreen(
                                 else -> "Salvo Offline"
                             },
                             fontSize = 13.sp,
-                            color = OnSurfaceVariant
+                            color = OnSurfaceVariant,
+                            modifier = Modifier.weight(1f)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Sincronizar Agora",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Tertiary,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier
                                 .clickable { onForceSync() }
                                 .padding(4.dp)

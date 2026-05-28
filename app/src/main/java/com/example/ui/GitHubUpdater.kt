@@ -51,27 +51,29 @@ class GitHubUpdater(private val context: Context) {
     private val _status = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     val status: StateFlow<UpdateStatus> = _status.asStateFlow()
 
+    private var latestCheckedSha: String = ""
+
     // Configurable parameters with smart defaults
     var owner: String
-        get() = sharedPrefs.getString("github_owner", "ManassesMartins") ?: "ManassesMartins"
+        get() = sharedPrefs.getString("github_owner", "ManassesMartins")?.takeIf { it.isNotBlank() } ?: "ManassesMartins"
         set(value) {
             sharedPrefs.edit().putString("github_owner", value.trim()).apply()
         }
 
     var repo: String
-        get() = sharedPrefs.getString("github_repo", "workspace-atelier-valeriacalc") ?: "workspace-atelier-valeriacalc"
+        get() = sharedPrefs.getString("github_repo", "workspace-atelier-valeriacalc")?.takeIf { it.isNotBlank() } ?: "workspace-atelier-valeriacalc"
         set(value) {
             sharedPrefs.edit().putString("github_repo", value.trim()).apply()
         }
 
     var branch: String
-        get() = sharedPrefs.getString("github_branch", "main") ?: "main"
+        get() = sharedPrefs.getString("github_branch", "main")?.takeIf { it.isNotBlank() } ?: "main"
         set(value) {
             sharedPrefs.edit().putString("github_branch", value.trim()).apply()
         }
 
     var apkPath: String
-        get() = sharedPrefs.getString("github_apk_path", "app-debug.apk") ?: "app-debug.apk"
+        get() = sharedPrefs.getString("github_apk_path", "app-debug.apk")?.takeIf { it.isNotBlank() } ?: "app-debug.apk"
         set(value) {
             sharedPrefs.edit().putString("github_apk_path", value.trim()).apply()
         }
@@ -174,45 +176,61 @@ class GitHubUpdater(private val context: Context) {
                 .addHeader("User-Agent", "Mozilla/5.0")
                 .build()
 
-            client.newCall(commitsRequest).execute().use { response ->
-                if (response.isSuccessful) {
-                    val bodyString = response.body?.string()
-                    if (!bodyString.isNullOrEmpty()) {
-                        val commitsArray = JSONArray(bodyString)
-                        if (commitsArray.length() > 0) {
-                            val latestCommitObj = commitsArray.getJSONObject(0)
-                            val sha = latestCommitObj.optString("sha", "")
-                            val commitObj = latestCommitObj.optJSONObject("commit")
-                            val message = commitObj?.optString("message", "Nova alteração de código") ?: ""
-                            val authorObj = commitObj?.optJSONObject("author")
-                            val authorName = authorObj?.optString("name", "") ?: ""
-                            val dateString = authorObj?.optString("date", "")?.take(10) ?: ""
+            var commitsRequestSuccess = false
+            try {
+                client.newCall(commitsRequest).execute().use { response ->
+                    if (response.isSuccessful) {
+                        commitsRequestSuccess = true
+                        val bodyString = response.body?.string()
+                        if (!bodyString.isNullOrEmpty()) {
+                            val commitsArray = JSONArray(bodyString)
+                            if (commitsArray.length() > 0) {
+                                val latestCommitObj = commitsArray.getJSONObject(0)
+                                val sha = latestCommitObj.optString("sha", "")
+                                val commitObj = latestCommitObj.optJSONObject("commit")
+                                val message = commitObj?.optString("message", "Nova alteração de código") ?: ""
+                                val authorObj = commitObj?.optJSONObject("author")
+                                val authorName = authorObj?.optString("name", "") ?: ""
+                                val dateString = authorObj?.optString("date", "")?.take(10) ?: ""
 
-                            val savedCommitSha = sharedPrefs.getString("last_checked_commit_sha", "") ?: ""
+                                val savedCommitSha = sharedPrefs.getString("last_checked_commit_sha", "") ?: ""
 
-                            if (sha != savedCommitSha || forceNotify) {
-                                // A new commit is detected on GitHub!
-                                val downloadUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$apkPath"
-                                _status.value = UpdateStatus.UpdateAvailable(
-                                    version = "Commit ${sha.take(7)}",
-                                    changelog = "Commit por $authorName:\n$message",
-                                    downloadUrl = downloadUrl,
-                                    type = UpdateType.COMMIT,
-                                    itemName = message,
-                                    date = dateString
-                                )
-                                // Save this SHA to avoid double notification unless force checked
-                                if (!forceNotify) {
-                                    sharedPrefs.edit().putString("last_checked_commit_sha", sha).apply()
+                                if (sha != savedCommitSha || forceNotify) {
+                                    // A new commit is detected on GitHub!
+                                    latestCheckedSha = sha
+                                    val downloadUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$apkPath"
+                                    _status.value = UpdateStatus.UpdateAvailable(
+                                        version = "Commit ${sha.take(7)}",
+                                        changelog = "Commit por $authorName:\n$message",
+                                        downloadUrl = downloadUrl,
+                                        type = UpdateType.COMMIT,
+                                        itemName = message,
+                                        date = dateString
+                                    )
+                                    return@withContext
                                 }
-                                return@withContext
                             }
+                        }
+                    } else {
+                        Log.e("GitHubUpdater", "Commits API returned error code ${response.code}")
+                        if (response.code == 403) {
+                            _status.value = UpdateStatus.Error("Limite de requisições da API do GitHub excedido (HTTP 403).")
+                            return@withContext
+                        } else {
+                            _status.value = UpdateStatus.Error("Erro na API do GitHub (HTTP ${response.code}).")
+                            return@withContext
                         }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("GitHubUpdater", "Failed to check commits", e)
+                _status.value = UpdateStatus.Error("Conexão falhou ao verificar commits: ${e.localizedMessage}")
+                return@withContext
             }
 
-            _status.value = UpdateStatus.UpToDate
+            if (commitsRequestSuccess) {
+                _status.value = UpdateStatus.UpToDate
+            }
         } catch (e: Exception) {
             Log.e("GitHubUpdater", "Error checking for updates", e)
             _status.value = UpdateStatus.Error("Erro de conexão: ${e.localizedMessage ?: "Verifique sua internet"}")
@@ -284,6 +302,10 @@ class GitHubUpdater(private val context: Context) {
 
             val authority = "${context.packageName}.fileprovider"
             val apkUri: Uri = FileProvider.getUriForFile(context, authority, apkFile)
+
+            if (latestCheckedSha.isNotEmpty()) {
+                sharedPrefs.edit().putString("last_checked_commit_sha", latestCheckedSha).apply()
+            }
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(apkUri, "application/vnd.android.package-archive")
