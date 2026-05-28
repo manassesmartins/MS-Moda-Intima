@@ -3431,7 +3431,7 @@ fun OrderAddEditDialog(
     var priceText by remember { mutableStateOf(order?.pantyValue?.toString() ?: "1.15") }
     var selectedWeek by remember { mutableStateOf(order?.week ?: "1ª Semana") }
 
-    val totalValue = (qtyText.toIntOrNull() ?: 0) * (priceText.toDoubleOrNull() ?: 0.0)
+    val totalValue = (qtyText.toIntOrNull() ?: 0) * (priceText.replace(',', '.').toDoubleOrNull() ?: 0.0)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -3578,13 +3578,13 @@ fun OrderAddEditDialog(
             Button(
                 onClick = {
                     val qty = qtyText.toIntOrNull() ?: 0
-                    val valUnit = priceText.toDoubleOrNull() ?: 0.0
+                    val valUnit = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
                     if (name.isNotBlank() && model.isNotBlank() && qty > 0 && valUnit > 0) {
                         onSave(name, model, size, qty, valUnit, selectedWeek)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                enabled = name.isNotBlank() && model.isNotBlank() && (qtyText.toIntOrNull() ?: 0) > 0 && (priceText.toDoubleOrNull() ?: 0.0) > 0
+                enabled = name.isNotBlank() && model.isNotBlank() && (qtyText.toIntOrNull() ?: 0) > 0 && (priceText.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0
             ) {
                 Text("Confirmar")
             }
@@ -4642,7 +4642,7 @@ fun NewTransactionScreen(
                 Spacer(modifier = Modifier.height(10.dp))
                 Button(
                     onClick = {
-                        val amt = amountText.toDoubleOrNull() ?: 0.0
+                        val amt = amountText.replace(',', '.').toDoubleOrNull() ?: 0.0
                         if (description.isNotBlank() && amt > 0) {
                             onSubmit(description, amt, category, type, selectedWeek)
                         }
@@ -4656,7 +4656,7 @@ fun NewTransactionScreen(
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("submit_transaction_button"),
-                    enabled = description.isNotBlank() && (amountText.toDoubleOrNull() ?: 0.0) > 0
+                    enabled = description.isNotBlank() && (amountText.replace(',', '.').toDoubleOrNull() ?: 0.0) > 0
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -5289,8 +5289,8 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
             confirmButton = {
                 Button(
                     onClick = {
-                        val kg = kgText.toDoubleOrNull()
-                        val valorKg = valorKgText.toDoubleOrNull()
+                        val kg = kgText.replace(',', '.').toDoubleOrNull()
+                        val valorKg = valorKgText.replace(',', '.').toDoubleOrNull()
                         val qty = qtyText.toIntOrNull()
                         viewModel.addCalculation(pano, kg, valorKg, qty)
                         showAddDialog = false
@@ -5365,8 +5365,8 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                     }
                     Button(
                         onClick = {
-                            val kg = kgText.toDoubleOrNull()
-                            val valorKg = valorKgText.toDoubleOrNull()
+                            val kg = kgText.replace(',', '.').toDoubleOrNull()
+                            val valorKg = valorKgText.replace(',', '.').toDoubleOrNull()
                             val qty = qtyText.toIntOrNull()
                             viewModel.updateCalculation(entity.id, pano, kg, valorKg, qty)
                             calculationToEdit = null
