@@ -39,6 +39,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     val context = LocalContext.current
     val isUserLoggedIn by viewModel.isUserLoggedIn.collectAsStateWithLifecycle()
     val updaterStatus by viewModel.updaterStatus.collectAsStateWithLifecycle()
+    val appName by viewModel.appName.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val updater = remember { viewModel.getUpdater(context) }
 
@@ -338,6 +339,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
                     MsModaIntimaTopBar(
+                        appName = appName,
                         syncState = syncState,
                         isCloudEnabled = isCloudBackupEnabled,
                         onSyncClick = {
@@ -767,6 +769,7 @@ fun GlassCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MsModaIntimaTopBar(
+    appName: String,
     syncState: String,
     isCloudEnabled: Boolean,
     onSyncClick: () -> Unit
@@ -785,7 +788,7 @@ fun MsModaIntimaTopBar(
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
-                    text = "MS Moda Íntima",
+                    text = appName,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary,

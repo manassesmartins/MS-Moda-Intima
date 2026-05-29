@@ -84,6 +84,12 @@ class GitHubUpdater(private val context: Context) {
             sharedPrefs.edit().putString("last_notified_version", value).apply()
         }
 
+    var versionJsonPath: String
+        get() = sharedPrefs.getString("github_version_json_path", "version.json")?.takeIf { it.isNotBlank() } ?: "version.json"
+        set(value) {
+            sharedPrefs.edit().putString("github_version_json_path", value.trim()).apply()
+        }
+
     fun getLocalVersion(): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -104,6 +110,54 @@ class GitHubUpdater(private val context: Context) {
         _status.value = UpdateStatus.Checking
         try {
             val currentVersion = getLocalVersion()
+
+            // Step 0: Check custom version.json URL if it contains version info
+            var foundCustomJsonUpdate = false
+            val customJsonUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$versionJsonPath"
+            val customJsonRequest = Request.Builder()
+                .url(customJsonUrl)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            try {
+                client.newCall(customJsonRequest).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val bodyString = response.body?.string()
+                        if (!bodyString.isNullOrEmpty()) {
+                            val json = JSONObject(bodyString)
+                            val latestVersion = json.optString("version", "").trim()
+                            if (latestVersion.isNotEmpty()) {
+                                val changelog = json.optString("changelog", "Nova versão disponível no repositório.")
+                                val rawDownloadUrl = json.optString("downloadUrl", "").trim()
+                                val downloadUrl = if (rawDownloadUrl.isNotEmpty()) {
+                                    rawDownloadUrl
+                                } else {
+                                    "https://raw.githubusercontent.com/$owner/$repo/$branch/$apkPath"
+                                }
+
+                                val hasNewerVersion = isNewerVersion(latestVersion, currentVersion)
+                                if (hasNewerVersion || (forceNotify && latestVersion.isNotEmpty())) {
+                                    if (forceNotify || latestVersion != lastNotifiedVersion) {
+                                        _status.value = UpdateStatus.UpdateAvailable(
+                                            version = latestVersion,
+                                            changelog = changelog,
+                                            downloadUrl = downloadUrl,
+                                            type = UpdateType.RAW,
+                                            itemName = "Atualização via JSON",
+                                            date = ""
+                                        )
+                                        foundCustomJsonUpdate = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("GitHubUpdater", "Failed to check custom version.json, proceeding to releases", e)
+            }
+
+            if (foundCustomJsonUpdate) return@withContext
 
             // Step 1: Check GitHub releases first (highly structured)
             val releaseUrl = "https://api.github.com/repos/$owner/$repo/releases/latest"
@@ -213,18 +267,25 @@ class GitHubUpdater(private val context: Context) {
                         }
                     } else {
                         Log.e("GitHubUpdater", "Commits API returned error code ${response.code}")
-                        if (response.code == 403) {
-                            _status.value = UpdateStatus.Error("Limite de requisições da API do GitHub excedido (HTTP 403).")
-                            return@withContext
+                        if (forceNotify) {
+                            if (response.code == 403) {
+                                _status.value = UpdateStatus.Error("Limite de requisições da API do GitHub excedido (HTTP 403).")
+                            } else {
+                                _status.value = UpdateStatus.Error("Erro na API do GitHub (HTTP ${response.code}).")
+                            }
                         } else {
-                            _status.value = UpdateStatus.Error("Erro na API do GitHub (HTTP ${response.code}).")
-                            return@withContext
+                            _status.value = UpdateStatus.Idle
                         }
+                        return@withContext
                     }
                 }
             } catch (e: Exception) {
                 Log.e("GitHubUpdater", "Failed to check commits", e)
-                _status.value = UpdateStatus.Error("Conexão falhou ao verificar commits: ${e.localizedMessage}")
+                if (forceNotify) {
+                    _status.value = UpdateStatus.Error("Conexão falhou ao verificar commits: ${e.localizedMessage}")
+                } else {
+                    _status.value = UpdateStatus.Idle
+                }
                 return@withContext
             }
 
@@ -233,7 +294,11 @@ class GitHubUpdater(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e("GitHubUpdater", "Error checking for updates", e)
-            _status.value = UpdateStatus.Error("Erro de conexão: ${e.localizedMessage ?: "Verifique sua internet"}")
+            if (forceNotify) {
+                _status.value = UpdateStatus.Error("Erro de conexão: ${e.localizedMessage ?: "Verifique sua internet"}")
+            } else {
+                _status.value = UpdateStatus.Idle
+            }
         }
     }
 

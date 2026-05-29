@@ -12,7 +12,29 @@ class SessionManager(context: Context) {
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_USING_SUPABASE = "using_supabase"
+        
+        // Customization keys
+        private const val KEY_APP_NAME = "custom_app_name"
+        private const val KEY_COLOR_SCHEME = "custom_color_scheme"
+        private const val KEY_DARK_MODE = "custom_dark_mode"
+        private const val KEY_FONT_SIZE_SCALE = "custom_font_size_scale"
     }
+
+    var appName: String
+        get() = prefs.getString(KEY_APP_NAME, "MS") ?: "MS"
+        set(value) = prefs.edit().putString(KEY_APP_NAME, value).apply()
+
+    var colorScheme: String
+        get() = prefs.getString(KEY_COLOR_SCHEME, "PINK") ?: "PINK"
+        set(value) = prefs.edit().putString(KEY_COLOR_SCHEME, value).apply()
+
+    var isDarkMode: Boolean
+        get() = prefs.getBoolean(KEY_DARK_MODE, true)
+        set(value) = prefs.edit().putBoolean(KEY_DARK_MODE, value).apply()
+
+    var fontSizeScale: Float
+        get() = prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f)
+        set(value) = prefs.edit().putFloat(KEY_FONT_SIZE_SCALE, value).apply()
 
     fun saveSession(userId: String, email: String, authToken: String? = null, usingSupabase: Boolean = false) {
         prefs.edit().apply {

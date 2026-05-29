@@ -336,8 +336,8 @@ class TransactionViewModel(
                                 _authSuccessMessage.value = "Autenticação local com sucesso (Cache off-line)!"
                                 _isUserLoggedIn.value = true
                             } else {
-                                val errorMsg = response.errorBody()?.string() ?: "Credenciais incorretas."
-                                _authError.value = "Erro de login: $errorMsg"
+                                val errorMsg = response.errorBody()?.string() ?: "E-mail ou senha incorretos."
+                                _authError.value = "Credenciais inválidas: $errorMsg. Por favor, revise os dados informados!"
                             }
                         }
                     } else {
@@ -357,7 +357,7 @@ class TransactionViewModel(
                             _authSuccessMessage.value = "Login local concluído com sucesso."
                             _isUserLoggedIn.value = true
                         } else {
-                            _authError.value = "Senha incorreta!"
+                            _authError.value = "A senha informada está incorreta para este e-mail. Tente novamente!"
                         }
                     } else {
                         // Create a default master account for convenience if they enter admin/admin and DB empty
@@ -379,7 +379,7 @@ class TransactionViewModel(
                             _authSuccessMessage.value = "Conta administradora local inicializada!"
                             _isUserLoggedIn.value = true
                         } else {
-                            _authError.value = "Usuário não encontrado. Se é o seu primeiro acesso, clique em Cadastrar!"
+                            _authError.value = "Conta de usuário não encontrada. Se este é o seu primeiro acesso, clique na guia 'Cadastrar' acima para criar sua conta!"
                         }
                     }
                 }
@@ -402,6 +402,39 @@ class TransactionViewModel(
                 _authLoading.value = false
             }
         }
+    }
+
+    // App configuration state flows
+    private val _appName = MutableStateFlow(sessionManager.appName)
+    val appName: StateFlow<String> = _appName.asStateFlow()
+
+    private val _colorSchemeName = MutableStateFlow(sessionManager.colorScheme)
+    val colorSchemeName: StateFlow<String> = _colorSchemeName.asStateFlow()
+
+    private val _isDarkMode = MutableStateFlow(sessionManager.isDarkMode)
+    val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+    private val _fontSizeScale = MutableStateFlow(sessionManager.fontSizeScale)
+    val fontSizeScale: StateFlow<Float> = _fontSizeScale.asStateFlow()
+
+    fun updateAppName(name: String) {
+        sessionManager.appName = name
+        _appName.value = name
+    }
+
+    fun updateColorScheme(scheme: String) {
+        sessionManager.colorScheme = scheme
+        _colorSchemeName.value = scheme
+    }
+
+    fun updateDarkMode(enabled: Boolean) {
+        sessionManager.isDarkMode = enabled
+        _isDarkMode.value = enabled
+    }
+
+    fun updateFontSizeScale(scale: Float) {
+        sessionManager.fontSizeScale = scale
+        _fontSizeScale.value = scale
     }
 
     // Navigation and UX states

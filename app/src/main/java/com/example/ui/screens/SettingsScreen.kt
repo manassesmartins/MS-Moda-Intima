@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.widget.Toast
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +29,13 @@ import kotlinx.coroutines.launch
 import com.example.data.*
 import com.example.ui.theme.*
 
+private data class ColorSchemeUiItem(
+    val id: String,
+    val name: String,
+    val darkColor: Color,
+    val lightColor: Color
+)
+
 @Composable
 fun SettingsScreen(
     isCloudEnabled: Boolean,
@@ -45,6 +53,7 @@ fun SettingsScreen(
     var repoInput by remember { mutableStateOf(updater.repo) }
     var branchInput by remember { mutableStateOf(updater.branch) }
     var apkPathInput by remember { mutableStateOf(updater.apkPath) }
+    var versionJsonPathInput by remember { mutableStateOf(updater.versionJsonPath) }
     val scope = rememberCoroutineScope()
 
     LazyColumn(
@@ -219,6 +228,213 @@ fun SettingsScreen(
                         fontSize = 13.sp,
                         color = OnSurfaceVariant,
                         lineHeight = 18.sp
+                    )
+                }
+            }
+        }
+
+        // PERSONALIZAÇÃO & ACESSIBILIDADE Card
+        item {
+            val appNameState by viewModel.appName.collectAsState()
+            val colorSchemeName by viewModel.colorSchemeName.collectAsState()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val fontSizeScale by viewModel.fontSizeScale.collectAsState()
+            var tempAppName by remember(appNameState) { mutableStateOf(appNameState) }
+
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "PERSONALIZAÇÃO & ACESSIBILIDADE",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // App Name Customization Text Field
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Nome do Aplicativo",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OnSurface
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = tempAppName,
+                            onValueChange = { tempAppName = it },
+                            placeholder = { Text("Ex: Gerenciamento de Confecção") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                                focusedTextColor = OnSurface,
+                                unfocusedTextColor = OnSurface
+                            )
+                        )
+                        Button(
+                            onClick = {
+                                if (tempAppName.isNotBlank()) {
+                                    viewModel.updateAppName(tempAppName)
+                                    Toast.makeText(context, "Nome do app alterado!", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = OnPrimary
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp)
+                        ) {
+                            Text("Salvar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Theme Mode Option (Light vs Dark Theme)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Modo de Visualização",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OnSurface
+                        )
+                        Text(
+                            text = if (isDarkMode) "Tema Escuro Elegante" else "Tema Claro Alto Contraste",
+                            fontSize = 12.sp,
+                            color = OnSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = isDarkMode,
+                        onCheckedChange = { viewModel.updateDarkMode(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = OnPrimary,
+                            checkedTrackColor = Primary,
+                            uncheckedThumbColor = OnSurfaceVariant,
+                            uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Font Size Settings (Acessibilidade)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Tamanho de Letra (Acessibilidade)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OnSurface
+                    )
+                    Text(
+                        text = "Ajuste o tamanho do texto para facilitar a leitura caso tenha dificuldades visuais.",
+                        fontSize = 12.sp,
+                        color = OnSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val sizes = listOf(
+                            Triple(0.85f, "Pequeno", "A-"),
+                            Triple(1.0f, "Normal", "A"),
+                            Triple(1.20f, "Grande", "A+"),
+                            Triple(1.40f, "Extra G", "A++")
+                        )
+                        sizes.forEach { (scale, label, symbol) ->
+                            val isSelected = Math.abs(fontSizeScale - scale) < 0.05f
+                            Button(
+                                onClick = { viewModel.updateFontSizeScale(scale) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSelected) Primary else Color.White.copy(alpha = 0.05f),
+                                    contentColor = if (isSelected) OnPrimary else OnSurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(symbol, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(label, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Layout Colors / Theme Presets Option
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Paleta de Cores do Layout",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OnSurface
+                    )
+
+                    val colorSchemes = listOf(
+                        ColorSchemeUiItem("PINK", "Orquídea", Color(0xFFF472B6), Color(0xFFDB2777)),
+                        ColorSchemeUiItem("BLUE", "Safira", Color(0xFF60A5FA), Color(0xFF2563EB)),
+                        ColorSchemeUiItem("GREEN", "Esmeralda", Color(0xFF34D399), Color(0xFF059669)),
+                        ColorSchemeUiItem("ROSE", "Ouro Rosé", Color(0xFFFBBF24), Color(0xFFD97706)),
+                        ColorSchemeUiItem("RED", "Rubi", Color(0xFFF87171), Color(0xFFDC2626))
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        colorSchemes.forEach { item ->
+                            val isSelected = colorSchemeName.uppercase() == item.id
+                            val displayCol = if (isDarkMode) item.darkColor else item.lightColor
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) Primary else Color.White.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { viewModel.updateColorScheme(item.id) }
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(displayCol, CircleShape)
+                                )
+                            }
+                        }
+                    }
+                    val currentLabel = colorSchemes.firstOrNull { it.id == colorSchemeName.uppercase() }?.name ?: "Padrão"
+                    Text(
+                        text = "Tema selecionado: $currentLabel",
+                        fontSize = 11.sp,
+                        color = OnSurfaceVariant,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -418,6 +634,23 @@ fun SettingsScreen(
                         unfocusedTextColor = OnSurface
                     )
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = versionJsonPathInput,
+                    onValueChange = { versionJsonPathInput = it },
+                    label = { Text("Caminho do JSON de Versão (Ex: version.json)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Primary,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                        focusedLabelColor = Primary,
+                        unfocusedLabelColor = OnSurfaceVariant,
+                        focusedTextColor = OnSurface,
+                        unfocusedTextColor = OnSurface
+                    )
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
@@ -427,6 +660,7 @@ fun SettingsScreen(
                             updater.repo = repoInput
                             updater.branch = branchInput
                             updater.apkPath = apkPathInput
+                            updater.versionJsonPath = versionJsonPathInput
                             Toast.makeText(context, "Configurações atualizadas com sucesso!", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(context, "Proprietário e Repositório não podem estar em branco.", Toast.LENGTH_LONG).show()

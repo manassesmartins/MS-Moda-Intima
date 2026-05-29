@@ -39,6 +39,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     val authError by viewModel.authError.collectAsStateWithLifecycle()
     val authLoading by viewModel.authLoading.collectAsStateWithLifecycle()
     val authSuccessMessage by viewModel.authSuccessMessage.collectAsStateWithLifecycle()
+    val appName by viewModel.appName.collectAsStateWithLifecycle()
 
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
@@ -107,11 +108,12 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "ATELIER",
+                    text = appName.uppercase(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary,
-                    letterSpacing = 4.sp
+                    letterSpacing = 2.sp,
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     text = "MS Moda Íntima",

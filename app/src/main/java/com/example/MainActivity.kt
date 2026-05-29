@@ -16,6 +16,9 @@ import com.example.ui.TransactionViewModel
 import com.example.ui.TransactionViewModelFactory
 import com.example.ui.theme.MyApplicationTheme
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +38,15 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            val colorSchemeName by viewModel.colorSchemeName.collectAsState()
+            val isDarkMode by viewModel.isDarkMode.collectAsState()
+            val fontSizeScale by viewModel.fontSizeScale.collectAsState()
+
+            MyApplicationTheme(
+                darkTheme = isDarkMode,
+                colorSchemeName = colorSchemeName,
+                fontSizeScale = fontSizeScale
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
