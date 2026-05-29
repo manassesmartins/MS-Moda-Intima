@@ -36,6 +36,19 @@ import com.example.ui.theme.*
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MsModaIntimaApp(viewModel: TransactionViewModel) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     val context = LocalContext.current
     val isUserLoggedIn by viewModel.isUserLoggedIn.collectAsStateWithLifecycle()
     val updaterStatus by viewModel.updaterStatus.collectAsStateWithLifecycle()
@@ -152,7 +165,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 CircularProgressIndicator(
-                                    progress = { stat.progress },
+                                    progress = stat.progress,
                                     color = Primary,
                                     modifier = Modifier.size(56.dp)
                                 )
@@ -280,7 +293,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         SurfaceDark,
-                        Color(0xFF1E0E2E), // Rich, deep lavender-dark grape background gradient
+                        androidx.compose.ui.graphics.lerp(SurfaceDark, Primary, 0.07f),
                         SurfaceDark
                     )
                 )
@@ -582,7 +595,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             CircularProgressIndicator(
-                                progress = { stat.progress },
+                                progress = stat.progress,
                                 color = Primary,
                                 modifier = Modifier.size(56.dp)
                             )
@@ -774,6 +787,19 @@ fun MsModaIntimaTopBar(
     isCloudEnabled: Boolean,
     onSyncClick: () -> Unit
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     TopAppBar(
         title = {
             Row(
@@ -877,6 +903,19 @@ fun MsModaIntimaBottomBar(
     currentTab: AppTab,
     onTabSelected: (AppTab) -> Unit
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     NavigationBar(
         containerColor = Color.White.copy(alpha = 0.05f),
         tonalElevation = 0.dp,
@@ -941,6 +980,19 @@ fun MsModaIntimaNavigationRail(
     onTabSelected: (AppTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     NavigationRail(
         containerColor = Color.White.copy(alpha = 0.05f),
         modifier = modifier

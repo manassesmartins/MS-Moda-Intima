@@ -47,6 +47,19 @@ fun TransactionListItem(
     item: TransactionEntity,
     onDeleteClick: () -> Unit
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -164,6 +177,19 @@ fun TransactionsScreen(
     onFilterChanged: (String) -> Unit,
     onDeleteClick: (Long) -> Unit
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     Column(
         modifier = Modifier
             .fillMaxSize()

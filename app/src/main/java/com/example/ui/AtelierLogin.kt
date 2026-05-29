@@ -36,6 +36,19 @@ import com.example.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     val authError by viewModel.authError.collectAsStateWithLifecycle()
     val authLoading by viewModel.authLoading.collectAsStateWithLifecycle()
     val authSuccessMessage by viewModel.authSuccessMessage.collectAsStateWithLifecycle()
@@ -55,7 +68,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         SurfaceDark,
-                        Color(0xFF280F1E), // Rich maroon-lavender plum visual glow
+                        androidx.compose.ui.graphics.lerp(SurfaceDark, Primary, 0.07f),
                         SurfaceDark
                     )
                 )
@@ -420,6 +433,19 @@ fun TabToggleItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     Surface(
         onClick = onClick,
         color = if (isSelected) SurfaceContainerHigh else Color.Transparent,

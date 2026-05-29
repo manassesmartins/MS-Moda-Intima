@@ -36,6 +36,19 @@ fun NewTransactionScreen(
     onDismiss: () -> Unit,
     onSubmit: (String, Double, String, String, String) -> Unit
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Variados") }

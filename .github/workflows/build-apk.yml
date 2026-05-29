@@ -41,6 +41,21 @@ jobs:
         run: |
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
+      - name: Update Version Name and Create version.json
+        run: |
+          VERSION_BASE=$(grep "versionName =" app/build.gradle.kts | head -n 1 | awk -F'"' '{print $2}')
+          VERSION_NAME="${VERSION_BASE}.${{ github.run_number }}"
+          echo "Baking version: ${VERSION_NAME}"
+          sed -i "s/versionName = .*/versionName = \"${VERSION_NAME}\"/g" app/build.gradle.kts
+          
+          cat <<EOF > version.json
+          {
+            "version": "${VERSION_NAME}",
+            "changelog": "Build automático: Commit ${{ github.event.head_commit.message }}",
+            "downloadUrl": "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/app-debug.apk"
+          }
+          EOF
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
@@ -53,5 +68,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app-debug.apk
-          git diff-index --quiet HEAD || (git commit -m "Auto-compile: Build APK for commit ${{ github.sha }}" && git push origin HEAD:${{ github.ref_name }})
+          git add app-debug.apk version.json app/build.gradle.kts
+          git diff-index --quiet HEAD || (git commit -m "Auto-compile: Build APK and update version.json to match" && git push origin HEAD:${{ github.ref_name }})

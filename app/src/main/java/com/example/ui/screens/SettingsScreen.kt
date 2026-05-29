@@ -47,6 +47,19 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     viewModel: TransactionViewModel
 ) {
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val OnSecondary = MaterialTheme.colorScheme.onSecondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnTertiary = MaterialTheme.colorScheme.onTertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
+    val SurfaceDark = MaterialTheme.colorScheme.background
+    val ErrorColor = MaterialTheme.colorScheme.error
+
     val context = LocalContext.current
     val updater = remember { viewModel.getUpdater(context) }
     var ownerInput by remember { mutableStateOf(updater.owner) }
@@ -397,7 +410,7 @@ fun SettingsScreen(
                         ColorSchemeUiItem("PINK", "Orquídea", Color(0xFFF472B6), Color(0xFFDB2777)),
                         ColorSchemeUiItem("BLUE", "Safira", Color(0xFF60A5FA), Color(0xFF2563EB)),
                         ColorSchemeUiItem("GREEN", "Esmeralda", Color(0xFF34D399), Color(0xFF059669)),
-                        ColorSchemeUiItem("ROSE", "Ouro Rosé", Color(0xFFFBBF24), Color(0xFFD97706)),
+                        ColorSchemeUiItem("ROSE", "Ouro Rosé", Color(0xFFF6A6B2), Color(0xFFD8577A)),
                         ColorSchemeUiItem("RED", "Rubi", Color(0xFFF87171), Color(0xFFDC2626))
                     )
 
@@ -555,126 +568,7 @@ fun SettingsScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = Color.White.copy(alpha = 0.05f))
-                Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = "CONFIGURAÇÕES DO REPOSITÓRIO GITHUB",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Secondary,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = ownerInput,
-                    onValueChange = { ownerInput = it },
-                    label = { Text("Nome do Proprietário / Org") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                        focusedLabelColor = Primary,
-                        unfocusedLabelColor = OnSurfaceVariant,
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = repoInput,
-                    onValueChange = { repoInput = it },
-                    label = { Text("Nome do Repositório") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                        focusedLabelColor = Primary,
-                        unfocusedLabelColor = OnSurfaceVariant,
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = branchInput,
-                    onValueChange = { branchInput = it },
-                    label = { Text("Branch de Sincronização") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                        focusedLabelColor = Primary,
-                        unfocusedLabelColor = OnSurfaceVariant,
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = apkPathInput,
-                    onValueChange = { apkPathInput = it },
-                    label = { Text("Caminho do APK do App") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                        focusedLabelColor = Primary,
-                        unfocusedLabelColor = OnSurfaceVariant,
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = versionJsonPathInput,
-                    onValueChange = { versionJsonPathInput = it },
-                    label = { Text("Caminho do JSON de Versão (Ex: version.json)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
-                        focusedLabelColor = Primary,
-                        unfocusedLabelColor = OnSurfaceVariant,
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface
-                    )
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        if (ownerInput.isNotBlank() && repoInput.isNotBlank()) {
-                            updater.owner = ownerInput
-                            updater.repo = repoInput
-                            updater.branch = branchInput
-                            updater.apkPath = apkPathInput
-                            updater.versionJsonPath = versionJsonPathInput
-                            Toast.makeText(context, "Configurações atualizadas com sucesso!", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Proprietário e Repositório não podem estar em branco.", Toast.LENGTH_LONG).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Secondary,
-                        contentColor = OnPrimary
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Salvar Ajustes do Repositório", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
             }
         }
 

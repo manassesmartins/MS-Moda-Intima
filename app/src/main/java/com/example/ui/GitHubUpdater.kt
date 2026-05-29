@@ -222,8 +222,9 @@ class GitHubUpdater(private val context: Context) {
 
             if (foundReleaseUpdate) return@withContext
 
-            // Step 2: If no release update was found, check commits to see if a push happened
-            val commitsUrl = "https://api.github.com/repos/$owner/$repo/commits?per_page=1&sha=$branch"
+            // Step 2: If no release update was found, check commits of the specific APK file path on GitHub
+            val encodedApkPath = java.net.URLEncoder.encode(apkPath, "UTF-8")
+            val commitsUrl = "https://api.github.com/repos/$owner/$repo/commits?per_page=1&sha=$branch&path=$encodedApkPath"
             val commitsRequest = Request.Builder()
                 .url(commitsUrl)
                 .addHeader("Accept", "application/vnd.github+json")

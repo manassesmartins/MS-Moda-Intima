@@ -376,7 +376,7 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                                             )
                                         }
                                         LinearProgressIndicator(
-                                            progress = { pct },
+                                            progress = pct,
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(6.dp)
