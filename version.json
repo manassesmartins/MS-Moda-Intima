@@ -1,9 +1,0 @@
-{
-  "version": "1.1.8",
-  "changelog": "Build automático: Commit feat: implement dynamic theme and update CI pipeline
-
-- Refactor theme to use dynamic Material3 color schemes
-- Update GitHub Actions to inject versioning and metadata
-- Improve update checker to track specific file commits",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

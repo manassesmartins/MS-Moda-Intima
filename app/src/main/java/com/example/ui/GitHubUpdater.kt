@@ -45,7 +45,7 @@ enum class UpdateType {
 
 class GitHubUpdater(private val context: Context) {
 
-    private val sharedPrefs = context.getSharedPreferences("atelier_github_updater_prefs", Context.MODE_PRIVATE)
+    private val sharedPrefs = context.getSharedPreferences("ms_producao_github_updater_prefs", Context.MODE_PRIVATE)
     private val client = OkHttpClient()
 
     private val _status = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
@@ -61,7 +61,7 @@ class GitHubUpdater(private val context: Context) {
         }
 
     var repo: String
-        get() = sharedPrefs.getString("github_repo", "workspace-atelier-valeriacalc")?.takeIf { it.isNotBlank() } ?: "workspace-atelier-valeriacalc"
+        get() = sharedPrefs.getString("github_repo", "workspace-ms-producao-valeriacalc")?.takeIf { it.isNotBlank() } ?: "workspace-ms-producao-valeriacalc"
         set(value) {
             sharedPrefs.edit().putString("github_repo", value.trim()).apply()
         }

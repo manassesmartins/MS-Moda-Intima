@@ -272,6 +272,9 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     val pendingDelete by viewModel.showDeleteConfirmation.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var transactionForOptions by remember { mutableStateOf<com.example.data.TransactionEntity?>(null) }
+    var transactionToEdit by remember { mutableStateOf<com.example.data.TransactionEntity?>(null) }
+
     LaunchedEffect(Unit) {
         viewModel.showUndoSnackbar.collect { message ->
             val result = snackbarHostState.showSnackbar(
@@ -418,16 +421,15 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                                 transactions = transactions,
                                 orders = orders,
                                 onVerTodosClick = { viewModel.setTab(AppTab.TRANSACTIONS) },
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                onItemClick = { tx -> transactionForOptions = tx }
                             )
                             AppTab.TRANSACTIONS -> TransactionsScreen(
                                 viewModel = viewModel,
                                 transactions = transactions,
                                 activeFilter = filterTab,
                                 onFilterChanged = { viewModel.setTransactionFilter(it) },
-                                onDeleteClick = { id ->
-                                    viewModel.deleteTransaction(id)
-                                }
+                                onItemClick = { tx -> transactionForOptions = tx }
                             )
                             AppTab.ORDERS -> OrdersScreen(
                                 viewModel = viewModel
@@ -457,9 +459,136 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
             }
         }
 
-        // Overlay: "Novo Lançamento" View
+        // Options Dialog overlay for true cash flow CRUD system
+        transactionForOptions?.let { tx ->
+            AlertDialog(
+                onDismissRequest = { transactionForOptions = null },
+                title = {
+                    Column {
+                        Text(
+                            text = tx.description,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Opções do Lançamento",
+                            fontSize = 12.sp,
+                            color = OnSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Valor:", fontSize = 14.sp, color = OnSurfaceVariant)
+                            Text(
+                                text = String.format(Locale("pt", "BR"), "R$ %,.2f", tx.amount),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (tx.type == "INFLOW") Tertiary else ErrorColor
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Categoria:", fontSize = 14.sp, color = OnSurfaceVariant)
+                            Text(text = tx.category, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = OnSurface)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Período:", fontSize = 14.sp, color = OnSurfaceVariant)
+                            Text(text = tx.week, fontSize = 14.sp, color = OnSurface)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Data:", fontSize = 14.sp, color = OnSurfaceVariant)
+                            Text(text = tx.dateString, fontSize = 14.sp, color = OnSurface)
+                        }
+                    }
+                },
+                confirmButton = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Edit button using weight(1f)
+                        Button(
+                            onClick = {
+                                transactionToEdit = tx
+                                transactionForOptions = null
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = OnPrimary
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Editar", fontSize = 13.sp)
+                        }
+
+                        // Delete button using weight(1f)
+                        Button(
+                            onClick = {
+                                viewModel.deleteTransaction(tx.id)
+                                transactionForOptions = null
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ErrorColor,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Excluir", fontSize = 13.sp)
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { transactionForOptions = null }
+                    ) {
+                        Text("Fechar", color = OnSurfaceVariant)
+                    }
+                },
+                containerColor = SurfaceContainerHigh
+            )
+        }
+
+        // Overlay: "Novo Lançamento / Editar Lançamento" View
         AnimatedVisibility(
-            visible = isAddingTransaction,
+            visible = isAddingTransaction || (transactionToEdit != null),
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.align(Alignment.Center)
@@ -473,7 +602,10 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
             }
 
             Box(
-                modifier = if (isWideScreen) Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable { viewModel.setAddingTransaction(false) } else Modifier.fillMaxSize(),
+                modifier = if (isWideScreen) Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable { 
+                    viewModel.setAddingTransaction(false)
+                    transactionToEdit = null
+                } else Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -482,11 +614,22 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                     NewTransactionScreen(
                         viewModel = viewModel,
                         isCloudBackupEnabled = isCloudBackupEnabled,
-                        onDismiss = { viewModel.setAddingTransaction(false) },
+                        onDismiss = { 
+                            viewModel.setAddingTransaction(false)
+                            transactionToEdit = null
+                        },
                         onSubmit = { desc, amount, cat, type, week ->
-                            viewModel.addTransaction(desc, amount, cat, type, week = week)
-                            Toast.makeText(context, "Lançamento salvo com sucesso!", Toast.LENGTH_SHORT).show()
-                        }
+                            val toEdit = transactionToEdit
+                            if (toEdit != null) {
+                                viewModel.editTransaction(toEdit.id, desc, amount, cat, type, toEdit.dateString, week)
+                                Toast.makeText(context, "Lançamento atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                transactionToEdit = null
+                            } else {
+                                viewModel.addTransaction(desc, amount, cat, type, week = week)
+                                Toast.makeText(context, "Lançamento salvo com sucesso!", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        transactionToEdit = transactionToEdit
                     )
                 }
             }

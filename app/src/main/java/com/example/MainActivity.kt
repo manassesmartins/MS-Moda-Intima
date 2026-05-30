@@ -36,6 +36,23 @@ class MainActivity : ComponentActivity() {
         val factory = TransactionViewModelFactory(repository, sessionManager)
         val viewModel = ViewModelProvider(this, factory)[TransactionViewModel::class.java]
 
+        // Monitor connections and automatically trigger sync when internet becomes available
+        try {
+            val connectivityManager = getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val networkRequest = android.net.NetworkRequest.Builder()
+                .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            connectivityManager.registerNetworkCallback(networkRequest, object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    if (viewModel.sessionManager.isLoggedIn) {
+                        viewModel.triggerSyncSimulation()
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error registering network status callback: ${e.message}")
+        }
+
         enableEdgeToEdge()
         setContent {
             val colorSchemeName by viewModel.colorSchemeName.collectAsState()

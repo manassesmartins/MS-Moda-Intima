@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 class SessionManager(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("atelier_session", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences("ms_producao_session", Context.MODE_PRIVATE)
 
     companion object {
         private const val KEY_IS_LOGGED_IN = "is_logged_in"

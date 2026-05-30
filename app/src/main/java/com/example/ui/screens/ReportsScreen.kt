@@ -492,6 +492,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
             val monthlyBalance = remember(totalInflowValue, totalOutflowValue) {
                 totalInflowValue - totalOutflowValue
             }
+            val monthlyTithing = remember(monthlyBalance) { if (monthlyBalance > 0) monthlyBalance * 0.10 else 0.0 }
+            val monthlyTithingSplit = remember(monthlyTithing) { monthlyTithing / 2.0 }
 
             LazyColumn(
                 modifier = Modifier
@@ -652,6 +654,30 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                                     color = if (monthlyBalance >= 0) Tertiary else ErrorColor,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("DÍZIMO (10% do Resultado)", fontSize = 13.sp, color = OnSurfaceVariant)
+                                Text(
+                                    text = String.format(Locale("pt", "BR"), "R$ %,.2f", monthlyTithing),
+                                    fontSize = 13.sp,
+                                    color = OnSurface,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("DÍZIMO DIVIDIDO POR 2", fontSize = 13.sp, color = OnSurfaceVariant)
+                                Text(
+                                    text = String.format(Locale("pt", "BR"), "R$ %,.2f", monthlyTithingSplit),
+                                    fontSize = 13.sp,
+                                    color = OnSurface,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }

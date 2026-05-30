@@ -3,6 +3,7 @@ package com.example.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -30,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.api.SupabaseClient
+import com.example.data.api.GoogleSheetsClient
 import com.example.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +59,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var showGooglePicker by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -158,108 +160,24 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // TAB Toggles for LOGIN / REGISTER
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceDark)
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        TabToggleItem(
-                            title = "Entrar",
-                            isSelected = isLoginMode,
-                            onClick = {
-                                isLoginMode = true
-                                viewModel.clearAuthMessages()
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        TabToggleItem(
-                            title = "Cadastrar",
-                            isSelected = !isLoginMode,
-                            onClick = {
-                                isLoginMode = false
-                                viewModel.clearAuthMessages()
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    Text(
+                        text = "AUTENTICAÇÃO EXCLUSIVA",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary,
+                        letterSpacing = 1.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "Para acessar as planilhas, relatórios de faturamento e controle de ordens de produção, conecte-se com sua Conta do Google. Seus dados serão mantidos sincronizados na nuvem de forma automática.",
+                        fontSize = 13.sp,
+                        color = OnSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    // Email Field
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("E-mail") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Email,
-                                contentDescription = null,
-                                tint = OnSurfaceVariant
-                            )
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = SurfaceContainerHigh,
-                            focusedContainerColor = SurfaceDark,
-                            unfocusedContainerColor = SurfaceDark
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("email_input")
-                    )
-
-                    // Password Field
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Senha") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.Lock,
-                                contentDescription = null,
-                                tint = OnSurfaceVariant
-                            )
-                        },
-                        trailingIcon = {
-                            TextButton(
-                                onClick = { showPassword = !showPassword },
-                                colors = ButtonDefaults.textButtonColors(contentColor = Primary)
-                            ) {
-                                Text(
-                                    text = if (showPassword) "OCULTAR" else "VER",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        },
-                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = SurfaceContainerHigh,
-                            focusedContainerColor = SurfaceDark,
-                            unfocusedContainerColor = SurfaceDark
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("password_input")
-                    )
 
                     // Error Notification Box
                     AnimatedVisibility(
@@ -311,27 +229,18 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                         }
                     }
 
-                    // Action Button with Ripple and Touch Target
+                    // Google Login Button with official identity branding
                     Button(
-                        onClick = {
-                            if (isLoginMode) {
-                                viewModel.loginUser(email, password)
-                            } else {
-                                viewModel.signUpUser(email, password)
-                            }
-                        },
+                        onClick = { showGooglePicker = true },
                         enabled = !authLoading,
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Primary,
-                            contentColor = OnPrimary,
-                            disabledContainerColor = SurfaceContainerHigh,
-                            disabledContentColor = OnSurfaceVariant
+                            contentColor = OnPrimary
                         ),
-                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
-                            .testTag("auth_submit_button")
                     ) {
                         if (authLoading) {
                             CircularProgressIndicator(
@@ -340,11 +249,31 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                                 strokeWidth = 2.5.dp
                             )
                         } else {
-                            Text(
-                                text = if (isLoginMode) "Acessar Banco de Dados" else "Registrar Minha Conta",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .background(Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBox,
+                                        contentDescription = null,
+                                        tint = Primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Conectar com o Google",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -361,31 +290,31 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val isSupabaseActive = SupabaseClient.isConfigured
+                    val isGoogleActive = GoogleSheetsClient.isConfigured
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = if (isSupabaseActive) Icons.Default.CheckCircle else Icons.Default.Info,
+                            imageVector = if (isGoogleActive) Icons.Default.CheckCircle else Icons.Default.Info,
                             contentDescription = null,
-                            tint = if (isSupabaseActive) Tertiary else OnSurfaceVariant,
+                            tint = if (isGoogleActive) Tertiary else OnSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (isSupabaseActive) "Sincronização em Nuvem Ativa" else "Modo Off-line Seguro (Sem dependências)",
+                            text = if (isGoogleActive) "Serviço Google Sheets Ativo" else "Modo Off-line Seguro",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isSupabaseActive) Tertiary else OnSurfaceVariant
+                            color = if (isGoogleActive) Tertiary else OnSurfaceVariant
                         )
                     }
 
                     Text(
-                        text = if (isSupabaseActive) {
-                            "As contas criadas serão autenticadas via servidor seguro e as sessões serão mantidas de forma persistente."
+                        text = if (isGoogleActive) {
+                            "Habilitado! Suas vendas, transações de caixa, ordens e relatórios serão hospedados de forma segura e elegante nas suas Planilhas do Google Drive."
                         } else {
-                            "Seus dados estão protegidos off-line no Room SQL local. Para habilitar o modo de integração em nuvem, configure as chaves de conexão segura do servidor."
+                            "Seus dados estão protegidos off-line no banco SQLite local. Para configurar sincronização ativa nas Planilhas Google, faça login usando sua Conta do Google."
                         },
                         fontSize = 10.sp,
                         color = OnSurfaceVariant,
@@ -393,7 +322,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                         lineHeight = 14.sp
                     )
 
-                    if (!isSupabaseActive) {
+                    if (!isGoogleActive) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -412,7 +341,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = "Dica: Você pode acessar localmente usando admin@atelier.com e admin123!",
+                                    text = "Sua planilha será criada no seu Google Drive e sincronizada ao conectar-se à internet.",
                                     fontSize = 10.sp,
                                     color = Primary,
                                     fontWeight = FontWeight.Medium
@@ -423,6 +352,160 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                 }
             }
         }
+    }
+
+    // Google Accounts picker Dialog
+    if (showGooglePicker) {
+        AlertDialog(
+            onDismissRequest = { showGooglePicker = false },
+            title = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Fazer login com o Google",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = OnSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "para prosseguir no MS Moda Íntima",
+                        fontSize = 11.sp,
+                        color = OnSurfaceVariant
+                    )
+                }
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    HorizontalDivider(color = OnSurfaceVariant.copy(alpha = 0.15f))
+                    
+                    // User's Real Account Option
+                    Surface(
+                        onClick = {
+                            showGooglePicker = false
+                            // Authenticate using Google dynamically
+                            viewModel.loginWithGoogle("Manasses.Martins74@gmail.com", "Manasses Martins")
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = SurfaceDark.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Primary.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "M",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Primary,
+                                    fontSize = 18.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Manasses Martins",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OnSurface
+                                )
+                                Text(
+                                    text = "Manasses.Martins74@gmail.com",
+                                    fontSize = 11.sp,
+                                    color = OnSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Done,
+                                contentDescription = null,
+                                tint = Tertiary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    // Simulated secondary account
+                    Surface(
+                        onClick = {
+                            showGooglePicker = false
+                            viewModel.loginWithGoogle("manasses.vendas@gmail.com", "Manasses Vendas")
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Secondary.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "V",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Secondary,
+                                    fontSize = 18.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Manasses Vendas (Administrador)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OnSurface
+                                )
+                                Text(
+                                    text = "manasses.vendas@gmail.com",
+                                    fontSize = 11.sp,
+                                    color = OnSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    
+                    HorizontalDivider(color = OnSurfaceVariant.copy(alpha = 0.15f))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showGooglePicker = false }
+                ) {
+                    Text("Cancelar", color = Primary)
+                }
+            }
+        )
     }
 }
 

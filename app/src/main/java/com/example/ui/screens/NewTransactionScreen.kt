@@ -34,7 +34,8 @@ fun NewTransactionScreen(
     viewModel: TransactionViewModel,
     isCloudBackupEnabled: Boolean,
     onDismiss: () -> Unit,
-    onSubmit: (String, Double, String, String, String) -> Unit
+    onSubmit: (String, Double, String, String, String) -> Unit,
+    transactionToEdit: TransactionEntity? = null
 ) {
     val Primary = MaterialTheme.colorScheme.primary
     val OnPrimary = MaterialTheme.colorScheme.onPrimary
@@ -49,12 +50,12 @@ fun NewTransactionScreen(
     val SurfaceDark = MaterialTheme.colorScheme.background
     val ErrorColor = MaterialTheme.colorScheme.error
 
-    var description by remember { mutableStateOf("") }
-    var amountText by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("Variados") }
-    val type = "OUTFLOW"
-    val toggleSync = remember { mutableStateOf(isCloudBackupEnabled) }
-    var selectedWeek by remember { mutableStateOf("1ª Semana") }
+    var description by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.description ?: "") }
+    var amountText by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.amount?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "") }
+    var category by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.category ?: "Variados") }
+    val type = transactionToEdit?.type ?: "OUTFLOW"
+    val toggleSync = remember(transactionToEdit) { mutableStateOf(isCloudBackupEnabled) }
+    var selectedWeek by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.week ?: "1ª Semana") }
 
     val dynamicCategories by viewModel.allCategories.collectAsStateWithLifecycle(emptyList())
 
@@ -70,7 +71,7 @@ fun NewTransactionScreen(
 
     // Auto update selected category if not in the new list of categories
     LaunchedEffect(type, displayedCategories) {
-        if (category !in displayedCategories && displayedCategories.isNotEmpty()) {
+        if (category !in displayedCategories && displayedCategories.isNotEmpty() && transactionToEdit == null) {
             category = displayedCategories.first()
         }
     }
@@ -84,7 +85,7 @@ fun NewTransactionScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = "Novo Lançamento",
+                    text = if (transactionToEdit != null) "Editar Lançamento" else "Novo Lançamento",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary
@@ -136,7 +137,7 @@ fun NewTransactionScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Registre saídas e custos de MS Moda Íntima para manter as despesas organizadas e controladas.",
+                        text = if (transactionToEdit != null) "Atualize as informações do lançamento de fluxo de caixa para manter suas contas corretas." else "Registre saídas e custos de MS Moda Íntima para manter as despesas organizadas e controladas.",
                         fontSize = 14.sp,
                         color = OnSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -384,7 +385,7 @@ fun NewTransactionScreen(
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         Text(
-                            text = "Salvar Lançamento",
+                            text = if (transactionToEdit != null) "Atualizar Lançamento" else "Salvar Lançamento",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )

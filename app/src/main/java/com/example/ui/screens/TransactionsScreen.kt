@@ -45,7 +45,7 @@ import java.util.Date
 @Composable
 fun TransactionListItem(
     item: TransactionEntity,
-    onDeleteClick: () -> Unit
+    onItemClick: () -> Unit
 ) {
     val Primary = MaterialTheme.colorScheme.primary
     val OnPrimary = MaterialTheme.colorScheme.onPrimary
@@ -64,7 +64,7 @@ fun TransactionListItem(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("transaction_item_${item.id}")
-            .clickable { onDeleteClick() }
+            .clickable { onItemClick() }
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -81,7 +81,9 @@ fun TransactionListItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Left & Middle Content (wrapped in a row with weight(1f) to restrict its width)
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -108,52 +110,70 @@ fun TransactionListItem(
                         )
                     }
 
-                    Column {
+                    // Text Details Column (weight(1f) avoids pushing other elements)
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = item.description,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = OnSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(
-                                text = item.extraText,
-                                fontSize = 12.sp,
-                                color = OnSurfaceVariant
-                            )
-                            Text(
-                                text = "•",
-                                fontSize = 12.sp,
-                                color = OnSurfaceVariant.copy(alpha = 0.5f)
-                            )
+                            if (item.extraText.isNotEmpty()) {
+                                Text(
+                                    text = item.extraText,
+                                    fontSize = 12.sp,
+                                    color = OnSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                Text(
+                                    text = "•",
+                                    fontSize = 12.sp,
+                                    color = OnSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                            }
                             Text(
                                 text = item.dateString,
                                 fontSize = 11.sp,
-                                color = OnSurfaceVariant
+                                color = OnSurfaceVariant,
+                                maxLines = 1
                             )
                         }
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Right Content (Amount and Category badge)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.wrapContentWidth(Alignment.End)
+                ) {
                     val sign = if (item.type == "INFLOW") "+" else "-"
                     val color = if (item.type == "INFLOW") Tertiary else ErrorColor
                     Text(
                         text = String.format(Locale("pt", "BR"), "%s R$ %,.2f", sign, item.amount),
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = color
+                        color = color,
+                        maxLines = 1,
+                        softWrap = false
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
                             .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 1.dp)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = item.category.uppercase(Locale.getDefault()),
@@ -175,7 +195,7 @@ fun TransactionsScreen(
     transactions: List<TransactionEntity>,
     activeFilter: String,
     onFilterChanged: (String) -> Unit,
-    onDeleteClick: (Long) -> Unit
+    onItemClick: (TransactionEntity) -> Unit
 ) {
     val Primary = MaterialTheme.colorScheme.primary
     val OnPrimary = MaterialTheme.colorScheme.onPrimary
@@ -301,7 +321,7 @@ fun TransactionsScreen(
                 items(transactions, key = { it.id }) { item ->
                     TransactionListItem(
                         item = item,
-                        onDeleteClick = { onDeleteClick(item.id) }
+                        onItemClick = { onItemClick(item) }
                     )
                 }
             }

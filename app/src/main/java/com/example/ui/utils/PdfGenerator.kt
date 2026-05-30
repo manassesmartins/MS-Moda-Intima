@@ -39,7 +39,7 @@ fun generatePdfAndShare(
         paint.textSize = 10f
         paint.isFakeBoldText = false
         paint.color = Color.DKGRAY
-        canvas.drawText("Atelier de Costura e Confecção - Demonstrativo de Lucros e Custos", 40f, 85f, paint)
+        canvas.drawText("Produção e Confecção - Demonstrativo de Lucros e Custos", 40f, 85f, paint)
 
         // Metadata
         val df = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -131,13 +131,13 @@ fun generatePdfAndShare(
         canvas.drawLine(40f, currentY, 220f, currentY, paint)
         canvas.drawLine(340f, currentY, 520f, currentY, paint)
         
-        canvas.drawText("Assinatura Atelier / Contábil", 65f, currentY + 15, paint)
+        canvas.drawText("Assinatura Produção / Contábil", 65f, currentY + 15, paint)
         canvas.drawText("Data de Validação Oficial", 365f, currentY + 15, paint)
 
         pdfDocument.finishPage(page)
 
         // Write to cache directory to bypass FileProvider requirement securely
-        val file = File(context.cacheDir, "Relatorio_Atelier.pdf")
+        val file = File(context.cacheDir, "Relatorio_Producao.pdf")
         val stream = FileOutputStream(file)
         pdfDocument.writeTo(stream)
         pdfDocument.close()
@@ -148,9 +148,9 @@ fun generatePdfAndShare(
         // Share via Intent
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
-            putExtra(Intent.EXTRA_TITLE, "Exportar Relatório Atelier")
+            putExtra(Intent.EXTRA_TITLE, "Exportar Relatório Produção")
             putExtra(Intent.EXTRA_SUBJECT, "Relatório Geral - MS Moda Íntima")
-            putExtra(Intent.EXTRA_TEXT, "Segue anexo o Relatório Executivo do Atelier MS Moda Íntima.")
+            putExtra(Intent.EXTRA_TEXT, "Segue anexo o Relatório Executivo de Produção MS Moda Íntima.")
             
             val fileUri = Uri.fromFile(file)
             putExtra(Intent.EXTRA_STREAM, fileUri)
