@@ -360,6 +360,136 @@ fun SettingsScreen(
                         Text("Buscar Atualização", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+
+                var showAdvanced by remember { mutableStateOf(false) }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showAdvanced = !showAdvanced }
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Configuração do Servidor do App",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                    Text(
+                        text = if (showAdvanced) "OCULTAR" else "ALTERAR SERVIDOR",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OnSurfaceVariant
+                    )
+                }
+
+                if (showAdvanced) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    ) {
+                        Text(
+                            text = "Ajuste os parâmetros abaixo para sincronizar as atualizações com seu próprio repositório público do GitHub:",
+                            fontSize = 11.sp,
+                            color = OnSurfaceVariant,
+                            lineHeight = 15.sp
+                        )
+
+                        OutlinedTextField(
+                            value = ownerInput,
+                            onValueChange = { ownerInput = it },
+                            label = { Text("Dono do Repositório (Usuário/Org)", fontSize = 11.sp) },
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                focusedContainerColor = Color.Black.copy(alpha = 0.2f),
+                                unfocusedContainerColor = Color.Black.copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = repoInput,
+                            onValueChange = { repoInput = it },
+                            label = { Text("Nome do Repositório", fontSize = 11.sp) },
+                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                focusedContainerColor = Color.Black.copy(alpha = 0.2f),
+                                unfocusedContainerColor = Color.Black.copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = branchInput,
+                                onValueChange = { branchInput = it },
+                                label = { Text("Branch", fontSize = 11.sp) },
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                    focusedContainerColor = Color.Black.copy(alpha = 0.2f),
+                                    unfocusedContainerColor = Color.Black.copy(alpha = 0.1f)
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            OutlinedTextField(
+                                value = apkPathInput,
+                                onValueChange = { apkPathInput = it },
+                                label = { Text("Caminho do APK", fontSize = 11.sp) },
+                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp),
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                    focusedContainerColor = Color.Black.copy(alpha = 0.2f),
+                                    unfocusedContainerColor = Color.Black.copy(alpha = 0.1f)
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1.5f)
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                updater.owner = ownerInput
+                                updater.repo = repoInput
+                                updater.branch = branchInput
+                                updater.apkPath = apkPathInput
+                                Toast.makeText(context, "Parâmetros do servidor atualizados!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = OnPrimary
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Salvar Configuração", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
         }
     }

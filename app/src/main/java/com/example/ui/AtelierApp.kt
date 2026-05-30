@@ -827,6 +827,47 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 )
             }
 
+            is UpdateStatus.UpToDate -> {
+                AlertDialog(
+                    onDismissRequest = { updater.clearStatus() },
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = Color(0xFF34D399), // custom beautiful emerald green
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Sem Atualizações",
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface
+                            )
+                        }
+                    },
+                    containerColor = SurfaceContainerHigh,
+                    text = {
+                        Text(
+                            text = "Seu aplicativo está totalmente atualizado com a nuvem na versão mais recente!\n\n(Versão instalada: ${updater.getLocalVersion()})",
+                            fontSize = 13.sp,
+                            color = OnSurfaceVariant
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { updater.clearStatus() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Concluído", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                )
+            }
+
             else -> {}
         }
 

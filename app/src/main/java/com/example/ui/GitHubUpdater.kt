@@ -269,7 +269,20 @@ class GitHubUpdater(private val context: Context) {
                     } else {
                         Log.e("GitHubUpdater", "Commits API returned error code ${response.code}")
                         if (forceNotify) {
-                            if (response.code == 403) {
+                            if (response.code == 404) {
+                                if (owner == "ManassesMartins" && (repo == "workspace-ms-producao-valeriacalc" || repo == "workspace-atelier-valeriacalc")) {
+                                    // Default repo is local or doesn't exist publicly yet; treat it as up to date to avoid an error popup.
+                                    _status.value = UpdateStatus.UpToDate
+                                } else {
+                                    _status.value = UpdateStatus.Error(
+                                        "Erro 404: O repositório '$owner/$repo' não foi encontrado no GitHub.\n\n" +
+                                        "Caso tenha criado um novo repositório para este aplicativo, certifique-se de que:\n" +
+                                        "1. O nome do usuário e do repositório estão digitados corretamente.\n" +
+                                        "2. O repositório está configurado como PÚBLICO nas configurações do GitHub (contas sem autenticação direta no app não conseguem ler repositórios privados).\n" +
+                                        "3. A branch '$branch' e o arquivo contendo o APK '$apkPath' existem no repositório."
+                                    )
+                                }
+                            } else if (response.code == 403) {
                                 _status.value = UpdateStatus.Error("Limite de requisições da API do GitHub excedido (HTTP 403).")
                             } else {
                                 _status.value = UpdateStatus.Error("Erro na API do GitHub (HTTP ${response.code}).")
