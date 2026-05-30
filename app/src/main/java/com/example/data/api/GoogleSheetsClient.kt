@@ -124,8 +124,8 @@ interface GoogleSheetsApi {
 object GoogleSheetsClient {
     private const val TAG = "GoogleSheetsClient"
     
-    // Default master Spreadsheet ID for MS Moda Íntima
-    var spreadsheetId: String = "1MS_ProducaoModaIntima_Backup_DB"
+    // Default master Spreadsheet ID for Produção Backup
+    var spreadsheetId: String = "1MS_Producao_Backup_DB"
     
     var googleAccessToken: String = "ya29.mock-google-login-sheets-key-access-msmodaintima-token"
 

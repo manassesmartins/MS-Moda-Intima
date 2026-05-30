@@ -131,7 +131,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "MS Moda Íntima",
+                    text = "Gestão de Produção",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = OnSurface,
@@ -383,7 +383,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "para prosseguir no MS Moda Íntima",
+                        text = "para prosseguir no aplicativo",
                         fontSize = 11.sp,
                         color = OnSurfaceVariant
                     )

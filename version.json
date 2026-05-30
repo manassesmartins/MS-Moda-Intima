@@ -1,7 +1,0 @@
-{
-  "version": "1.2.11",
-  "changelog": "Build automático: Commit ci: update build process and app version
-
-Use a stable debug.keystore for builds and reset the application version to 1.2.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

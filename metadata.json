@@ -1,6 +1,6 @@
 {
-  "name": "MS",
-  "description": "Gerenciador financeiro para negócios de moda íntima feminina, com relatórios de vendas, controle de pedidos e acesso offline.",
+  "name": "Produção",
+  "description": "Gerenciador financeiro para pequenos negócios e confecções de vestuário e produção têxtil, integrado ao Google Sheets com suporte offline.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

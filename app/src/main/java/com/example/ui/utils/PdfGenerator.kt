@@ -146,11 +146,13 @@ fun generatePdfAndShare(
         Toast.makeText(context, "PDF pronto: " + file.name, Toast.LENGTH_SHORT).show()
 
         // Share via Intent
+        val sessionManager = com.example.data.SessionManager(context)
+        val bName = sessionManager.appName
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
             putExtra(Intent.EXTRA_TITLE, "Exportar Relatório Produção")
-            putExtra(Intent.EXTRA_SUBJECT, "Relatório Geral - MS Moda Íntima")
-            putExtra(Intent.EXTRA_TEXT, "Segue anexo o Relatório Executivo de Produção MS Moda Íntima.")
+            putExtra(Intent.EXTRA_SUBJECT, "Relatório Geral - $bName")
+            putExtra(Intent.EXTRA_TEXT, "Segue anexo o Relatório Executivo de Produção - $bName.")
             
             val fileUri = Uri.fromFile(file)
             putExtra(Intent.EXTRA_STREAM, fileUri)

@@ -137,7 +137,7 @@ fun NewTransactionScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = if (transactionToEdit != null) "Atualize as informações do lançamento de fluxo de caixa para manter suas contas corretas." else "Registre saídas e custos de MS Moda Íntima para manter as despesas organizadas e controladas.",
+                        text = if (transactionToEdit != null) "Atualize as informações do lançamento de fluxo de caixa para manter suas contas corretas." else "Registre saídas e custos do seu negócio para manter as despesas organizadas e controladas.",
                         fontSize = 14.sp,
                         color = OnSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -415,7 +415,7 @@ fun NewTransactionScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Os lançamentos salvos aqui impactam diretamente seus relatórios mensais de lucratividade na MS Moda Íntima.",
+                            text = "Os lançamentos salvos aqui impactam diretamente seus relatórios mensais de lucratividade do seu negócio.",
                             fontSize = 11.sp,
                             color = OnSurfaceVariant,
                             lineHeight = 16.sp

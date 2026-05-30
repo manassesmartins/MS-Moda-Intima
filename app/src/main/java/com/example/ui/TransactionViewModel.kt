@@ -195,9 +195,19 @@ class TransactionViewModel(
     }
 
     fun logoutUser() {
-        sessionManager.clearSession()
-        _isUserLoggedIn.value = false
-        clearAuthMessages()
+        viewModelScope.launch {
+            try {
+                repository.deleteBrandConfig()
+                repository.clearAll()
+            } catch (e: Exception) {
+                android.util.Log.e("TransactionViewModel", "Error purging user data on logout", e)
+            }
+            sessionManager.clearSession()
+            _isUserLoggedIn.value = false
+            clearAuthMessages()
+            _appName.value = "MS"
+            _colorSchemeName.value = "PINK"
+        }
     }
 
     fun signUpUser(email: String, password: String) {
@@ -315,7 +325,7 @@ class TransactionViewModel(
                 
                 // Define a dynamic spreadsheet ID associated with the user's account
                 val cleanEmail = email.replace("@", "_").replace(".", "_")
-                com.example.data.api.GoogleSheetsClient.spreadsheetId = "1Producao_${cleanEmail}_ModaIntima_Backup_DB"
+                com.example.data.api.GoogleSheetsClient.spreadsheetId = "1Producao_${cleanEmail}_Backup_DB"
                 
                 // Save user profile locally
                 repository.insertUser(
@@ -338,7 +348,7 @@ class TransactionViewModel(
                 // Synchronize values initially
                 com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
                 
-                _authSuccessMessage.value = "Conectado à sua conta Google!\nPlanilha de Banco de Dados 'Producao_${cleanEmail}_ModaIntima_Backup_DB' criada na sua conta e sincronizada com sucesso."
+                _authSuccessMessage.value = "Conectado à sua conta Google!\nPlanilha de Banco de Dados 'Producao_${cleanEmail}_Backup_DB' criada na sua conta e sincronizada com sucesso."
                 _isUserLoggedIn.value = true
             } catch (e: Exception) {
                 _authError.value = "Falha ao autenticar com o Google: ${e.localizedMessage}"
@@ -349,6 +359,50 @@ class TransactionViewModel(
     }
 
     // App configuration state flows
+    val brandConfig: StateFlow<com.example.data.BrandConfigEntity?> = repository.brandConfig
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    init {
+        viewModelScope.launch {
+            repository.brandConfig.collect { config ->
+                if (config != null && config.isConfigured) {
+                    sessionManager.appName = config.brandName
+                    sessionManager.colorScheme = config.colorScheme
+                    _appName.value = config.brandName
+                    _colorSchemeName.value = config.colorScheme
+                }
+            }
+        }
+    }
+
+    fun saveBrandConfig(
+        brandName: String,
+        category: String,
+        niche: String,
+        colorScheme: String,
+        logoText: String,
+        logoIcon: String
+    ) {
+        viewModelScope.launch {
+            val entity = com.example.data.BrandConfigEntity(
+                brandName = brandName,
+                category = category,
+                niche = niche,
+                colorScheme = colorScheme,
+                logoText = logoText,
+                logoIcon = logoIcon,
+                isConfigured = true
+            )
+            repository.insertBrandConfig(entity)
+            updateAppName(brandName)
+            updateColorScheme(colorScheme)
+        }
+    }
+
     private val _appName = MutableStateFlow(sessionManager.appName)
     val appName: StateFlow<String> = _appName.asStateFlow()
 

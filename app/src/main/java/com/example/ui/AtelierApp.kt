@@ -260,6 +260,15 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
         return
     }
 
+    val brandConfig by viewModel.brandConfig.collectAsStateWithLifecycle()
+
+    if (brandConfig == null || !brandConfig!!.isConfigured) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            com.example.ui.screens.BusinessSetupScreen(viewModel = viewModel)
+        }
+        return
+    }
+
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val isAddingTransaction by viewModel.isAddingTransaction.collectAsStateWithLifecycle()
     val transactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
@@ -344,7 +353,8 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
             if (isWideScreen) {
                 MsModaIntimaNavigationRail(
                     currentTab = currentTab,
-                    onTabSelected = { viewModel.setTab(it) }
+                    onTabSelected = { viewModel.setTab(it) },
+                    brandConfig = brandConfig
                 )
             }
 
@@ -1162,6 +1172,7 @@ fun MsModaIntimaBottomBar(
 fun MsModaIntimaNavigationRail(
     currentTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
+    brandConfig: com.example.data.BrandConfigEntity?,
     modifier: Modifier = Modifier
 ) {
     val Primary = MaterialTheme.colorScheme.primary
@@ -1186,20 +1197,44 @@ fun MsModaIntimaNavigationRail(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
         
-        // Brand logo/letters matching "MS Moda Íntima"
+        // Brand logo/letters matching user business style
+        val logoText = brandConfig?.logoText ?: "MS"
+        val logoIconName = brandConfig?.logoIcon ?: "CROWN"
+        val iconsMap = mapOf(
+            "CROWN" to Icons.Default.Star,
+            "BAG" to Icons.Default.ShoppingCart,
+            "HEART" to Icons.Default.Favorite,
+            "BUILD" to Icons.Default.Build,
+            "PERSON" to Icons.Default.Person
+        )
+        val selectedIcon = iconsMap[logoIconName] ?: Icons.Default.Star
+
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(54.dp)
                 .background(Primary.copy(alpha = 0.15f), CircleShape)
+                .border(1.dp, Primary, CircleShape)
                 .glow(Primary),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "MS",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Primary
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = selectedIcon,
+                    contentDescription = null,
+                    tint = Primary,
+                    modifier = Modifier.size(13.dp)
+                )
+                Text(
+                    text = logoText.uppercase().take(3),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = OnSurface,
+                    lineHeight = 11.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
