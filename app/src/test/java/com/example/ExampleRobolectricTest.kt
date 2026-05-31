@@ -36,7 +36,8 @@ class ExampleRobolectricTest {
       database.categoryDao,
       database.orderDao,
       database.pieceCalculationDao,
-      database.userDao
+      database.userDao,
+      database.brandConfigDao
     )
     
     val sessionManager = com.example.data.SessionManager(context)

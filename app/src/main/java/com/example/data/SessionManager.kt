@@ -36,13 +36,30 @@ class SessionManager(context: Context) {
         get() = prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f)
         set(value) = prefs.edit().putFloat(KEY_FONT_SIZE_SCALE, value).apply()
 
-    fun saveSession(userId: String, email: String, authToken: String? = null, usingSupabase: Boolean = false) {
+    var userName: String
+        get() = prefs.getString("user_name", "") ?: ""
+        set(value) = prefs.edit().putString("user_name", value).apply()
+
+    var userAvatar: String
+        get() = prefs.getString("user_avatar", "") ?: ""
+        set(value) = prefs.edit().putString("user_avatar", value).apply()
+
+    fun saveSession(
+        userId: String,
+        email: String,
+        authToken: String? = null,
+        usingSupabase: Boolean = false,
+        name: String? = null,
+        avatarUrl: String? = null
+    ) {
         prefs.edit().apply {
             putBoolean(KEY_IS_LOGGED_IN, true)
             putString(KEY_USER_ID, userId)
             putString(KEY_USER_EMAIL, email)
             putString(KEY_AUTH_TOKEN, authToken)
             putBoolean(KEY_USING_SUPABASE, usingSupabase)
+            putString("user_name", name ?: "")
+            putString("user_avatar", avatarUrl ?: "")
             apply()
         }
     }

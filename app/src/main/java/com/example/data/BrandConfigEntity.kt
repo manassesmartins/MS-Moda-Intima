@@ -12,5 +12,6 @@ data class BrandConfigEntity(
     val colorScheme: String,
     val logoText: String,
     val logoIcon: String,
+    val logoImage: String? = null,
     val isConfigured: Boolean = false
 )

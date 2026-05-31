@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
 import com.example.data.*
 import com.example.ui.theme.*
 
@@ -260,7 +261,34 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
         return
     }
 
+    val isBrandLoaded by viewModel.isBrandLoaded.collectAsStateWithLifecycle()
     val brandConfig by viewModel.brandConfig.collectAsStateWithLifecycle()
+
+    if (!isBrandLoaded) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(56.dp)
+                )
+                Text(
+                    text = "Carregando configurações...",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+        return
+    }
 
     if (brandConfig == null || !brandConfig!!.isConfigured) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1213,27 +1241,38 @@ fun MsModaIntimaNavigationRail(
             modifier = Modifier
                 .size(54.dp)
                 .background(Primary.copy(alpha = 0.15f), CircleShape)
-                .border(1.dp, Primary, CircleShape)
+                .border(1.5.dp, Primary, CircleShape)
                 .glow(Primary),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = selectedIcon,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(13.dp)
+            val customLogoImg = brandConfig?.logoImage
+            if (!customLogoImg.isNullOrBlank()) {
+                AsyncImage(
+                    model = customLogoImg,
+                    contentDescription = "Logo da Marca",
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
                 )
-                Text(
-                    text = logoText.uppercase().take(3),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = OnSurface,
-                    lineHeight = 11.sp
-                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = selectedIcon,
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = logoText.uppercase().take(3),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = OnSurface,
+                        lineHeight = 11.sp
+                    )
+                }
             }
         }
 

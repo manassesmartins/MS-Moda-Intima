@@ -26,6 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import android.net.Uri
 import com.example.ui.TransactionViewModel
 import com.example.ui.theme.*
 
@@ -42,6 +46,7 @@ fun BusinessSetupScreen(viewModel: TransactionViewModel) {
     var selectedColor by remember { mutableStateOf("PINK") }
     var logoText by remember { mutableStateOf("") }
     var selectedIconName by remember { mutableStateOf("CROWN") }
+    var logoImageBase64 by remember { mutableStateOf<String?>(null) }
 
     // Standard pre-defined options for categories
     val categoryOptions = listOf("Moda Íntima", "Vestuário / Têxtil", "Moda Praia / Fitness", "Artesanato & Crochê", "Calçados & Bolsas", "Outro")
@@ -161,29 +166,30 @@ fun BusinessSetupScreen(viewModel: TransactionViewModel) {
                                 .border(1.5.dp, previewScheme.primary, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = iconsMap[selectedIconName] ?: Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = previewScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                            if (!logoImageBase64.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = logoImageBase64,
+                                    contentDescription = "Pré-visualização da logo",
+                                    modifier = Modifier
+                                        .size(54.dp)
+                                        .clip(CircleShape)
                                 )
-                                if (logoText.isNotBlank()) {
-                                    Text(
-                                        text = logoText.uppercase().take(3),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = previewScheme.onSurface
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = iconsMap[selectedIconName] ?: Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = previewScheme.primary,
+                                        modifier = Modifier.size(16.dp)
                                     )
-                                } else {
                                     Text(
-                                        text = "LOG",
-                                        fontSize = 10.sp,
+                                        text = if (brandName.isNotBlank()) brandName.take(3).uppercase() else "LOG",
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = previewScheme.onSurface.copy(alpha = 0.5f)
+                                        color = previewScheme.onSurface
                                     )
                                 }
                             }
@@ -313,83 +319,88 @@ fun BusinessSetupScreen(viewModel: TransactionViewModel) {
                         )
                     }
 
-                    // Field 4: Logo Customizations
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    // Field 4: Custom Logo Image Upload Picker
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text("Iniciais da Logo", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            OutlinedTextField(
-                                value = logoText,
-                                onValueChange = { if (it.length <= 3) logoText = it },
-                                placeholder = { Text("Ex: BT") },
-                                singleLine = true,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = previewScheme.primary,
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.12f),
-                                    focusedContainerColor = Color.Black.copy(alpha = 0.25f),
-                                    unfocusedContainerColor = Color.Black.copy(alpha = 0.12f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        Text(
+                            text = "Carregar Imagem de Logo",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        
+                        val launcher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.GetContent()
+                        ) { uri: Uri? ->
+                            uri?.let {
+                                try {
+                                    val inputStream: java.io.InputStream? = context.contentResolver.openInputStream(it)
+                                    val bytes = inputStream?.readBytes()
+                                    inputStream?.close()
+                                    if (bytes != null) {
+                                        val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                                        logoImageBase64 = "data:image/png;base64,$base64"
+                                        Toast.makeText(context, "Logo carregada com sucesso!", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Erro ao carregar imagem: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
 
-                        Column(
-                            modifier = Modifier.weight(1.5f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        OutlinedCard(
+                            onClick = { launcher.launch("image/*") },
+                            colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.25f)),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Símbolo Iconográfico", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            var showIconMenu by remember { mutableStateOf(false) }
-                            Box {
-                                OutlinedCard(
-                                    onClick = { showIconMenu = true },
-                                    colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.25f)),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-                                    shape = RoundedCornerShape(8.dp),
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(52.dp)
+                                        .size(48.dp)
+                                        .background(previewScheme.primary.copy(alpha = 0.12f), CircleShape)
+                                        .border(1.dp, previewScheme.primary.copy(alpha = 0.3f), CircleShape),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(horizontal = 12.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = iconLabels[selectedIconName] ?: "Selecione",
-                                            fontSize = 12.sp,
-                                            color = Color.White
+                                    if (!logoImageBase64.isNullOrBlank()) {
+                                        AsyncImage(
+                                            model = logoImageBase64,
+                                            contentDescription = "Logo",
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
                                         )
+                                    } else {
                                         Icon(
-                                            imageVector = Icons.Default.ArrowDropDown,
+                                            imageVector = Icons.Default.Add,
                                             contentDescription = null,
-                                            tint = previewScheme.primary
+                                            tint = previewScheme.primary,
+                                            modifier = Modifier.size(24.dp)
                                         )
                                     }
                                 }
-                                DropdownMenu(
-                                    expanded = showIconMenu,
-                                    onDismissRequest = { showIconMenu = false },
-                                    modifier = Modifier.background(Color(0xFF1C1736))
-                                ) {
-                                    iconLabels.forEach { (key, label) ->
-                                        DropdownMenuItem(
-                                            text = { Text(label, color = Color.White, fontSize = 12.sp) },
-                                            onClick = {
-                                                selectedIconName = key
-                                                showIconMenu = false
-                                            }
-                                        )
-                                    }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (!logoImageBase64.isNullOrBlank()) "Imagem Pronta" else "Escolher Imagem Galeria",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = if (!logoImageBase64.isNullOrBlank()) "Logomarca carregada com sucesso localmente" else "Toque para abrir seus arquivos de imagem locais",
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.6f)
+                                    )
                                 }
                             }
                         }
@@ -445,14 +456,14 @@ fun BusinessSetupScreen(viewModel: TransactionViewModel) {
                     if (brandName.isBlank()) {
                         Toast.makeText(context, "Insira o nome da sua marca!", Toast.LENGTH_SHORT).show()
                     } else {
-                        val finalLogoText = if (logoText.isNotBlank()) logoText else brandName.take(3)
                         viewModel.saveBrandConfig(
                             brandName = brandName,
                             category = category,
                             niche = niche,
                             colorScheme = selectedColor,
-                            logoText = finalLogoText,
-                            logoIcon = selectedIconName
+                            logoText = brandName.take(3),
+                            logoIcon = "IMAGE",
+                            logoImage = logoImageBase64
                         )
                         Toast.makeText(context, "Sua marca está pronta para uso!", Toast.LENGTH_SHORT).show()
                     }

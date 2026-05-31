@@ -170,6 +170,9 @@ class TransactionViewModel(
     private val _isUserLoggedIn = MutableStateFlow(sessionManager.isLoggedIn)
     val isUserLoggedIn: StateFlow<Boolean> = _isUserLoggedIn.asStateFlow()
 
+    private val _isBrandLoaded = MutableStateFlow(false)
+    val isBrandLoaded: StateFlow<Boolean> = _isBrandLoaded.asStateFlow()
+
     private val _authError = MutableStateFlow<String?>(null)
     val authError: StateFlow<String?> = _authError.asStateFlow()
 
@@ -204,6 +207,8 @@ class TransactionViewModel(
             }
             sessionManager.clearSession()
             _isUserLoggedIn.value = false
+            _isBrandLoaded.value = false
+            _brandConfig.value = null
             clearAuthMessages()
             _appName.value = "MS"
             _colorSchemeName.value = "PINK"
@@ -243,7 +248,9 @@ class TransactionViewModel(
                     // Push initialized structure
                     com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
                     
+                    _brandConfig.value = null
                     _authSuccessMessage.value = "Conta cadastrada com sucesso!"
+                    _isBrandLoaded.value = true
                     _isUserLoggedIn.value = true
                 }
             } catch (e: Exception) {
@@ -278,7 +285,16 @@ class TransactionViewModel(
                         // Sincroniza dados com Planilhas Google
                         com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
                         
+                        val config = repository.getBrandConfig()
+                        _brandConfig.value = config
+                        if (config != null && config.isConfigured) {
+                            sessionManager.appName = config.brandName
+                            sessionManager.colorScheme = config.colorScheme
+                            _appName.value = config.brandName
+                            _colorSchemeName.value = config.colorScheme
+                        }
                         _authSuccessMessage.value = "Autenticação concluída e integrada com Planilhas Google!"
+                        _isBrandLoaded.value = true
                         _isUserLoggedIn.value = true
                     } else {
                         _authError.value = "A senha informada está incorreta para este e-mail. Tente novamente!"
@@ -301,7 +317,16 @@ class TransactionViewModel(
                             usingSupabase = false
                         )
                         com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
+                        val config = repository.getBrandConfig()
+                        _brandConfig.value = config
+                        if (config != null && config.isConfigured) {
+                            sessionManager.appName = config.brandName
+                            sessionManager.colorScheme = config.colorScheme
+                            _appName.value = config.brandName
+                            _colorSchemeName.value = config.colorScheme
+                        }
                         _authSuccessMessage.value = "Conta de Administrador local iniciada!"
+                        _isBrandLoaded.value = true
                         _isUserLoggedIn.value = true
                     } else {
                         _authError.value = "Conta de usuário não encontrada. Se este é o seu primeiro acesso, clique na guia 'Cadastrar' acima para criar sua conta!"
@@ -315,7 +340,7 @@ class TransactionViewModel(
         }
     }
 
-    fun loginWithGoogle(email: String, name: String) {
+    fun loginWithGoogle(email: String, name: String, avatarUrl: String? = null) {
         viewModelScope.launch {
             _authLoading.value = true
             _authError.value = null
@@ -326,6 +351,8 @@ class TransactionViewModel(
                 // Define a dynamic spreadsheet ID associated with the user's account
                 val cleanEmail = email.replace("@", "_").replace(".", "_")
                 com.example.data.api.GoogleSheetsClient.spreadsheetId = "1Producao_${cleanEmail}_Backup_DB"
+                
+                val computedAvatarUrl = avatarUrl ?: "https://ui-avatars.com/api/?name=${java.net.URLEncoder.encode(name, "UTF-8")}&background=${if (email.lowercase().contains("vendas")) "34D399" else "F472B6"}&color=1A0A13&bold=true&size=120"
                 
                 // Save user profile locally
                 repository.insertUser(
@@ -339,16 +366,30 @@ class TransactionViewModel(
                     userId = userId,
                     email = email,
                     authToken = "google-access-token-placeholder",
-                    usingSupabase = true // Ativa modo de backup do Google Sheets
+                    usingSupabase = true, // Ativa modo de backup do Google Sheets
+                    name = name,
+                    avatarUrl = computedAvatarUrl
                 )
                 
-                // Populate base data if database empty
+                // Recover previous data & settings if any exist under this Google user ID
+                com.example.data.GoogleSheetsSyncManager.pullRemoteData(repository, sessionManager)
+                
+                // Populate base categories if database is still empty after pulling
                 repository.seedMockDataIfEmpty()
                 
-                // Synchronize values initially
+                // Sychronize database status after initial login sequence
                 com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
                 
+                val config = repository.getBrandConfig()
+                _brandConfig.value = config
+                if (config != null && config.isConfigured) {
+                    sessionManager.appName = config.brandName
+                    sessionManager.colorScheme = config.colorScheme
+                    _appName.value = config.brandName
+                    _colorSchemeName.value = config.colorScheme
+                }
                 _authSuccessMessage.value = "Conectado à sua conta Google!\nPlanilha de Banco de Dados 'Producao_${cleanEmail}_Backup_DB' criada na sua conta e sincronizada com sucesso."
+                _isBrandLoaded.value = true
                 _isUserLoggedIn.value = true
             } catch (e: Exception) {
                 _authError.value = "Falha ao autenticar com o Google: ${e.localizedMessage}"
@@ -359,22 +400,20 @@ class TransactionViewModel(
     }
 
     // App configuration state flows
-    val brandConfig: StateFlow<com.example.data.BrandConfigEntity?> = repository.brandConfig
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    private val _brandConfig = MutableStateFlow<com.example.data.BrandConfigEntity?>(null)
+    val brandConfig: StateFlow<com.example.data.BrandConfigEntity?> = _brandConfig.asStateFlow()
 
     init {
         viewModelScope.launch {
             repository.brandConfig.collect { config ->
+                _brandConfig.value = config
                 if (config != null && config.isConfigured) {
                     sessionManager.appName = config.brandName
                     sessionManager.colorScheme = config.colorScheme
                     _appName.value = config.brandName
                     _colorSchemeName.value = config.colorScheme
                 }
+                _isBrandLoaded.value = true
             }
         }
     }
@@ -385,7 +424,8 @@ class TransactionViewModel(
         niche: String,
         colorScheme: String,
         logoText: String,
-        logoIcon: String
+        logoIcon: String,
+        logoImage: String? = null
     ) {
         viewModelScope.launch {
             val entity = com.example.data.BrandConfigEntity(
@@ -395,11 +435,13 @@ class TransactionViewModel(
                 colorScheme = colorScheme,
                 logoText = logoText,
                 logoIcon = logoIcon,
+                logoImage = logoImage,
                 isConfigured = true
             )
             repository.insertBrandConfig(entity)
             updateAppName(brandName)
             updateColorScheme(colorScheme)
+            triggerSyncSimulation()
         }
     }
 

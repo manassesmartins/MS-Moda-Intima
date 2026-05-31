@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
+import androidx.compose.ui.draw.clip
 import com.example.data.*
 import com.example.ui.theme.*
 
@@ -91,6 +93,89 @@ fun SettingsScreen(
                     color = OnSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+
+        // Google Account Profile Card
+        item {
+            val userNameStr = viewModel.sessionManager.userName.ifBlank { "Usuário Ativo" }
+            val avatarUrlStr = viewModel.sessionManager.userAvatar
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (avatarUrlStr.isNotBlank()) {
+                        AsyncImage(
+                            model = avatarUrlStr,
+                            contentDescription = "Foto do perfil Google",
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .border(1.5.dp, Primary, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(Primary.copy(alpha = 0.15f), CircleShape)
+                                .border(1.5.dp, Primary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = userNameStr,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = userEmail ?: "Sem e-mail conectado",
+                            fontSize = 12.sp,
+                            color = OnSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(Primary.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "CONECTADO VIA GOOGLE",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Primary
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Sair da Conta",
+                            tint = ErrorColor
+                        )
+                    }
+                }
             }
         }
 
