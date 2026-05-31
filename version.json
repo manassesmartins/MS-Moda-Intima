@@ -1,0 +1,7 @@
+{
+  "version": "1.2.13",
+  "changelog": "Build automático: Commit refactor: implement global CSS variables for theming
+
+Standardize UI colors using CSS custom properties in index.html to improve maintainability and consistency across components. Also, clean up build version metadata.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
+}
