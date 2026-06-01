@@ -234,6 +234,13 @@ class TransactionViewModel(
             } catch (e: Exception) {
                 android.util.Log.e("TransactionViewModel", "Error purging user data on logout", e)
             }
+            try {
+                val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+                val googleSignInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
+                googleSignInClient.signOut()
+            } catch (e: Exception) {
+                android.util.Log.e("TransactionViewModel", "Error signing out Google client", e)
+            }
             sessionManager.clearSession()
             _isUserLoggedIn.value = false
             _isBrandLoaded.value = false

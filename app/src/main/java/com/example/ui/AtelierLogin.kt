@@ -66,9 +66,24 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var showGooglePicker by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    // Auto Google sign-in on launch if already authenticated previously
+    LaunchedEffect(Unit) {
+        try {
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(context)
+            if (lastAccount != null && lastAccount.email != null) {
+                viewModel.loginWithGoogle(
+                    email = lastAccount.email!!,
+                    name = lastAccount.displayName ?: "Usuário Google",
+                    avatarUrl = lastAccount.photoUrl?.toString()
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("GoogleSignIn", "Automatic Google Sign-in on launch failed", e)
+        }
+    }
 
     // Set up real Google Sign-In options with Drive scopes
     val gso = remember {
@@ -101,10 +116,8 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                 viewModel.setAuthError("Erro ao recuperar informações da conta Google: ${e.localizedMessage}")
             }
         } else {
-            // Cancelled or missing Google Play Services.
-            // Under emulator/development, we still let them use the developer picker dialog
-            // as fallback so development is never blocked.
-            showGooglePicker = true
+            // Cancelled or unable to sign in
+            viewModel.setAuthError("O login com o Google foi cancelado ou não pôde ser concluído.")
         }
     }
 
@@ -280,7 +293,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                             try {
                                 googleSignInLauncher.launch(googleSignInClient.signInIntent)
                             } catch (e: Exception) {
-                                showGooglePicker = true
+                                viewModel.setAuthError("Erro ao iniciar o login com o Google: ${e.localizedMessage}")
                             }
                         },
                         enabled = !authLoading,
@@ -405,159 +418,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
         }
     }
 
-    // Google Accounts picker Dialog
-    if (showGooglePicker) {
-        AlertDialog(
-            onDismissRequest = { showGooglePicker = false },
-            title = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = null,
-                            tint = Primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Fazer login com o Google",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = OnSurface
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "para prosseguir no aplicativo",
-                        fontSize = 11.sp,
-                        color = OnSurfaceVariant
-                    )
-                }
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    HorizontalDivider(color = OnSurfaceVariant.copy(alpha = 0.15f))
-                    
-                    // User's Real Account Option
-                    Surface(
-                        onClick = {
-                            showGooglePicker = false
-                            // Authenticate using Google dynamically
-                            viewModel.loginWithGoogle("Manasses.Martins74@gmail.com", "Manasses Martins")
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = SurfaceDark.copy(alpha = 0.5f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Primary.copy(alpha = 0.1f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "M",
-                                    fontWeight = FontWeight.Bold,
-                                    color = Primary,
-                                    fontSize = 18.sp
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Manasses Martins",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = OnSurface
-                                )
-                                Text(
-                                    text = "Manasses.Martins74@gmail.com",
-                                    fontSize = 11.sp,
-                                    color = OnSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.Done,
-                                contentDescription = null,
-                                tint = Tertiary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
 
-                    // Simulated secondary account
-                    Surface(
-                        onClick = {
-                            showGooglePicker = false
-                            viewModel.loginWithGoogle("manasses.vendas@gmail.com", "Manasses Vendas")
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color.Transparent,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Secondary.copy(alpha = 0.1f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "V",
-                                    fontWeight = FontWeight.Bold,
-                                    color = Secondary,
-                                    fontSize = 18.sp
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "Manasses Vendas (Administrador)",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = OnSurface
-                                )
-                                Text(
-                                    text = "manasses.vendas@gmail.com",
-                                    fontSize = 11.sp,
-                                    color = OnSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                    
-                    HorizontalDivider(color = OnSurfaceVariant.copy(alpha = 0.15f))
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showGooglePicker = false }
-                ) {
-                    Text("Cancelar", color = Primary)
-                }
-            }
-        )
-    }
 }
 
 @Composable

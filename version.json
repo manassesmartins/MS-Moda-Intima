@@ -1,7 +1,0 @@
-{
-  "version": "1.2.17",
-  "changelog": "Build automático: Commit feat: integrate Google Sign-In and Drive backups
-
-Add Google Sign-In for authentication and implement database backup/restore functionality using Google Drive scopes. Refactored glass UI components and updated the ViewModel to support external data streams.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}
