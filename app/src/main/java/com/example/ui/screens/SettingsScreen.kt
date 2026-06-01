@@ -562,6 +562,7 @@ fun SettingsScreen(
                                 updater.repo = repoInput
                                 updater.branch = branchInput
                                 updater.apkPath = apkPathInput
+                                updater.versionJsonPath = versionJsonPathInput
                                 Toast.makeText(context, "Parâmetros do servidor atualizados!", Toast.LENGTH_SHORT).show()
                             },
                             colors = ButtonDefaults.buttonColors(

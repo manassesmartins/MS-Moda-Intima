@@ -1,7 +1,0 @@
-{
-  "version": "1.2.14",
-  "changelog": "Build automático: Commit feat: add user profile persistence and brand loading state
-
-Implemented user session enhancements for names and avatars, added a brand initialization loading screen in the UI, and updated database schema to accommodate brand configurations.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

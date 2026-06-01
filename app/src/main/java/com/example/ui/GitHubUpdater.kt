@@ -136,7 +136,7 @@ class GitHubUpdater(private val context: Context) {
                                 }
 
                                 val hasNewerVersion = isNewerVersion(latestVersion, currentVersion)
-                                if (hasNewerVersion || (forceNotify && latestVersion.isNotEmpty())) {
+                                if (hasNewerVersion) {
                                     if (forceNotify || latestVersion != lastNotifiedVersion) {
                                         _status.value = UpdateStatus.UpdateAvailable(
                                             version = latestVersion,
@@ -148,6 +148,9 @@ class GitHubUpdater(private val context: Context) {
                                         )
                                         foundCustomJsonUpdate = true
                                     }
+                                } else {
+                                    _status.value = if (forceNotify) UpdateStatus.UpToDate else UpdateStatus.Idle
+                                    foundCustomJsonUpdate = true
                                 }
                             }
                         }
@@ -295,7 +298,7 @@ class GitHubUpdater(private val context: Context) {
             }
 
             if (commitsRequestSuccess) {
-                _status.value = UpdateStatus.UpToDate
+                _status.value = if (forceNotify) UpdateStatus.UpToDate else UpdateStatus.Idle
             }
         } catch (e: Exception) {
             Log.e("GitHubUpdater", "Error checking for updates", e)
