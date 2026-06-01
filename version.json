@@ -1,0 +1,7 @@
+{
+  "version": "1.2.21",
+  "changelog": "Build automático: Commit feat: add P2P sync via MQTT
+
+Implement real-time synchronization between mobile and web clients using the Paho MQTT library. Added connection logic to the settings UI and initialized MQTT support in the web interface.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
+}
