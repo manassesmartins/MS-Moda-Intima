@@ -1,9 +1,0 @@
-{
-  "version": "1.2.20",
-  "changelog": "Build automático: Commit feat: rename app to "Gestor de Produção"
-
-- Rename project application ID and metadata
-- Add businessArea and status fields to OrderEntity
-- Improve Google Drive login error handling and flow",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import coil.compose.AsyncImage
 import androidx.compose.ui.draw.clip
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -833,6 +835,103 @@ fun SettingsScreen(
                         color = OnSurfaceVariant,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+        }
+        
+        // P2P MQTT SYNC WITH WEB
+        item {
+            var pinCode by remember { mutableStateOf("") }
+            var isSyncing by remember { mutableStateOf(false) }
+            val coroutineScope = rememberCoroutineScope()
+            val txs by viewModel.allTransactions.collectAsState()
+            val cats by viewModel.allCategories.collectAsState()
+            val orders by viewModel.allOrders.collectAsState()
+            val calcs by viewModel.allCalculations.collectAsState()
+            val bConfig by viewModel.brandConfig.collectAsState()
+            
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "CONECTAR AO COMPUTADOR / WEB",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Acesse o site da versão desktop pelo computador, e digite o Código de 6 dígitos gerado na tela abaixo para espelhar todos os dados em tempo real (P2P).",
+                    fontSize = 12.sp,
+                    color = OnSurfaceVariant,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                
+                OutlinedTextField(
+                    value = pinCode,
+                    onValueChange = { if (it.length <= 6) pinCode = it },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    placeholder = { Text("Código de 6 dígitos") },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Primary,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                        focusedTextColor = OnSurface,
+                        unfocusedTextColor = OnSurface
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        if (pinCode.length == 6 && !isSyncing) {
+                            isSyncing = true
+                            coroutineScope.launch {
+                                val success = com.example.data.MqttSyncManager.syncWithWeb(
+                                    pinCode = pinCode,
+                                    context = context,
+                                    transactions = txs,
+                                    categories = cats,
+                                    orders = orders,
+                                    calculations = calcs,
+                                    brandConfig = bConfig?.let { config ->
+                                        org.json.JSONObject().apply {
+                                            put("brandName", config.brandName)
+                                            put("category", config.category)
+                                            put("niche", config.niche)
+                                            put("colorScheme", config.colorScheme)
+                                            put("logoIcon", config.logoIcon)
+                                            put("logoText", config.logoText)
+                                            put("logoImage", config.logoImage)
+                                            put("isConfigured", config.isConfigured)
+                                        }
+                                    }
+                                )
+                                withContext(Dispatchers.Main) {
+                                    isSyncing = false
+                                    pinCode = "" // Clear after sync
+                                    Toast.makeText(context, if(success) "Dados espelhados com sucesso!" else "Erro, tente novamente.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else if (pinCode.length != 6) {
+                            Toast.makeText(context, "Digite os 6 dígitos mostrados no Computador", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isSyncing
+                ) {
+                    if (isSyncing) {
+                        CircularProgressIndicator(color = OnPrimary, modifier = Modifier.size(16.dp))
+                    } else {
+                        Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Iniciar Espelhamento", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
