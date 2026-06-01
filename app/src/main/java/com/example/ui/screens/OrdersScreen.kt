@@ -188,7 +188,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Top
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = order.clientName,
                                         fontSize = 16.sp,
@@ -196,10 +196,29 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                         color = OnSurface
                                     )
                                     Text(
-                                        text = "${order.pantyType} - Tam ${order.pantySize}",
+                                        text = "${order.pantyType} - M/T ${order.pantySize}",
                                         fontSize = 13.sp,
                                         color = OnSurfaceVariant
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(Secondary.copy(alpha = 0.2f))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(order.businessArea, fontSize = 10.sp, color = Secondary, fontWeight = FontWeight.SemiBold)
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(if (order.status == "Concluído") Tertiary.copy(alpha=0.2f) else ErrorColor.copy(alpha=0.2f))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(order.status, fontSize = 10.sp, color = if (order.status == "Concluído") Tertiary else ErrorColor, fontWeight = FontWeight.SemiBold)
+                                        }
+                                    }
                                 }
                                 Box(
                                     modifier = Modifier
@@ -329,8 +348,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
     if (showAddDialog) {
         OrderAddEditDialog(
             onDismiss = { showAddDialog = false },
-            onSave = { name, model, size, qty, valUnit, week ->
-                viewModel.addOrder(name, model, size, qty, valUnit, week)
+            onSave = { name, model, size, qty, valUnit, week, area, status ->
+                viewModel.addOrder(name, model, size, qty, valUnit, week, area, status)
                 showAddDialog = false
                 Toast.makeText(context, "Pedido agendado com sucesso!", Toast.LENGTH_SHORT).show()
             }
@@ -341,8 +360,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
         OrderAddEditDialog(
             order = order,
             onDismiss = { orderToEdit = null },
-            onSave = { name, model, size, qty, valUnit, week ->
-                viewModel.editOrder(order.id, name, model, size, qty, valUnit, week)
+            onSave = { name, model, size, qty, valUnit, week, area, status ->
+                viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status)
                 orderToEdit = null
                 Toast.makeText(context, "Pedido atualizado!", Toast.LENGTH_SHORT).show()
             }
@@ -361,7 +380,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
 fun OrderAddEditDialog(
     order: com.example.data.OrderEntity? = null,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, Int, Double, String) -> Unit
+    onSave: (String, String, String, Int, Double, String, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf(order?.clientName ?: "") }
     var model by remember { mutableStateOf(order?.pantyType ?: "") }
@@ -369,6 +388,11 @@ fun OrderAddEditDialog(
     var qtyText by remember { mutableStateOf(order?.quantity?.toString() ?: "100") }
     var priceText by remember { mutableStateOf(order?.pantyValue?.toString() ?: "1.15") }
     var selectedWeek by remember { mutableStateOf(order?.week ?: "1ª Semana") }
+    var area by remember { mutableStateOf(order?.businessArea ?: "Geral") }
+    var status by remember { mutableStateOf(order?.status ?: "Pendente") }
+    
+    val areaOptions = listOf("Costura", "Corte", "Bordado", "Embalagem", "Revisão", "Geral")
+    val statusOptions = listOf("Pendente", "Em Andamento", "Concluído", "Atrasado")
 
     val totalValue = (qtyText.toIntOrNull() ?: 0) * (priceText.replace(',', '.').toDoubleOrNull() ?: 0.0)
 
@@ -496,6 +520,47 @@ fun OrderAddEditDialog(
                     }
                 }
 
+                // Area and Status Selectors
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Área de Negócios", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            items(areaOptions, key = { it }) { a ->
+                                val isSelected = area == a
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) Primary.copy(alpha = 0.2f) else Color.Transparent)
+                                        .border(1.dp, if (isSelected) Primary else Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                        .clickable { area = a }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(a, color = if (isSelected) Primary else OnSurface, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Status da Produção", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(statusOptions, key = { it }) { s ->
+                            val isSelected = status == s
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) Tertiary.copy(alpha = 0.2f) else Color.Transparent)
+                                    .border(1.dp, if (isSelected) Tertiary else Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                    .clickable { status = s }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(s, color = if (isSelected) Tertiary else OnSurface, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                }
+
                 Divider(color = Color.White.copy(alpha = 0.08f))
 
                 Row(
@@ -519,7 +584,7 @@ fun OrderAddEditDialog(
                     val qty = qtyText.toIntOrNull() ?: 0
                     val valUnit = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
                     if (name.isNotBlank() && model.isNotBlank() && qty > 0 && valUnit > 0) {
-                        onSave(name, model, size, qty, valUnit, selectedWeek)
+                        onSave(name, model, size, qty, valUnit, selectedWeek, area, status)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
@@ -562,7 +627,7 @@ fun OrderInvoiceDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "MS MODA ÍNTIMA - PRODUÇÃO",
+                        text = "GESTOR DE PRODUÇÃO - COMANDA",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black

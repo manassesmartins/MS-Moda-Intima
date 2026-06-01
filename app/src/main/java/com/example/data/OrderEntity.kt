@@ -13,5 +13,7 @@ data class OrderEntity(
     val pantyValue: Double,
     val totalValue: Double, // quantity * pantyValue
     val week: String = "1ª Semana", // "1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana", "5ª Semana"
+    @androidx.room.ColumnInfo(defaultValue = "Geral") val businessArea: String = "Geral",
+    @androidx.room.ColumnInfo(defaultValue = "Pendente") val status: String = "Pendente",
     val timestamp: Long = System.currentTimeMillis()
 )

@@ -1,5 +1,5 @@
 {
-  "name": "Produção",
+  "name": "Gestor de Produção",
   "description": "Gerenciador financeiro para pequenos negócios e confecções de vestuário e produção têxtil, integrado ao Google Sheets com suporte offline.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

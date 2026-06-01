@@ -33,7 +33,7 @@ fun generatePdfAndShare(
         paint.color = Color.BLACK
         paint.textSize = 18f
         paint.isFakeBoldText = true
-        canvas.drawText("MS MODA ÍNTIMA - RELATÓRIO OPERACIONAL", 40f, 65f, paint)
+        canvas.drawText("GESTOR DE PRODUÇÃO - RELATÓRIO OPERACIONAL", 40f, 65f, paint)
 
         // Subtitle
         paint.textSize = 10f
@@ -71,7 +71,7 @@ fun generatePdfAndShare(
         val costPiece = if (totalPieces > 0) outflow / totalPieces else 0.0
         val margin = if (inflow > 0.0) (balance / inflow) * 100.0 else 0.0
         canvas.drawText(String.format("Margem Estimada de Rendimento: %,.1f%%", margin), 50f, 235f, paint)
-        canvas.drawText(String.format("Volume Total Fabricado: %d calcinhas", totalPieces), 50f, 255f, paint)
+        canvas.drawText(String.format("Volume Total Fabricado: %d peças", totalPieces), 50f, 255f, paint)
         canvas.drawText(String.format("Custo de Insumo Unitário Médio: R$ %,.2f", costPiece), 50f, 275f, paint)
 
         // Draw Orders Table Title
@@ -94,7 +94,7 @@ fun generatePdfAndShare(
         val limitedOrders = orders.take(8)
         limitedOrders.forEach { o ->
             canvas.drawText(o.clientName.take(18), 45f, currentY, paint)
-            canvas.drawText(o.pantyType + " (" + o.pantySize + ")", 160f, currentY, paint)
+            canvas.drawText(o.pantyType + " (" + o.businessArea + ")", 160f, currentY, paint)
             canvas.drawText(o.quantity.toString() + " un", 320f, currentY, paint)
             canvas.drawText(String.format("R$ %,.2f", o.totalValue), 450f, currentY, paint)
             currentY += 15f

@@ -386,27 +386,35 @@ class TransactionViewModel(
                 val computedAvatarUrl = avatarUrl ?: "https://ui-avatars.com/api/?name=${java.net.URLEncoder.encode(name, "UTF-8")}&background=${if (email.lowercase().contains("vendas")) "34D399" else "F472B6"}&color=1A0A13&bold=true&size=120"
                 
                 // Fetch the Google Drive Access Token
-                val token = com.example.data.GoogleDriveBackupManager.getGoogleAccessToken(context)
+                var token: String? = null
                 var downloadSuccess = false
-                
-                if (token != null) {
-                    val fileId = com.example.data.GoogleDriveBackupManager.findBackupFile(token)
-                    if (fileId != null) {
-                        val res = com.example.data.GoogleDriveBackupManager.downloadBackup(token, fileId, context)
-                        if (res) {
-                            downloadSuccess = true
-                            android.util.Log.i("TransactionViewModel", "Database auto-restored from Google Drive successfully!")
+                try {
+                    token = com.example.data.GoogleDriveBackupManager.getGoogleAccessToken(context)
+                    if (token != null) {
+                        val fileId = com.example.data.GoogleDriveBackupManager.findBackupFile(token)
+                        if (fileId != null) {
+                            val res = com.example.data.GoogleDriveBackupManager.downloadBackup(token, fileId, context)
+                            if (res) {
+                                downloadSuccess = true
+                                android.util.Log.i("TransactionViewModel", "Database auto-restored from Google Drive successfully!")
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    android.util.Log.e("TransactionViewModel", "Google Drive sync error during login", e)
                 }
 
-                if (!downloadSuccess) {
-                    // Seed categories if it's a fresh setup
-                    repository.seedMockDataIfEmpty()
-                    // Upload current local database to start a new Google Drive backup stream
-                    if (token != null) {
-                        com.example.data.GoogleDriveBackupManager.uploadBackup(token, context)
+                try {
+                    if (!downloadSuccess) {
+                        // Seed categories if it's a fresh setup
+                        repository.seedMockDataIfEmpty()
+                        // Upload current local database to start a new Google Drive backup stream
+                        if (token != null) {
+                            com.example.data.GoogleDriveBackupManager.uploadBackup(token, context)
+                        }
                     }
+                } catch (e: Exception) {
+                    android.util.Log.e("TransactionViewModel", "Google Drive backup uploading error during login", e)
                 }
 
                 // Save user profile locally
@@ -794,7 +802,7 @@ class TransactionViewModel(
         }
     }
 
-    fun addOrder(clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String) {
+    fun addOrder(clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente") {
         viewModelScope.launch {
             val totalValue = quantity * pantyValue
             val order = com.example.data.OrderEntity(
@@ -805,6 +813,8 @@ class TransactionViewModel(
                 pantyValue = pantyValue,
                 totalValue = totalValue,
                 week = week,
+                businessArea = businessArea,
+                status = status,
                 timestamp = System.currentTimeMillis()
             )
             repository.insertOrder(order)
@@ -812,7 +822,7 @@ class TransactionViewModel(
         }
     }
 
-    fun editOrder(id: Long, clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String) {
+    fun editOrder(id: Long, clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente") {
         viewModelScope.launch {
             val totalValue = quantity * pantyValue
             val order = com.example.data.OrderEntity(
@@ -824,6 +834,8 @@ class TransactionViewModel(
                 pantyValue = pantyValue,
                 totalValue = totalValue,
                 week = week,
+                businessArea = businessArea,
+                status = status,
                 timestamp = System.currentTimeMillis()
             )
             repository.insertOrder(order)

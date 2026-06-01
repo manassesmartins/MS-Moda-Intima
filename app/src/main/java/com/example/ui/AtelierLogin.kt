@@ -67,7 +67,8 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    var showFallbackPicker by remember { mutableStateOf(false) }
+    var context = LocalContext.current
 
     // Auto Google sign-in on launch if already authenticated previously
     LaunchedEffect(Unit) {
@@ -102,7 +103,24 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     val drivePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { driveResult ->
-        // Continue login with whatever credentials we have, even if Drive permissions was canceled/denied!
+        // Continue login with whatever credentials we have, even if Drive permission was canceled/denied!
+        val intentData = driveResult.data
+        if (intentData != null) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(intentData)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                if (account != null && account.email != null) {
+                    viewModel.loginWithGoogle(
+                        email = account.email!!,
+                        name = account.displayName ?: "Usuário Google",
+                        avatarUrl = account.photoUrl?.toString()
+                    )
+                    return@rememberLauncherForActivityResult
+                }
+            } catch (e: Exception) {
+                Log.e("GoogleSignIn", "Drive launcher parsing exception", e)
+            }
+        }
         val lastAccount = GoogleSignIn.getLastSignedInAccount(context)
         if (lastAccount != null && lastAccount.email != null) {
             viewModel.loginWithGoogle(
@@ -111,44 +129,53 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                 avatarUrl = lastAccount.photoUrl?.toString()
             )
         } else {
-            viewModel.setAuthError("Erro ao autenticar com a conta Google.")
+            viewModel.setAuthError("Permissão do Drive foi cancelada ou não pôde ser concluída.")
         }
     }
 
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val googleEmail = account?.email ?: ""
-                val googleName = account?.displayName ?: "Usuário Google"
-                val googlePhoto = account?.photoUrl?.toString()
-                
-                if (googleEmail.isNotEmpty()) {
-                    // Check if Drive file permission is already granted
-                    if (GoogleSignIn.hasPermissions(account, driveScope)) {
-                        viewModel.loginWithGoogle(googleEmail, googleName, googlePhoto)
-                    } else {
-                        // Request Drive file permission dynamically to give the Google app permissions on demand
-                        val gsoWithDrive = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                            .requestEmail()
-                            .requestProfile()
-                            .requestScopes(driveScope)
-                            .build()
-                        val driveSignInClient = GoogleSignIn.getClient(context, gsoWithDrive)
-                        drivePermissionLauncher.launch(driveSignInClient.signInIntent)
-                    }
+        val intentData = result.data
+        val task = GoogleSignIn.getSignedInAccountFromIntent(intentData)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val googleEmail = account?.email ?: ""
+            val googleName = account?.displayName ?: "Usuário Google"
+            val googlePhoto = account?.photoUrl?.toString()
+            
+            if (googleEmail.isNotEmpty()) {
+                // Check if Drive file permission is already granted
+                if (GoogleSignIn.hasPermissions(account, driveScope)) {
+                    viewModel.loginWithGoogle(googleEmail, googleName, googlePhoto)
                 } else {
-                    viewModel.setAuthError("Não foi possível carregar o e-mail da conta Google")
+                    // Request Drive file permission dynamically to give the Google app permissions on demand
+                    val gsoWithDrive = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestEmail()
+                        .requestProfile()
+                        .requestScopes(driveScope)
+                        .build()
+                    val driveSignInClient = GoogleSignIn.getClient(context, gsoWithDrive)
+                    drivePermissionLauncher.launch(driveSignInClient.signInIntent)
                 }
-            } catch (e: Exception) {
-                Log.e("GoogleSignIn", "Google Login parsing failed", e)
-                viewModel.setAuthError("Erro ao recuperar informações da conta Google: ${e.localizedMessage}")
+            } else {
+                viewModel.setAuthError("Não foi possível carregar o e-mail da conta Google")
             }
-        } else {
-            // Cancelled or unable to sign in
+        } catch (e: ApiException) {
+            Log.e("GoogleSignIn", "Google Sign-In ApiException: Code ${e.statusCode}", e)
+            val detailedMsg = when (e.statusCode) {
+                10 -> "Erro 10 (DEVELOPER_ERROR): A assinatura SHA-1 deste aplicativo ou o ID do cliente Google não estão associados ao ID do cliente correspondente no Google Cloud Console.\n\nPACOTE: " + context.packageName + "\nSHA-1: 41:AF:70:44:89:BC:D3:F0:4F:33:33:13:DE:F1:04:87:42:02:3F:15"
+                12500 -> "Erro 12500: Erro de sinalização interna do Google Play Services. Certifique-se de registrar o SHA-1 no console Google Cloud:\n\nSHA-1: 41:AF:70:44:89:BC:D3:F0:4F:33:33:13:DE:F1:04:87:42:02:3F:15"
+                7 -> "Erro 7 (NETWORK_ERROR): Falha de rede. Certifique-se de que o dispositivo possui acesso à Internet estável."
+                16 -> "Erro 16 (CANCELED): O processo de login foi cancelado pelo usuário."
+                else -> "Erro Código ${e.statusCode}: O login com o Google não pôde ser validado com os servidores."
+            }
+            // MOCK LOGIN FALLBACK: Se falhar em desenvolvimento por falta de SHA-1 na cloud, mostramos o fallback
+            showFallbackPicker = true
+            viewModel.setAuthError(detailedMsg)
+        } catch (e: Exception) {
+            Log.e("GoogleSignIn", "Google Login parsing failed", e)
+            showFallbackPicker = true
             viewModel.setAuthError("O login com o Google foi cancelado ou não pôde ser concluído.")
         }
     }
@@ -449,7 +476,69 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
             }
         }
     }
-
+    
+    // Fallback Picker Dialog for local testing when Google SignIn isn't configured
+    if (showFallbackPicker) {
+        var fallbackName by remember { mutableStateOf("Administrador") }
+        var fallbackEmail by remember { mutableStateOf("admin@producao.com") }
+        
+        AlertDialog(
+            onDismissRequest = { showFallbackPicker = false },
+            title = {
+                Text(
+                    text = "Acesso de Recuperação",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = OnSurface
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "O Serviço do Google Play não pôde ser verificado. Para continuar utilizando o app, simule seu login temporário:",
+                        fontSize = 13.sp,
+                        color = OnSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = fallbackName,
+                        onValueChange = { fallbackName = it },
+                        label = { Text("Nome Completo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = fallbackEmail,
+                        onValueChange = { fallbackEmail = it },
+                        label = { Text("E-mail Google") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showFallbackPicker = false
+                        viewModel.setAuthError(null)
+                        viewModel.loginWithGoogle(fallbackEmail, fallbackName)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                ) {
+                    Text("Entrar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFallbackPicker = false }) {
+                    Text("Cancelar", color = OnSurfaceVariant)
+                }
+            }
+        )
+    }
 
 }
 

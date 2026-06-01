@@ -39,7 +39,7 @@ class GreetingScreenshotTest {
         ) {
           GlassCard {
             Text(
-              text = "MS Moda Íntima",
+              text = "Gestor de Produção",
               color = Primary,
               fontSize = 22.sp
             )
