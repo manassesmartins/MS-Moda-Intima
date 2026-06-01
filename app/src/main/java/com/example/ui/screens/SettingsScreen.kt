@@ -11,9 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +21,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import androidx.compose.ui.draw.clip
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
 import com.example.data.*
 import com.example.ui.theme.*
 
@@ -70,6 +72,7 @@ fun SettingsScreen(
     var apkPathInput by remember { mutableStateOf(updater.apkPath) }
     var versionJsonPathInput by remember { mutableStateOf(updater.versionJsonPath) }
     val scope = rememberCoroutineScope()
+    val brandConfig by viewModel.brandConfig.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -100,7 +103,110 @@ fun SettingsScreen(
         item {
             val userNameStr = viewModel.sessionManager.userName.ifBlank { "Usuário Ativo" }
             val avatarUrlStr = viewModel.sessionManager.userAvatar
+            val iconsMap = mapOf(
+                "CROWN" to Icons.Default.Star,
+                "BAG" to Icons.Default.ShoppingCart,
+                "HEART" to Icons.Default.Favorite,
+                "BUILD" to Icons.Default.Build,
+                "PERSON" to Icons.Default.Person
+            )
+
             GlassCard(modifier = Modifier.fillMaxWidth()) {
+                // Brand logo at the very top of the Profile card
+                brandConfig?.let { config ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(Primary.copy(alpha = 0.15f), CircleShape)
+                                .border(1.5.dp, Primary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!config.logoImage.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = config.logoImage,
+                                    contentDescription = "Logo da Marca",
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                val selectedIcon = iconsMap[config.logoIcon] ?: Icons.Default.Star
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = selectedIcon,
+                                        contentDescription = null,
+                                        tint = Primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = config.logoText.uppercase().take(3),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = OnSurface,
+                                        lineHeight = 11.sp
+                                    )
+                                }
+                            }
+                        }
+                        
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = config.brandName,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface,
+                                textAlign = TextAlign.Center
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(Secondary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = config.category,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Secondary
+                                    )
+                                }
+                                if (config.niche.isNotBlank()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Tertiary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = config.niche,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Tertiary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        HorizontalDivider(
+                            modifier = Modifier.padding(top = 8.dp),
+                            color = Color.White.copy(alpha = 0.08f)
+                        )
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -155,10 +261,10 @@ fun SettingsScreen(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "CONECTADO VIA GOOGLE",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Primary
+                                  text = "CONECTADO VIA GOOGLE",
+                                  fontSize = 9.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = Primary
                             )
                         }
                     }
@@ -175,6 +281,311 @@ fun SettingsScreen(
                             tint = ErrorColor
                         )
                     }
+                }
+            }
+        }
+
+        // CONFIGURAÇÃO DA MARCA Card
+        item {
+            var brandNameInput by remember(brandConfig) { mutableStateOf(brandConfig?.brandName ?: "") }
+            var categoryInput by remember(brandConfig) { mutableStateOf(brandConfig?.category ?: "Moda Íntima") }
+            var nicheInput by remember(brandConfig) { mutableStateOf(brandConfig?.niche ?: "") }
+            var selectedColorInput by remember(brandConfig) { mutableStateOf(brandConfig?.colorScheme ?: "PINK") }
+            var logoIconInput by remember(brandConfig) { mutableStateOf(brandConfig?.logoIcon ?: "CROWN") }
+            var logoTextInput by remember(brandConfig) { mutableStateOf(brandConfig?.logoText ?: "") }
+            var logoImageInput by remember(brandConfig) { mutableStateOf<String?>(brandConfig?.logoImage) }
+
+            val categoryOptions = listOf("Moda Íntima", "Vestuário / Têxtil", "Moda Praia / Fitness", "Artesanato & Crochê", "Calçados & Bolsas", "Outro")
+            
+            val iconsMap = mapOf(
+                "CROWN" to Icons.Default.Star,
+                "BAG" to Icons.Default.ShoppingCart,
+                "HEART" to Icons.Default.Favorite,
+                "BUILD" to Icons.Default.Build,
+                "PERSON" to Icons.Default.Person
+            )
+
+            // Image Picker Setup
+            val imageLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetContent()
+            ) { uri: Uri? ->
+                uri?.let {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(it)
+                        val bytes = inputStream?.readBytes()
+                        inputStream?.close()
+                        if (bytes != null) {
+                            val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                            logoImageInput = "data:image/png;base64,$base64"
+                            Toast.makeText(context, "Logo carregada!", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Erro ao carregar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "CONFIGURAÇÃO DA MARCA",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Field 1: Brand Name
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Nome da Sua Marca / Negócio", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    OutlinedTextField(
+                        value = brandNameInput,
+                        onValueChange = { brandNameInput = it },
+                        placeholder = { Text("Ex: Ateliê Realeza, Bella Confecções") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Field 2: Category Chips
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Categoria de Produção", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    
+                    val categoryOptionsRow1 = listOf("Moda Íntima", "Vestuário / Têxtil")
+                    val categoryOptionsRow2 = listOf("Moda Praia / Fitness", "Artesanato & Crochê")
+                    val categoryOptionsRow3 = listOf("Calçados & Bolsas", "Outro")
+
+                    listOf(categoryOptionsRow1, categoryOptionsRow2, categoryOptionsRow3).forEach { rowOpts ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            rowOpts.forEach { opt ->
+                                val selected = categoryInput == opt
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (selected) Primary else Color.White.copy(alpha = 0.05f))
+                                        .border(1.dp, if (selected) Primary else Color.White.copy(alpha = 0.12f), RoundedCornerShape(8.dp))
+                                        .clickable { categoryInput = opt }
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = opt,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selected) OnPrimary else OnSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Field 3: Niche
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Qual o Nicho ou Foco? (Opcional)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    OutlinedTextField(
+                        value = nicheInput,
+                        onValueChange = { nicheInput = it },
+                        placeholder = { Text("Ex: Crochê Manual, Lingerie Fina, Fitness Atacado") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Field 4: Logo Upload Picker
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Logomarca do Negócio", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(Primary.copy(alpha = 0.12f), CircleShape)
+                                .border(1.dp, Primary.copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!logoImageInput.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = logoImageInput,
+                                    contentDescription = "Logo",
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .clip(CircleShape)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = iconsMap[logoIconInput] ?: Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (!logoImageInput.isNullOrBlank()) "Logomarca Customizada" else "Sem imagem carregada",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface
+                            )
+                            Text(
+                                text = if (!logoImageInput.isNullOrBlank()) "Exibindo imagem carregada" else "Usando ícone/texto de backup",
+                                fontSize = 11.sp,
+                                color = OnSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { imageLauncher.launch("image/*") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Nova Imagem", fontSize = 11.sp)
+                        }
+
+                        if (!logoImageInput.isNullOrBlank()) {
+                            Button(
+                                onClick = { logoImageInput = null },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = ErrorColor.copy(alpha = 0.1f),
+                                    contentColor = ErrorColor
+                                ),
+                                border = BorderStroke(1.dp, ErrorColor.copy(alpha = 0.3f)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Remover", fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+
+                // Field 5: If no custom image, configure Backup Text & Icon
+                if (logoImageInput.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Configuração do Ícone & Letras de Backup", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = logoTextInput,
+                                onValueChange = { logoTextInput = it.take(3) },
+                                label = { Text("Sigla logo (Até 3 letras)", fontSize = 10.sp) },
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.15f),
+                                    focusedTextColor = OnSurface,
+                                    unfocusedTextColor = OnSurface
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // Icon choose selector row
+                            Row(
+                                modifier = Modifier
+                                    .weight(1.5f)
+                                    .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(8.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceAround
+                            ) {
+                                iconsMap.forEach { (iconId, icVec) ->
+                                    val isIconSelected = logoIconInput == iconId
+                                    Icon(
+                                        imageVector = icVec,
+                                        contentDescription = iconId,
+                                        tint = if (isIconSelected) Primary else OnSurfaceVariant,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .clickable { logoIconInput = iconId }
+                                            .padding(2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = {
+                        if (brandNameInput.isBlank()) {
+                            Toast.makeText(context, "O nome da marca é obrigatório!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            viewModel.saveBrandConfig(
+                                brandName = brandNameInput,
+                                category = categoryInput,
+                                niche = nicheInput,
+                                colorScheme = selectedColorInput,
+                                logoText = if (logoTextInput.isNotBlank()) logoTextInput else brandNameInput.take(3),
+                                logoIcon = logoIconInput,
+                                logoImage = logoImageInput
+                            )
+                            Toast.makeText(context, "Identidade da marca atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = OnPrimary
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Salvar Configurações da Marca", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }

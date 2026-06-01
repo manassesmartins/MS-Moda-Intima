@@ -138,6 +138,8 @@ class GitHubUpdater(private val context: Context) {
                                 val hasNewerVersion = isNewerVersion(latestVersion, currentVersion)
                                 if (hasNewerVersion) {
                                     if (forceNotify || latestVersion != lastNotifiedVersion) {
+                                        sharedPrefs.edit().putString("pending_notified_version", latestVersion).apply()
+                                        sharedPrefs.edit().putString("pending_commit_sha", "").apply()
                                         _status.value = UpdateStatus.UpdateAvailable(
                                             version = latestVersion,
                                             changelog = changelog,
@@ -149,6 +151,7 @@ class GitHubUpdater(private val context: Context) {
                                         foundCustomJsonUpdate = true
                                     }
                                 } else {
+                                    sharedPrefs.edit().remove("pending_notified_version").remove("pending_commit_sha").apply()
                                     _status.value = if (forceNotify) UpdateStatus.UpToDate else UpdateStatus.Idle
                                     foundCustomJsonUpdate = true
                                 }
@@ -205,6 +208,8 @@ class GitHubUpdater(private val context: Context) {
                             val hasNewerVersion = isNewerVersion(tagName, currentVersion)
                             if (hasNewerVersion || (forceNotify && tagName.isNotEmpty())) {
                                 if (forceNotify || tagName != lastNotifiedVersion) {
+                                    sharedPrefs.edit().putString("pending_notified_version", tagName).apply()
+                                    sharedPrefs.edit().putString("pending_commit_sha", "").apply()
                                     _status.value = UpdateStatus.UpdateAvailable(
                                         version = tagName,
                                         changelog = changelog,
@@ -256,6 +261,8 @@ class GitHubUpdater(private val context: Context) {
                                 if (sha != savedCommitSha || forceNotify) {
                                     // A new commit is detected on GitHub!
                                     latestCheckedSha = sha
+                                    sharedPrefs.edit().putString("pending_commit_sha", sha).apply()
+                                    sharedPrefs.edit().putString("pending_notified_version", "").apply()
                                     val downloadUrl = "https://raw.githubusercontent.com/$owner/$repo/$branch/$apkPath"
                                     _status.value = UpdateStatus.UpdateAvailable(
                                         version = "Commit ${sha.take(7)}",
@@ -376,8 +383,15 @@ class GitHubUpdater(private val context: Context) {
             val authority = "${context.packageName}.fileprovider"
             val apkUri: Uri = FileProvider.getUriForFile(context, authority, apkFile)
 
-            if (latestCheckedSha.isNotEmpty()) {
-                sharedPrefs.edit().putString("last_checked_commit_sha", latestCheckedSha).apply()
+            val pendingVer = sharedPrefs.getString("pending_notified_version", "") ?: ""
+            if (pendingVer.isNotEmpty()) {
+                sharedPrefs.edit().putString("last_notified_version", pendingVer).apply()
+            }
+
+            val pendingSha = sharedPrefs.getString("pending_commit_sha", "") ?: ""
+            val shaToSave = if (pendingSha.isNotEmpty()) pendingSha else latestCheckedSha
+            if (shaToSave.isNotEmpty()) {
+                sharedPrefs.edit().putString("last_checked_commit_sha", shaToSave).apply()
             }
 
             val intent = Intent(Intent.ACTION_VIEW).apply {

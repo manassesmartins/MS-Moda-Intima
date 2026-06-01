@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
+import androidx.compose.ui.composed
 import com.example.data.*
 import com.example.ui.theme.*
 
@@ -982,13 +983,25 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val isLight = MaterialTheme.colorScheme.background.isColorLight()
+    val containerCol = if (isLight) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+    } else {
+        Color.White.copy(alpha = 0.05f)
+    }
+    val borderCol = if (isLight) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+    } else {
+        Color.White.copy(alpha = 0.12f)
+    }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.05f)
+            containerColor = containerCol
         ),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        border = BorderStroke(1.5.dp, borderCol)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -1102,7 +1115,11 @@ fun MsModaIntimaTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.White.copy(alpha = 0.05f),
+            containerColor = if (MaterialTheme.colorScheme.background.isColorLight()) {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+            } else {
+                Color.White.copy(alpha = 0.05f)
+            },
             titleContentColor = Primary
         ),
         modifier = Modifier.drawBehindGlassBorder()
@@ -1110,12 +1127,18 @@ fun MsModaIntimaTopBar(
 }
 
 // Custom Glass Border modifier
-fun Modifier.drawBehindGlassBorder(): Modifier = this.background(
-    Color.Transparent
-).border(
-    width = 0.5.dp,
-    color = Color.White.copy(alpha = 0.15f)
-)
+fun Modifier.drawBehindGlassBorder(): Modifier = this.composed {
+    val isLight = MaterialTheme.colorScheme.background.isColorLight()
+    val borderColor = if (isLight) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+    } else {
+        Color.White.copy(alpha = 0.15f)
+    }
+    this.border(
+        width = 1.dp,
+        color = borderColor
+    )
+}
 
 // ------------------------------------
 // COMPONENT: Bottom Nav Bar
@@ -1327,3 +1350,12 @@ fun MsModaIntimaNavigationRail(
 }
 
 fun Modifier.glow(color: Color): Modifier = this // Decorative visual effect placeholder
+
+fun Color.isColorLight(): Boolean {
+    return try {
+        if (this == Color.Unspecified) false
+        else (this.red + this.green + this.blue) > 1.5f
+    } catch (e: Exception) {
+        false
+    }
+}
