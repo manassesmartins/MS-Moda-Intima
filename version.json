@@ -1,9 +1,0 @@
-{
-  "version": "1.2.16",
-  "changelog": "Build automático: Commit fix: update version and improve UI styling
-
-- Revert version to 1.2
-- Update GlassCard and TopAppBar to support dynamic theme colors
-- Improve GitHubUpdater state management for pending versions",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

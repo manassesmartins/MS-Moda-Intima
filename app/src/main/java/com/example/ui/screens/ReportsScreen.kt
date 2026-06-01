@@ -190,11 +190,11 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                         ) {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                                colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                border = getGlassBorderStroke(),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .border(BorderStroke(1.dp, Tertiary.copy(alpha = 0.2f)), RoundedCornerShape(16.dp))
+                                    .border(getGlassBorderStroke(1.dp), RoundedCornerShape(16.dp))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text("ENTRADAS (Faturamento)", fontSize = 11.sp, color = OnSurfaceVariant)
@@ -210,11 +210,11 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
 
                             Card(
                                 shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                                colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                border = getGlassBorderStroke(),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .border(BorderStroke(1.dp, ErrorColor.copy(alpha = 0.2f)), RoundedCornerShape(16.dp))
+                                    .border(getGlassBorderStroke(1.dp), RoundedCornerShape(16.dp))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text("SAÍDAS (Despesas)", fontSize = 11.sp, color = OnSurfaceVariant)
@@ -352,8 +352,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                         Spacer(modifier = Modifier.height(10.dp))
                         Card(
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                            colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                            border = getGlassBorderStroke(),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
@@ -402,11 +402,11 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                             ).show()
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.08f),
+                            containerColor = getGlassContainerColor(),
                             contentColor = Primary
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                        border = getGlassBorderStroke(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("export_pdf_button")
@@ -609,8 +609,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                        colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                        border = getGlassBorderStroke()
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -711,8 +711,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                            border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.25f))
+                            colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                            border = getGlassBorderStroke()
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
@@ -766,8 +766,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                            border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.25f))
+                            colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                            border = getGlassBorderStroke()
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
@@ -811,8 +811,8 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                            border = BorderStroke(1.dp, ErrorColor.copy(alpha = 0.25f))
+                            colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                            border = getGlassBorderStroke()
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(

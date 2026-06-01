@@ -178,8 +178,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                 items(filteredOrders, key = { it.id }) { order ->
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                        colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                        border = getGlassBorderStroke(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {

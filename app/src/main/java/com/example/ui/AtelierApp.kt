@@ -983,25 +983,13 @@ fun GlassCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val isLight = MaterialTheme.colorScheme.background.isColorLight()
-    val containerCol = if (isLight) {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
-    } else {
-        Color.White.copy(alpha = 0.05f)
-    }
-    val borderCol = if (isLight) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-    } else {
-        Color.White.copy(alpha = 0.12f)
-    }
-
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = containerCol
+            containerColor = getGlassContainerColor()
         ),
-        border = BorderStroke(1.5.dp, borderCol)
+        border = getGlassBorderStroke(1.5.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -1350,12 +1338,3 @@ fun MsModaIntimaNavigationRail(
 }
 
 fun Modifier.glow(color: Color): Modifier = this // Decorative visual effect placeholder
-
-fun Color.isColorLight(): Boolean {
-    return try {
-        if (this == Color.Unspecified) false
-        else (this.red + this.green + this.blue) > 1.5f
-    } catch (e: Exception) {
-        false
-    }
-}

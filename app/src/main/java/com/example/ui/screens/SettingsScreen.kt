@@ -74,6 +74,46 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val brandConfig by viewModel.brandConfig.collectAsState()
 
+    // Activity launcher for database export (Create document)
+    val exportDatabaseLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    val success = viewModel.exportDatabaseToStream(outputStream)
+                    if (success) {
+                        Toast.makeText(context, "Banco de dados SQLite exportado com sucesso!", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "Falha ao exportar banco de dados.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro durante a exportação: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    // Activity launcher for database import (Get binary database content)
+    val importDatabaseLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val success = viewModel.importDatabaseFromStream(inputStream)
+                    if (success) {
+                        Toast.makeText(context, "Banco de dados importado e restaurado com sucesso!", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "Falha ao processar o arquivo de banco de dados SQLite informado.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro durante a importação: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -793,6 +833,84 @@ fun SettingsScreen(
                         color = OnSurfaceVariant,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+        }
+
+        // MANUAL IMPORT & EXPORT DATABASE (SQLITE) SECTION
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "MANUTENÇÃO DE DADOS (SQLITE)",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Exporte uma cópia física do seu banco de dados local SQLite (.db) ou faça a restauração importando um arquivo de backup previamente exportado.",
+                    fontSize = 12.sp,
+                    color = OnSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            try {
+                                exportDatabaseLauncher.launch("ms_modaintima_database.db")
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro ao iniciar exportador: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = OnPrimary
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Exportar Banco", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            try {
+                                importDatabaseLauncher.launch("*/*")
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro ao alterar: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Importar Banco", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

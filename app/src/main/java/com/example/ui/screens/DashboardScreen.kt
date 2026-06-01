@@ -154,7 +154,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
-                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(24.dp))
+                .background(getGlassContainerColor(), RoundedCornerShape(24.dp))
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -208,7 +208,7 @@ fun DashboardScreen(
                                     text = "Painel de Negócios",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White
+                                    color = OnSurface
                                 )
                                 Text(
                                     text = "Faturamento e Custos operacionais",
@@ -221,10 +221,10 @@ fun DashboardScreen(
                                 onClick = { showReportDialog = true },
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White.copy(alpha = 0.06f),
-                                    contentColor = Color.White
+                                    containerColor = getGlassContainerColor(),
+                                    contentColor = OnSurface
                                 ),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                border = getGlassBorderStroke(),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.height(36.dp)
                             ) {
@@ -316,9 +316,9 @@ fun DashboardScreen(
                             Card(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = Color.White.copy(alpha = 0.05f)
+                                    containerColor = getGlassContainerColor()
                                 ),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                                border = getGlassBorderStroke(),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
@@ -368,9 +368,9 @@ fun DashboardScreen(
                             Card(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = Color.White.copy(alpha = 0.05f)
+                                    containerColor = getGlassContainerColor()
                                 ),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                                border = getGlassBorderStroke(),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
@@ -446,15 +446,15 @@ fun DashboardScreen(
                             ) {
                                 // Margin card
                                 Card(
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                    border = getGlassBorderStroke(),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text("Margem Líquida", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(String.format(Locale("pt", "BR"), "%.1f%%", marginPct), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            Text(String.format(Locale("pt", "BR"), "%.1f%%", marginPct), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                                             Box(
                                                 modifier = Modifier
                                                     .background(
@@ -476,14 +476,14 @@ fun DashboardScreen(
 
                                 // Ticket Card
                                 Card(
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                    border = getGlassBorderStroke(),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text("Ticket Médio", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", avgTicket), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", avgTicket), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                                     }
                                 }
                             }
@@ -494,27 +494,27 @@ fun DashboardScreen(
                             ) {
                                 // Production Volume Card
                                 Card(
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                    border = getGlassBorderStroke(),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text("Produção Geral", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text("$totalPieces pçs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text("$totalPieces pçs", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                                     }
                                 }
 
                                 // Unit Cost Card
                                 Card(
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                                    border = getGlassBorderStroke(),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text("Custo por Peça", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", costPerPiece), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", costPerPiece), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                                     }
                                 }
                             }
@@ -694,11 +694,11 @@ fun WeeklyReportsSection(
                 ) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                        colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                        border = getGlassBorderStroke(),
                         modifier = Modifier
                             .weight(1f)
-                            .border(BorderStroke(1.dp, Tertiary.copy(alpha = 0.2f)), RoundedCornerShape(16.dp))
+                            .border(getGlassBorderStroke(1.dp), RoundedCornerShape(16.dp))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("ENTRADAS (Faturamento)", fontSize = 11.sp, color = OnSurfaceVariant)
@@ -714,11 +714,11 @@ fun WeeklyReportsSection(
 
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                        colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                        border = getGlassBorderStroke(),
                         modifier = Modifier
                             .weight(1f)
-                            .border(BorderStroke(1.dp, ErrorColor.copy(alpha = 0.2f)), RoundedCornerShape(16.dp))
+                            .border(getGlassBorderStroke(1.dp), RoundedCornerShape(16.dp))
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("SAÍDAS (Despesas)", fontSize = 11.sp, color = OnSurfaceVariant)
@@ -853,8 +853,8 @@ fun WeeklyReportsSection(
                 Spacer(modifier = Modifier.height(10.dp))
                 Card(
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                    border = getGlassBorderStroke(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -902,11 +902,11 @@ fun WeeklyReportsSection(
                     ).show()
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.08f),
+                    containerColor = getGlassContainerColor(),
                     contentColor = OnSurface
                 ),
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                border = getGlassBorderStroke(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Exportar Relatório Consolidado", fontWeight = FontWeight.Bold)
@@ -1095,8 +1095,8 @@ fun MonthlyReportsSection(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                border = getGlassBorderStroke()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -1194,8 +1194,8 @@ fun MonthlyReportsSection(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                    border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.25f))
+                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                    border = getGlassBorderStroke()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(
@@ -1232,8 +1232,8 @@ fun MonthlyReportsSection(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                    border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.2f))
+                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                    border = getGlassBorderStroke()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(
@@ -1270,8 +1270,8 @@ fun MonthlyReportsSection(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                    border = BorderStroke(1.dp, ErrorColor.copy(alpha = 0.2f))
+                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                    border = getGlassBorderStroke()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(

@@ -69,9 +69,9 @@ fun TransactionListItem(
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.05f)
+                containerColor = getGlassContainerColor()
             ),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+            border = getGlassBorderStroke(),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(

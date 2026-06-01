@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
 
 fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
     return if (isDark) {
@@ -170,6 +172,40 @@ fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
             )
         }
     }
+}
+
+fun Color.isColorLight(): Boolean {
+    return try {
+        if (this == Color.Unspecified) false
+        else (this.red + this.green + this.blue) > 1.5f
+    } catch (e: Exception) {
+        false
+    }
+}
+
+@Composable
+fun getGlassContainerColor(): Color {
+    val isLight = MaterialTheme.colorScheme.background.isColorLight()
+    return if (isLight) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+    } else {
+        Color.White.copy(alpha = 0.05f)
+    }
+}
+
+@Composable
+fun getGlassBorderColor(): Color {
+    val isLight = MaterialTheme.colorScheme.background.isColorLight()
+    return if (isLight) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+    } else {
+        Color.White.copy(alpha = 0.12f)
+    }
+}
+
+@Composable
+fun getGlassBorderStroke(width: androidx.compose.ui.unit.Dp = 1.dp): BorderStroke {
+    return BorderStroke(width, getGlassBorderColor())
 }
 
 @Composable

@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
             database.brandConfigDao
         )
         val sessionManager = com.example.data.SessionManager(this)
-        val factory = TransactionViewModelFactory(repository, sessionManager)
+        val factory = TransactionViewModelFactory(repository, sessionManager, applicationContext)
         val viewModel = ViewModelProvider(this, factory)[TransactionViewModel::class.java]
 
         // Monitor connections and automatically trigger sync when internet becomes available

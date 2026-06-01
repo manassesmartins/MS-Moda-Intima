@@ -31,8 +31,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.api.GoogleSheetsClient
 import com.example.ui.theme.*
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.Scope
+import com.google.android.gms.common.api.ApiException
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +69,44 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
     var showGooglePicker by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    // Set up real Google Sign-In options with Drive scopes
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestProfile()
+            .requestScopes(Scope("https://www.googleapis.com/auth/drive.file"))
+            .build()
+    }
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(context, gso)
+    }
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val googleEmail = account.email ?: ""
+                val googleName = account.displayName ?: ""
+                val googlePhoto = account.photoUrl?.toString()
+                if (googleEmail.isNotEmpty()) {
+                    viewModel.loginWithGoogle(googleEmail, googleName, googlePhoto)
+                } else {
+                    viewModel.setAuthError("Não foi possível carregar o e-mail da conta Google")
+                }
+            } catch (e: Exception) {
+                Log.e("GoogleSignIn", "Google Login parsing failed", e)
+                viewModel.setAuthError("Erro ao recuperar informações da conta Google: ${e.localizedMessage}")
+            }
+        } else {
+            // Cancelled or missing Google Play Services.
+            // Under emulator/development, we still let them use the developer picker dialog
+            // as fallback so development is never blocked.
+            showGooglePicker = true
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -231,7 +276,13 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
 
                     // Google Login Button with official identity branding
                     Button(
-                        onClick = { showGooglePicker = true },
+                        onClick = {
+                            try {
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            } catch (e: Exception) {
+                                showGooglePicker = true
+                            }
+                        },
                         enabled = !authLoading,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -290,7 +341,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val isGoogleActive = GoogleSheetsClient.isConfigured
+                    val isGoogleActive = viewModel.sessionManager.isLoggedIn
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -303,7 +354,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (isGoogleActive) "Serviço Google Sheets Ativo" else "Modo Off-line Seguro",
+                            text = if (isGoogleActive) "Backup no Google Drive Ativo" else "Modo Off-line Seguro",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isGoogleActive) Tertiary else OnSurfaceVariant
@@ -312,9 +363,9 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
 
                     Text(
                         text = if (isGoogleActive) {
-                            "Habilitado! Suas vendas, transações de caixa, ordens e relatórios serão hospedados de forma segura e elegante nas suas Planilhas do Google Drive."
+                            "Habilitado! Seu banco de dados SQLite será sincronizado de forma totalmente criptografada e segura no seu Google Drive."
                         } else {
-                            "Seus dados estão protegidos off-line no banco SQLite local. Para configurar sincronização ativa nas Planilhas Google, faça login usando sua Conta do Google."
+                            "Seus dados estão protegidos localmente no SQLite. Para configurar o backup automático e manter as informações seguras mesmo se reinstalar o app, faça login com a conta Google."
                         },
                         fontSize = 10.sp,
                         color = OnSurfaceVariant,
@@ -341,7 +392,7 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = "Sua planilha será criada no seu Google Drive e sincronizada ao conectar-se à internet.",
+                                    text = "O backup do banco de dados será mantido no seu Google Drive de forma 100% automática.",
                                     fontSize = 10.sp,
                                     color = Primary,
                                     fontWeight = FontWeight.Medium

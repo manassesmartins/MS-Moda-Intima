@@ -46,7 +46,8 @@ sealed class PendingDelete {
 
 class TransactionViewModel(
     private val repository: TransactionRepository,
-    val sessionManager: com.example.data.SessionManager
+    val sessionManager: com.example.data.SessionManager,
+    private val context: Context
 ) : ViewModel() {
 
     // Deletion Confirmation and Undo State
@@ -197,6 +198,34 @@ class TransactionViewModel(
         _authSuccessMessage.value = null
     }
 
+    fun setAuthError(err: String?) {
+        _authError.value = err
+    }
+
+    // Export local database to an external stream (for manual backup)
+    fun exportDatabaseToStream(outputStream: java.io.OutputStream): Boolean {
+        return com.example.data.GoogleDriveBackupManager.exportLocalDatabase(context, outputStream)
+    }
+
+    // Import and restore an external database stream (for manual restore)
+    fun importDatabaseFromStream(inputStream: java.io.InputStream): Boolean {
+        val success = com.example.data.GoogleDriveBackupManager.importLocalDatabase(context, inputStream)
+        if (success) {
+            // Re-read brand configuration immediately from restored SQLite database
+            viewModelScope.launch {
+                val config = repository.getBrandConfig()
+                _brandConfig.value = config
+                if (config != null && config.isConfigured) {
+                    sessionManager.appName = config.brandName
+                    sessionManager.colorScheme = config.colorScheme
+                    _appName.value = config.brandName
+                    _colorSchemeName.value = config.colorScheme
+                }
+            }
+        }
+        return success
+    }
+
     fun logoutUser() {
         viewModelScope.launch {
             try {
@@ -246,7 +275,7 @@ class TransactionViewModel(
                     )
                     
                     // Push initialized structure
-                    com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
+                    triggerSyncSimulation()
                     
                     _brandConfig.value = null
                     _authSuccessMessage.value = "Conta cadastrada com sucesso!"
@@ -282,8 +311,8 @@ class TransactionViewModel(
                             usingSupabase = false
                         )
                         
-                        // Sincroniza dados com Planilhas Google
-                        com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
+                        // Sincroniza dados com Google Drive se conectado
+                        triggerSyncSimulation()
                         
                         val config = repository.getBrandConfig()
                         _brandConfig.value = config
@@ -293,7 +322,7 @@ class TransactionViewModel(
                             _appName.value = config.brandName
                             _colorSchemeName.value = config.colorScheme
                         }
-                        _authSuccessMessage.value = "Autenticação concluída e integrada com Planilhas Google!"
+                        _authSuccessMessage.value = "Autenticação concluída e banco de dados pronto!"
                         _isBrandLoaded.value = true
                         _isUserLoggedIn.value = true
                     } else {
@@ -316,7 +345,7 @@ class TransactionViewModel(
                             authToken = null,
                             usingSupabase = false
                         )
-                        com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
+                        triggerSyncSimulation()
                         val config = repository.getBrandConfig()
                         _brandConfig.value = config
                         if (config != null && config.isConfigured) {
@@ -347,13 +376,32 @@ class TransactionViewModel(
             _authSuccessMessage.value = null
             try {
                 val userId = "google-" + email.hashCode().toString()
-                
-                // Define a dynamic spreadsheet ID associated with the user's account
-                val cleanEmail = email.replace("@", "_").replace(".", "_")
-                com.example.data.api.GoogleSheetsClient.spreadsheetId = "1Producao_${cleanEmail}_Backup_DB"
-                
                 val computedAvatarUrl = avatarUrl ?: "https://ui-avatars.com/api/?name=${java.net.URLEncoder.encode(name, "UTF-8")}&background=${if (email.lowercase().contains("vendas")) "34D399" else "F472B6"}&color=1A0A13&bold=true&size=120"
                 
+                // Fetch the Google Drive Access Token
+                val token = com.example.data.GoogleDriveBackupManager.getGoogleAccessToken(context)
+                var downloadSuccess = false
+                
+                if (token != null) {
+                    val fileId = com.example.data.GoogleDriveBackupManager.findBackupFile(token)
+                    if (fileId != null) {
+                        val res = com.example.data.GoogleDriveBackupManager.downloadBackup(token, fileId, context)
+                        if (res) {
+                            downloadSuccess = true
+                            android.util.Log.i("TransactionViewModel", "Database auto-restored from Google Drive successfully!")
+                        }
+                    }
+                }
+
+                if (!downloadSuccess) {
+                    // Seed categories if it's a fresh setup
+                    repository.seedMockDataIfEmpty()
+                    // Upload current local database to start a new Google Drive backup stream
+                    if (token != null) {
+                        com.example.data.GoogleDriveBackupManager.uploadBackup(token, context)
+                    }
+                }
+
                 // Save user profile locally
                 repository.insertUser(
                     com.example.data.UserEntity(
@@ -362,23 +410,15 @@ class TransactionViewModel(
                         passwordHash = "google-authenticated-account"
                     )
                 )
+                
                 sessionManager.saveSession(
                     userId = userId,
                     email = email,
-                    authToken = "google-access-token-placeholder",
-                    usingSupabase = true, // Ativa modo de backup do Google Sheets
+                    authToken = token ?: "google-access-token-placeholder",
+                    usingSupabase = true, // compatibility flag kept active
                     name = name,
                     avatarUrl = computedAvatarUrl
                 )
-                
-                // Recover previous data & settings if any exist under this Google user ID
-                com.example.data.GoogleSheetsSyncManager.pullRemoteData(repository, sessionManager)
-                
-                // Populate base categories if database is still empty after pulling
-                repository.seedMockDataIfEmpty()
-                
-                // Sychronize database status after initial login sequence
-                com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
                 
                 val config = repository.getBrandConfig()
                 _brandConfig.value = config
@@ -388,7 +428,12 @@ class TransactionViewModel(
                     _appName.value = config.brandName
                     _colorSchemeName.value = config.colorScheme
                 }
-                _authSuccessMessage.value = "Conectado à sua conta Google!\nPlanilha de Banco de Dados 'Producao_${cleanEmail}_Backup_DB' criada na sua conta e sincronizada com sucesso."
+                
+                _authSuccessMessage.value = if (downloadSuccess) {
+                    "Conectado à sua conta Google!\nSeu banco de dados SQLite foi encontrado e restaurado com do Google Drive."
+                } else {
+                    "Conectado à sua conta Google!\nNenhum backup prévio localizado. Um novo backup automático foi gerado no seu Google Drive."
+                }
                 _isBrandLoaded.value = true
                 _isUserLoggedIn.value = true
             } catch (e: Exception) {
@@ -633,7 +678,12 @@ class TransactionViewModel(
         viewModelScope.launch {
             _syncState.value = "SYNCING"
             val success = if (sessionManager.isLoggedIn) {
-                com.example.data.GoogleSheetsSyncManager.pushLocalData(repository, sessionManager)
+                val token = com.example.data.GoogleDriveBackupManager.getGoogleAccessToken(context)
+                if (token != null) {
+                    com.example.data.GoogleDriveBackupManager.uploadBackup(token, context)
+                } else {
+                    false
+                }
             } else {
                 kotlinx.coroutines.delay(1200)
                 true
@@ -887,12 +937,13 @@ class TransactionViewModel(
 
 class TransactionViewModelFactory(
     private val repository: TransactionRepository,
-    private val sessionManager: com.example.data.SessionManager
+    private val sessionManager: com.example.data.SessionManager,
+    private val context: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TransactionViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TransactionViewModel(repository, sessionManager) as T
+            return TransactionViewModel(repository, sessionManager, context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

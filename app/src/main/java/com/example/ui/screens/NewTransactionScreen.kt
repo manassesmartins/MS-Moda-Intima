@@ -398,9 +398,9 @@ fun NewTransactionScreen(
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.05f)
+                        containerColor = getGlassContainerColor()
                     ),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                    border = getGlassBorderStroke(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
