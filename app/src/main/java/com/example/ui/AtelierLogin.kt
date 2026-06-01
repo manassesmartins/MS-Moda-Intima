@@ -85,17 +85,36 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
         }
     }
 
-    // Set up real Google Sign-In options with Drive scopes
+    // Set up real Google Sign-In options with basic scopes (email and profile) which are guaranteed to succeed on any account picker
     val gso = remember {
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestProfile()
-            .requestScopes(Scope("https://www.googleapis.com/auth/drive.file"))
             .build()
     }
     val googleSignInClient = remember {
         GoogleSignIn.getClient(context, gso)
     }
+    
+    val driveScope = Scope("https://www.googleapis.com/auth/drive.file")
+
+    // Launcher for dynamic Google Drive file-scope consent
+    val drivePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { driveResult ->
+        // Continue login with whatever credentials we have, even if Drive permissions was canceled/denied!
+        val lastAccount = GoogleSignIn.getLastSignedInAccount(context)
+        if (lastAccount != null && lastAccount.email != null) {
+            viewModel.loginWithGoogle(
+                email = lastAccount.email!!,
+                name = lastAccount.displayName ?: "Usuário Google",
+                avatarUrl = lastAccount.photoUrl?.toString()
+            )
+        } else {
+            viewModel.setAuthError("Erro ao autenticar com a conta Google.")
+        }
+    }
+
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -103,11 +122,24 @@ fun MsModaIntimaLoginScreen(viewModel: TransactionViewModel) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
                 val account = task.getResult(ApiException::class.java)
-                val googleEmail = account.email ?: ""
-                val googleName = account.displayName ?: ""
-                val googlePhoto = account.photoUrl?.toString()
+                val googleEmail = account?.email ?: ""
+                val googleName = account?.displayName ?: "Usuário Google"
+                val googlePhoto = account?.photoUrl?.toString()
+                
                 if (googleEmail.isNotEmpty()) {
-                    viewModel.loginWithGoogle(googleEmail, googleName, googlePhoto)
+                    // Check if Drive file permission is already granted
+                    if (GoogleSignIn.hasPermissions(account, driveScope)) {
+                        viewModel.loginWithGoogle(googleEmail, googleName, googlePhoto)
+                    } else {
+                        // Request Drive file permission dynamically to give the Google app permissions on demand
+                        val gsoWithDrive = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestEmail()
+                            .requestProfile()
+                            .requestScopes(driveScope)
+                            .build()
+                        val driveSignInClient = GoogleSignIn.getClient(context, gsoWithDrive)
+                        drivePermissionLauncher.launch(driveSignInClient.signInIntent)
+                    }
                 } else {
                     viewModel.setAuthError("Não foi possível carregar o e-mail da conta Google")
                 }
