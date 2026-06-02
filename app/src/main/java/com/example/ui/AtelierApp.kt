@@ -34,6 +34,9 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.composed
 import com.example.data.*
 import com.example.ui.theme.*
+import com.example.ui.utils.rememberBitmapFromBase64
+import com.example.ui.screens.ProfileSettingsPopup
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -312,6 +315,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
 
     var transactionForOptions by remember { mutableStateOf<com.example.data.TransactionEntity?>(null) }
     var transactionToEdit by remember { mutableStateOf<com.example.data.TransactionEntity?>(null) }
+    var showProfileSettingsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.showUndoSnackbar.collect { message ->
@@ -325,6 +329,13 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 Toast.makeText(context, "Registro restaurado!", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    if (showProfileSettingsDialog) {
+        ProfileSettingsPopup(
+            onDismiss = { showProfileSettingsDialog = false },
+            viewModel = viewModel
+        )
     }
 
     BoxWithConstraints(
@@ -395,16 +406,9 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                 topBar = {
                     MsModaIntimaTopBar(
                         appName = appName,
-                        syncState = syncState,
-                        isCloudEnabled = isCloudBackupEnabled,
-                        onSyncClick = {
-                            if (isCloudBackupEnabled) {
-                                viewModel.triggerSyncSimulation()
-                                Toast.makeText(context, "Sincronizando com a Nuvem...", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Ative a sincronização em nuvem nas configurações.", Toast.LENGTH_LONG).show()
-                            }
-                        }
+                        brandConfig = brandConfig,
+                        onProfileClick = { showProfileSettingsDialog = true },
+                        context = context
                     )
                 },
                 bottomBar = {
@@ -1006,9 +1010,9 @@ fun GlassCard(
 @Composable
 fun MsModaIntimaTopBar(
     appName: String,
-    syncState: String,
-    isCloudEnabled: Boolean,
-    onSyncClick: () -> Unit
+    brandConfig: com.example.data.BrandConfigEntity?,
+    onProfileClick: () -> Unit,
+    context: android.content.Context
 ) {
     val Primary = MaterialTheme.colorScheme.primary
     val OnPrimary = MaterialTheme.colorScheme.onPrimary
@@ -1023,86 +1027,83 @@ fun MsModaIntimaTopBar(
     val SurfaceDark = MaterialTheme.colorScheme.background
     val ErrorColor = MaterialTheme.colorScheme.error
 
-    TopAppBar(
+    // Active network checker
+    var isConnected by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            isConnected = try {
+                val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+                val activeNetwork = cm?.activeNetwork
+                val caps = cm?.getNetworkCapabilities(activeNetwork)
+                caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+            } catch (e: Exception) {
+                false
+            }
+            kotlinx.coroutines.delay(4000)
+        }
+    }
+
+    CenterAlignedTopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.clickable { onSyncClick() }
+                modifier = Modifier.padding(horizontal = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Estado de Sincronização",
-                    tint = Primary,
-                    modifier = Modifier.size(24.dp)
-                )
                 Text(
                     text = appName,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary,
                     fontFamily = FontFamily.SansSerif
                 )
-            }
-        },
-        actions = {
-            // Live Synchronicity Badge
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(end = 12.dp)
-            ) {
+                // Small indicator dot (green connected / gray disconnected)
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            when (syncState) {
-                                "SYNCED" -> Tertiary.copy(alpha = 0.15f)
-                                "SYNCING" -> Secondary.copy(alpha = 0.15f)
-                                "SAVED_OFFLINE" -> Color(0xFFFFB4AB).copy(alpha = 0.15f)
-                                else -> Color.White.copy(alpha = 0.1f)
-                            }
-                        )
-                        .border(
-                            1.dp,
-                            when (syncState) {
-                                "SYNCED" -> Tertiary.copy(alpha = 0.4f)
-                                "SYNCING" -> Secondary.copy(alpha = 0.4f)
-                                "SAVED_OFFLINE" -> Color(0xFFFFB4AB).copy(alpha = 0.4f)
-                                else -> Color.White.copy(alpha = 0.2f)
-                            },
-                            RoundedCornerShape(12.dp)
-                        )
-                        .clickable { onSyncClick() }
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = when (syncState) {
-                            "SYNCED" -> "SINCRONIZADO"
-                            "SYNCING" -> "SINCANDO..."
-                            "SAVED_OFFLINE" -> "SALVO OFFLINE"
-                            else -> "NUVEM OFF"
-                        },
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = when (syncState) {
-                            "SYNCED" -> Tertiary
-                            "SYNCING" -> Secondary
-                            "SAVED_OFFLINE" -> Color(0xFFFFB4AB)
-                            else -> OnSurfaceVariant
-                        }
-                    )
-                }
-
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Perfil",
-                    tint = OnSurfaceVariant,
-                    modifier = Modifier.size(28.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(if (isConnected) Color(0xFF10B981) else Color(0xFF9CA3AF))
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
+        actions = {
+            // Profile icon or custom brand logo trigger button
+            Box(
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Primary.copy(alpha = 0.12f))
+                    .border(1.dp, Primary.copy(alpha = 0.25f), CircleShape)
+                    .clickable { onProfileClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                val decodedLogo = rememberBitmapFromBase64(brandConfig?.logoImage)
+                if (decodedLogo != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = decodedLogo,
+                        contentDescription = "Logo",
+                        modifier = Modifier.size(34.dp).clip(CircleShape)
+                    )
+                } else {
+                    val iconsMap = mapOf(
+                        "CROWN" to Icons.Default.Star,
+                        "BAG" to Icons.Default.ShoppingCart,
+                        "HEART" to Icons.Default.Favorite,
+                        "BUILD" to Icons.Default.Build,
+                        "PERSON" to Icons.Default.Person
+                    )
+                    val iconVec = iconsMap[brandConfig?.logoIcon ?: "CROWN"] ?: Icons.Default.Star
+                    Icon(
+                        imageVector = iconVec,
+                        contentDescription = "Ajustes",
+                        tint = Primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = if (MaterialTheme.colorScheme.background.isColorLight()) {
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
             } else {
@@ -1113,6 +1114,7 @@ fun MsModaIntimaTopBar(
         modifier = Modifier.drawBehindGlassBorder()
     )
 }
+
 
 // Custom Glass Border modifier
 fun Modifier.drawBehindGlassBorder(): Modifier = this.composed {
@@ -1157,11 +1159,10 @@ fun MsModaIntimaBottomBar(
             .height(80.dp)
     ) {
         val tabs = listOf(
-            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
-            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
-            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
-            Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
+            Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel"),
+            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo Caixa"),
+            Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Pedidos"),
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo Peças")
         )
 
         tabs.forEach { (tab, icon, label) ->
@@ -1293,7 +1294,7 @@ fun MsModaIntimaNavigationRail(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
-            Triple(AppTab.SETTINGS, Icons.Default.Settings, "Ajustes")
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças")
         )
 
         tabs.forEach { (tab, icon, label) ->

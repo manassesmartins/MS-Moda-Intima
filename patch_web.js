@@ -2,16 +2,10 @@ const fs = require('fs');
 
 let html = fs.readFileSync('web/index.html', 'utf8');
 
-// 1. Add MQTT script to head
-html = html.replace(
-    '</head>',
-    '    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>\n</head>'
-);
+const authPanelRegex = /<!-- LOGIN PANEL -->[\s\S]*?<!-- GOOGLE ACCOUNT PICKER MODAL/m;
 
-// 2. Replace #auth-panel
-const authPanelRegex = /<div id="auth-panel"[\\s\\S]*?<!-- GOOGLE ACCOUNT PICKER MODAL/m;
 const newAuthPanel = `
-    <!-- LOGIN PANEL -->
+    <!-- LOGIN PANEL (MQTT P2P) -->
     <div id="auth-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style="background: linear-gradient(180deg, var(--dark-bg, #1A0A13) 0%, rgba(244, 114, 182, 0.08) 50%, var(--dark-bg, #1A0A13) 100%);">
         <!-- Glowing background lights -->
         <div class="absolute top-10 left-10 w-72 h-72 rounded-full pointer-events-none blur-[120px]" style="background: radial-gradient(circle, rgba(244, 114, 182, 0.12) 0%, transparent 70%);"></div>
@@ -38,7 +32,7 @@ const newAuthPanel = `
                 </div>
                 
                 <div class="bg-black/30 border border-white/5 rounded-2xl py-6 px-10 relative">
-                    <div id="new-auth-pin" class="text-[44px] font-mono tracking-[0.3em] ml-[0.15em] font-black glow-text text-white" style="text-shadow: 0 0 15px var(--primary-glow)">000000</div>
+                    <div id="new-auth-pin" class="text-[44px] font-mono tracking-[0.3em] font-black glow-text text-white" style="text-shadow: 0 0 15px var(--primary-glow)">000000</div>
                 </div>
 
                 <!-- Status messages -->
@@ -60,18 +54,21 @@ const newAuthPanel = `
 
     <!-- P2P MQTT SCRIPT INJECTION -->
     <script>
-        // Start MQTT listener for Auth
-        let mqttClient;
         let p2pPinCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        function initP2PMQTT() {
-            setTimeout(() => {
-                if (document.getElementById('new-auth-pin')) {
-                    document.getElementById('new-auth-pin').innerText = p2pPinCode;
-                }
-            }, 100);
+        let mqttClient = null;
 
-            // Using HiveMQ public websockets
+        function initP2PMQTT() {
+            const elm = document.getElementById('new-auth-pin');
+            if (elm) {
+                elm.innerText = p2pPinCode;
+            }
+
+            if (!window.Paho || !window.Paho.MQTT || !window.Paho.MQTT.Client) {
+                console.error("MQTT client not loaded yet");
+                setTimeout(initP2PMQTT, 1000);
+                return;
+            }
+
             const clientId = "gestor-web-" + p2pPinCode + "-" + Math.floor(Math.random() * 1000);
             mqttClient = new Paho.MQTT.Client("broker.hivemq.com", 8000, "/mqtt", clientId);
 
@@ -88,34 +85,46 @@ const newAuthPanel = `
                     try {
                         const payload = JSON.parse(message.payloadString);
                         
-                        // Show success 
-                        const errBox = document.getElementById('auth-error-box');
                         const sucBox = document.getElementById('auth-success-box');
                         const spin = document.getElementById('connection-status-spinner');
                         const txt = document.getElementById('connection-status-text');
                         
-                        if(errBox) errBox.classList.add('hidden');
                         if(spin) spin.classList.add('hidden');
                         if(txt) txt.innerText = "Sincronizando dados...";
                         
-                        // Parse Database JSON from mobile
-                        if (payload.transactions) transactions = payload.transactions;
-                        if (payload.categories) categories = payload.categories;
-                        if (payload.orders) orders = payload.orders;
-                        if (payload.calculations) pieceCalculations = payload.calculations;
-                        if (payload.brandConfig) brandConfig = payload.brandConfig;
+                        // Parse JSON
+                        if (payload.transactions) {
+                            transactions = [];
+                            for(let i=0; i<payload.transactions.length(); i++) {
+                                transactions.push(payload.transactions.getJSONObject(i)); 
+                            }
+                        }
+                        if (payload.transactions) {
+                            // Quick parse assuming payload is direct JSON array mapping
+                            transactions = JSON.parse(JSON.stringify(payload.transactions));
+                        }
+                        if (payload.categories) {
+                            categories = JSON.parse(JSON.stringify(payload.categories));
+                        }
+                        if (payload.orders) {
+                            orders = JSON.parse(JSON.stringify(payload.orders));
+                        }
+                        if (payload.calculations) {
+                            pieceCalculations = JSON.parse(JSON.stringify(payload.calculations));
+                        }
+                        if (payload.brandConfig) {
+                            brandConfig = payload.brandConfig;
+                            localStorage.setItem('ms_brand_config', JSON.stringify(brandConfig));
+                            applyThemeFromConfig();
+                        }
                         
-                        // Set mock user so app unblocks
                         user = {
                             id: "mobile-sync-user",
-                            email: payload.email || "conectado@mobile.com",
+                            email: payload.email || "Android Sync (P2P)",
                             created_at: new Date().toISOString()
                         };
+                        localStorage.setItem("ms_user", JSON.stringify(user));
                         
-                        localStorage.setItem("ms_authenticated", "true");
-                        localStorage.setItem("ms_auth_user", JSON.stringify(user));
-                        
-                        // Add success visuals and load app
                         if(sucBox) {
                             sucBox.classList.remove('hidden');
                             sucBox.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i>Sincronizado com o Celular com Sucesso!';
@@ -123,18 +132,9 @@ const newAuthPanel = `
                         
                         setTimeout(() => {
                             document.getElementById('auth-panel').classList.add('hidden');
-                            updateUserInfoUI();
-                            loadBrandConfig(); // Applies theme if brandConfig was sent
-                            renderTransactionsTable();
-                            updateDashboardMetrics();
-                            renderOrdersGrid();
-                            renderCalculationsCards();
-                            
-                            // Let mobile app know we received it
-                            const ack = new Paho.MQTT.Message(JSON.stringify({ status: "ok" }));
-                            ack.destinationName = "gestor_producao/sync/" + p2pPinCode + "/ack";
-                            mqttClient.send(ack);
-                        }, 1200);
+                            updateSyncBadge(true, "Android Sync");
+                            renderAll();
+                        }, 1500);
 
                     } catch(e) {
                         console.error("MQTT parsing error", e);
@@ -147,6 +147,11 @@ const newAuthPanel = `
                 onSuccess: function() {
                     console.log("MQTT Connected");
                     mqttClient.subscribe("gestor_producao/sync/" + p2pPinCode, {qos: 1});
+                    
+                    const spin = document.getElementById('connection-status-spinner');
+                    const txt = document.getElementById('connection-status-text');
+                    if (spin) spin.classList.remove('hidden');
+                    if (txt) txt.innerText = "Escutando aplicativo Android na nuvem...";
                 },
                 onFailure: function(message) {
                     console.log("MQTT Connection failed: " + message.errorMessage);
@@ -156,23 +161,45 @@ const newAuthPanel = `
             
             try {
                 mqttClient.connect(options);
+                console.log("Connecting MQTT per paho");
             } catch(e) {
                 console.error("Failed to connect MQTT", e);
             }
         }
-        
-        // Load on document ready
-        document.addEventListener("DOMContentLoaded", function() {
-            // Only start if not already authenticated
-            if(!localStorage.getItem("ms_authenticated")) {
-                setTimeout(initP2PMQTT, 500); 
-            }
-        });
     </script>
     <!-- GOOGLE ACCOUNT PICKER MODAL`;
 
-html = html.replace(authPanelRegex, newAuthPanel);
+const newHTML = html.replace(authPanelRegex, newAuthPanel);
 
-fs.writeFileSync('web/index.html', html, 'utf8');
+// Ensure MQTT library is there
+let finalHTML = newHTML;
+if (!finalHTML.includes('mqttws31.min.js')) {
+    finalHTML = finalHTML.replace(
+        '</head>',
+        '    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>\n</head>'
+    );
+}
 
-console.log('Web HTML patched successfully!');
+// Remove the Initial Setup Config Modal that the user complained about
+const setupModalRegex = /<!-- BRAND SETUP WIZARD \(Runs on first ever login\) -->[\s\S]*?<!-- MAIN APP VIEW -->/m;
+finalHTML = finalHTML.replace(setupModalRegex, `<!-- MAIN APP VIEW -->`);
+
+// Replace the DOMContentLoaded app init block to call initP2PMQTT if not logged in
+const documentReadyRegex = /document\.addEventListener\('DOMContentLoaded', \(\) => {[\s\S]*?loadBrandConfig\(\);[\s\S]*?updateSyncBadge\(false\);[\s\S]*?}\);/m;
+const newDOMReady = `document.addEventListener('DOMContentLoaded', () => {
+        loadBrandConfig();
+        const savedUser = localStorage.getItem('ms_user');
+        if (savedUser) {
+            user = JSON.parse(savedUser);
+            document.getElementById('auth-panel').classList.add('hidden');
+            updateSyncBadge(true, "Android Sync");
+            renderAll();
+        } else {
+            document.getElementById('auth-panel').classList.remove('hidden');
+            setTimeout(initP2PMQTT, 800);
+        }
+    });`;
+finalHTML = finalHTML.replace(documentReadyRegex, newDOMReady);
+
+fs.writeFileSync('web/index.html', finalHTML, 'utf8');
+console.log('Patch complete.');
