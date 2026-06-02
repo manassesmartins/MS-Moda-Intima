@@ -1,0 +1,7 @@
+{
+  "version": "1.2.23",
+  "changelog": "Build automático: Commit feat: implement QR code scanning for web auth
+
+Add CameraX support, update UI theme identifiers, and integrate QRCode.js in the web portal to enable quick login via QR code scanning.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
