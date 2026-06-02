@@ -1,7 +1,0 @@
-{
-  "version": "1.2.22",
-  "changelog": "Build automático: Commit feat: add profile settings and update authentication
-
-Integrate profile settings dialog in the UI and update web authentication to support MQTT P2P connection logic. Refactor build configuration versioning.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/MS-Moda-Intima/main/app-debug.apk"
-}

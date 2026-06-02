@@ -215,7 +215,8 @@
             }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 </head>
 <body class="h-full flex flex-col md:flex-row overflow-hidden">
 
@@ -247,7 +248,13 @@
                         </div>
                         
                         <div class="bg-black/30 border border-white/5 rounded-2xl py-5 px-10 relative mt-4">
-                            <div id="new-auth-pin" class="text-[40px] font-mono tracking-[0.3em] font-black glow-text text-white pl-3" style="text-shadow: 0 0 15px var(--primary-glow)">000000</div>
+    <div id="new-auth-pin" class="text-[40px] font-mono tracking-[0.3em] font-black glow-text text-white pl-3" style="text-shadow: 0 0 15px var(--primary-glow)">000000</div>
+</div>
+
+<div class="mt-2 text-center flex flex-col items-center">
+    <p class="text-[10px] text-purple-200/50 mb-2 uppercase tracking-wide">Ou Escaneie o QR Code</p>
+    <div id="qrcode-container" class="p-2 bg-white rounded-xl shadow-lg"></div>
+</div>
                         </div>
 
                         <!-- Status messages -->
@@ -268,6 +275,7 @@
             </div>
 
             <!-- P2P MQTT SCRIPT INJECTION -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
             <script>
                 let p2pPinCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -323,7 +331,25 @@
                     }
                 }
 
-                function initP2PMQTT() {
+                // Instantly show pin code
+document.addEventListener('DOMContentLoaded', () => {
+    const elm = document.getElementById('new-auth-pin');
+    if (elm) elm.innerText = p2pPinCode;
+    
+    const qrContainer = document.getElementById('qrcode-container');
+    if (qrContainer && typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+            text: p2pPinCode,
+            width: 120,
+            height: 120,
+            colorDark : "#1A0A13",
+            colorLight : "#FFFFFF",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+    }
+});
+
+function initP2PMQTT() {
                     const elm = document.getElementById('new-auth-pin');
                     if (elm) {
                         elm.innerText = p2pPinCode;

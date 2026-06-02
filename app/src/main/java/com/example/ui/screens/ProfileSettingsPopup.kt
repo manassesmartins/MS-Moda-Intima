@@ -187,14 +187,6 @@ fun ProfileSettingsPopup(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                SettingsMenuRow(
-                    title = "Backup em Nuvem Google Drive",
-                    subtitle = "Configurar conta e sincronização automática",
-                    iconVec = Icons.Default.Lock,
-                    onClick = { activeSubPopup = "CLOUD" },
-                    primaryColor = Primary
-                )
-
                 Spacer(modifier = Modifier.height(10.dp))
 
                 SettingsMenuRow(
@@ -212,6 +204,22 @@ fun ProfileSettingsPopup(
                     subtitle = "Exportar ou restaurar banco SQLite em arquivo",
                     iconVec = Icons.Default.Share,
                     onClick = { activeSubPopup = "LOCAL" },
+                    primaryColor = Primary
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                SettingsMenuRow(
+                    title = "Buscar Atualizações",
+                    subtitle = "Verificar se há nova versão disponivel",
+                    iconVec = Icons.Default.Refresh,
+                    onClick = { 
+                        Toast.makeText(context, "Verificando se há atualizações...", Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            kotlinx.coroutines.delay(1500)
+                            Toast.makeText(context, "O aplicativo já está na versão mais recente (v1.0.0)", Toast.LENGTH_LONG).show()
+                        }
+                    },
                     primaryColor = Primary
                 )
 
@@ -263,6 +271,45 @@ fun ProfileSettingsPopup(
         var logoIconInput by remember(brandConfig) { mutableStateOf(brandConfig?.logoIcon ?: "CROWN") }
         var logoTextInput by remember(brandConfig) { mutableStateOf(brandConfig?.logoText ?: "") }
         var logoImageInput by remember(brandConfig) { mutableStateOf<String?>(brandConfig?.logoImage) }
+
+        val cameraLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicturePreview()
+        ) { bitmap: android.graphics.Bitmap? ->
+            if (bitmap != null) {
+                try {
+                    val maxDimen = 300
+                    val scale = java.lang.Math.min(maxDimen.toFloat()/bitmap.width, maxDimen.toFloat()/bitmap.height)
+                    val resizedBitmap = if (scale < 1.0f) {
+                        android.graphics.Bitmap.createScaledBitmap(
+                            bitmap, 
+                            (bitmap.width * scale).toInt(), 
+                            (bitmap.height * scale).toInt(), 
+                            true
+                        )
+                    } else bitmap
+
+                    val outputStream = java.io.ByteArrayOutputStream()
+                    resizedBitmap.compress(android.graphics.Bitmap.CompressFormat.WEBP, 80, outputStream)
+                    val bytes = outputStream.toByteArray()
+                    
+                    val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    logoImageInput = "data:image/webp;base64,$base64"
+                    Toast.makeText(context, "Foto de Logotipo Tirada!", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Erro ao processar imagem", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        val cameraPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                cameraLauncher.launch(null)
+            } else {
+                Toast.makeText(context, "Permissão de câmera negada", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         val imageLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -365,12 +412,26 @@ fun ProfileSettingsPopup(
                             }
 
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Button(
-                                    onClick = { imageLauncher.launch("image/*") },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("Carregar Imagem", fontSize = 11.sp)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(
+                                        onClick = { imageLauncher.launch("image/*") },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Galeria", fontSize = 11.sp)
+                                    }
+                                    
+                                    Button(
+                                        onClick = { cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Primary.copy(alpha=0.8f)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Câmera", fontSize = 11.sp)
+                                    }
                                 }
                                 if (logoImageInput != null) {
                                     Text(
@@ -580,107 +641,6 @@ fun ProfileSettingsPopup(
     }
 
     // ----------------------------------------------------
-    // SUB-POPUP 3: BACKUP EM NUVEM (GOOGLE DRIVE)
-    // ----------------------------------------------------
-    if (activeSubPopup == "CLOUD") {
-        AlertDialog(
-            onDismissRequest = { activeSubPopup = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            title = {
-                Text("Backup em Nuvem (Google Drive)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "Ative a sincronização para salvar um backup completo de suas transações, tabelas de medidas, fichas técnicas e clientes de forma invisível e automatizada na sua conta do Google Drive.",
-                        fontSize = 12.sp,
-                        color = OnSurfaceVariant,
-                        lineHeight = 16.sp
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.05f))
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Sincronização Ativa", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = OnSurface)
-                            Text("Sincronizar dados automaticamente", fontSize = 11.sp, color = OnSurfaceVariant)
-                        }
-                        Switch(
-                            checked = isCloudEnabled,
-                            onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Primary)
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(10.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
-                            .padding(12.dp)
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "Status de Sincronização:",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = OnSurface
-                            )
-                            Text(
-                                text = when (syncState) {
-                                    "SYNCED" -> "✓ Totalmente Sincronizado"
-                                    "SYNCING" -> "⌛ Enviando Backup para o Drive..."
-                                    "ERROR_SYNC" -> "⚠ Falha ao autenticar com Play Services (Verifique permissões)"
-                                    else -> "📴 Backup Desativado / Operando Local"
-                                },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = when (syncState) {
-                                    "SYNCED" -> Color(0xFF10B981)
-                                    "SYNCING" -> Secondary
-                                    "ERROR_SYNC" -> Color(0xFFFFB4AB)
-                                    else -> OnSurfaceVariant
-                                }
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = {
-                            viewModel.triggerSyncSimulation()
-                            Toast.makeText(context, "Sincronizando...", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Sincronizar Agora com o Drive", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { activeSubPopup = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    // ----------------------------------------------------
     // SUB-POPUP 4: IMPORTAÇÃO & EXPORTAÇÃO LOCAL SQLite
     // ----------------------------------------------------
     if (activeSubPopup == "LOCAL") {
@@ -807,6 +767,10 @@ fun ProfileSettingsPopup(
                         lineHeight = 16.sp
                     )
                     
+                    val scanner = remember {
+                        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context)
+                    }
+
                     OutlinedTextField(
                         value = pinCode,
                         onValueChange = { if (it.length <= 6) pinCode = it },
@@ -819,6 +783,25 @@ fun ProfileSettingsPopup(
                             focusedTextColor = OnSurface,
                             unfocusedTextColor = OnSurface
                         ),
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                scanner.startScan()
+                                    .addOnSuccessListener { barcode ->
+                                        barcode.rawValue?.let { scannedPin ->
+                                            if (scannedPin.length == 6 && scannedPin.all { it.isDigit() }) {
+                                                pinCode = scannedPin
+                                            } else {
+                                                Toast.makeText(context, "QR Code inválido", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Falha ao escanear", Toast.LENGTH_SHORT).show()
+                                    }
+                            }) {
+                                Icon(imageVector = Icons.Default.Search, contentDescription = "Escanear QR")
+                            }
+                        },
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     )

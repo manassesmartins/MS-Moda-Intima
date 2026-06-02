@@ -31,7 +31,7 @@ fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
                 surfaceVariant = Color(0xFF1F2E4D),
                 onSurfaceVariant = Color(0xFFCBD5E1)
             )
-            "GREEN" -> darkColorScheme(
+            "EMERALD" -> darkColorScheme(
                 primary = Color(0xFF34D399),
                 onPrimary = Color(0xFF022C22),
                 secondary = Color(0xFF6EE7B7),
@@ -45,6 +45,21 @@ fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
                 onSurface = Color(0xFFECFDF5),
                 surfaceVariant = Color(0xFF153D30),
                 onSurfaceVariant = Color(0xFFD1FAE5)
+            )
+            "PURPLE" -> darkColorScheme(
+                primary = Color(0xFFC084FC),
+                onPrimary = Color(0xFF2E1065),
+                secondary = Color(0xFFD8B4FE),
+                onSecondary = Color(0xFF3B0764),
+                tertiary = Color(0xFFE9D5FF),
+                onTertiary = Color(0xFF2E1065),
+                error = Color(0xFFF87171),
+                background = Color(0xFF160A24), // Deep Amethyst
+                onBackground = Color(0xFFFAF5FF),
+                surface = Color(0xFF200F33),
+                onSurface = Color(0xFFFAF5FF),
+                surfaceVariant = Color(0xFF3B1E63),
+                onSurfaceVariant = Color(0xFFE9D5FF)
             )
             "ROSE" -> darkColorScheme( // LUXURIOUS OURO ROSÉ (Rose Gold Theme)
                 primary = Color(0xFFF6A6B2), // Magnificent dusty Rose Gold
@@ -110,7 +125,7 @@ fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
                 surfaceVariant = Color(0xFFE2E8F0),
                 onSurfaceVariant = Color(0xFF475569)
             )
-            "GREEN" -> lightColorScheme(
+            "EMERALD" -> lightColorScheme(
                 primary = Color(0xFF059669),
                 onPrimary = Color(0xFFFFFFFF),
                 secondary = Color(0xFF10B981),
@@ -124,6 +139,21 @@ fun getDynamicColorScheme(schemeName: String, isDark: Boolean): ColorScheme {
                 onSurface = Color(0xFF064E3B),
                 surfaceVariant = Color(0xFFD1FAE5),
                 onSurfaceVariant = Color(0xFF065F46)
+            )
+            "PURPLE" -> lightColorScheme(
+                primary = Color(0xFF9333EA),
+                onPrimary = Color(0xFFFFFFFF),
+                secondary = Color(0xFFA855F7),
+                onSecondary = Color(0xFFFFFFFF),
+                tertiary = Color(0xFFD8B4FE),
+                onTertiary = Color(0xFF581C87),
+                error = Color(0xFFDC2626),
+                background = Color(0xFFFAF5FF), 
+                onBackground = Color(0xFF3B0764),
+                surface = Color(0xFFFFFFFF),
+                onSurface = Color(0xFF3B0764),
+                surfaceVariant = Color(0xFFF3E8FF),
+                onSurfaceVariant = Color(0xFF581C87)
             )
             "ROSE" -> lightColorScheme( // LUXURIOUS OURO ROSÉ (Rose Gold Theme Light)
                 primary = Color(0xFFD8577A), // Cozy rich Rose Gold Pink
