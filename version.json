@@ -1,9 +1,5 @@
 {
-  "version": "1.2.28",
-  "changelog": "Build automático: Commit build: update app version and visual assets
-
-- Revert versionName to 1.2
-- Update app launcher icon background and foreground
-- Remove unnecessary build artifacts",
+  "version": "1.2.28.32",
+  "changelog": "Build automático: Commit Add files via upload",
   "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
 }
