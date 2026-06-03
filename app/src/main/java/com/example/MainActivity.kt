@@ -20,6 +20,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
+    private lateinit var viewModel: TransactionViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -35,7 +37,7 @@ class MainActivity : ComponentActivity() {
         )
         val sessionManager = com.example.data.SessionManager(this)
         val factory = TransactionViewModelFactory(repository, sessionManager, applicationContext)
-        val viewModel = ViewModelProvider(this, factory)[TransactionViewModel::class.java]
+        viewModel = ViewModelProvider(this, factory)[TransactionViewModel::class.java]
 
         // Monitor connections and automatically trigger sync when internet becomes available
         try {
@@ -72,6 +74,13 @@ class MainActivity : ComponentActivity() {
                     MsModaIntimaApp(viewModel = viewModel)
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::viewModel.isInitialized) {
+            viewModel.checkForUpdatesSilently(this)
         }
     }
 }
