@@ -74,8 +74,9 @@ class SessionManager(context: Context) {
     val userId: String?
         get() = prefs.getString(KEY_USER_ID, null)
 
-    val userEmail: String?
+    var userEmail: String?
         get() = prefs.getString(KEY_USER_EMAIL, null)
+        set(value) = prefs.edit().putString(KEY_USER_EMAIL, value).apply()
 
     val authToken: String?
         get() = prefs.getString(KEY_AUTH_TOKEN, null)

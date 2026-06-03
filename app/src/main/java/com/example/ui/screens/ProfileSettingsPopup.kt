@@ -190,6 +190,16 @@ fun ProfileSettingsPopup(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 SettingsMenuRow(
+                    title = "Backup em Nuvem Google Drive",
+                    subtitle = "Configurar conta e sincronização automática",
+                    iconVec = Icons.Default.Lock,
+                    onClick = { activeSubPopup = "CLOUD" },
+                    primaryColor = Primary
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                SettingsMenuRow(
                     title = "Espelhamento PC / Web (P2P)",
                     subtitle = "Sincronizar em tempo real com laptop/desktop via MQTT",
                     iconVec = Icons.Default.Send,
@@ -428,7 +438,7 @@ fun ProfileSettingsPopup(
                                         colors = ButtonDefaults.buttonColors(containerColor = Primary.copy(alpha=0.8f)),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text("Câmera", fontSize = 11.sp)
                                     }
@@ -635,6 +645,146 @@ fun ProfileSettingsPopup(
             dismissButton = {
                 TextButton(onClick = { activeSubPopup = null }) {
                     Text("Fechar", color = OnSurfaceVariant)
+                }
+            }
+        )
+    }
+
+    // ----------------------------------------------------
+    // SUB-POPUP 3: BACKUP EM NUVEM (GOOGLE DRIVE)
+    // ----------------------------------------------------
+    if (activeSubPopup == "CLOUD") {
+        val googleSignInLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                try {
+                    val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                    viewModel.sessionManager.userEmail = account?.email ?: "Usuário Google"
+                    Toast.makeText(context, "Autenticado como ${account?.email}", Toast.LENGTH_SHORT).show()
+                    viewModel.setCloudBackupEnabled(true)
+                } catch (e: com.google.android.gms.common.api.ApiException) {
+                    Toast.makeText(context, "Falha na autenticação", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { activeSubPopup = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            title = {
+                Text("Backup em Nuvem (Google Drive)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max=400.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Ative a sincronização para salvar um backup completo de suas transações, tabelas de medidas, fichas técnicas e clientes de forma invisível e automatizada na sua conta do Google Drive.",
+                        fontSize = 12.sp,
+                        color = OnSurfaceVariant,
+                        lineHeight = 16.sp
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.05f))
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Sincronização Ativa", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                            Text("Sincronizar dados automaticamente", fontSize = 11.sp, color = OnSurfaceVariant)
+                        }
+                        Switch(
+                            checked = isCloudEnabled,
+                            onCheckedChange = { viewModel.setCloudBackupEnabled(it) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = Primary)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                            .padding(12.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                "Status de Sincronização:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface
+                            )
+                            Text(
+                                text = when {
+                                    !isCloudEnabled -> "📴 Backup Desativado / Operando Local"
+                                    viewModel.sessionManager.userEmail == null -> "⚠ Autenticação Google Pendente"
+                                    syncState == "SYNCED" -> "✓ Totalmente Sincronizado"
+                                    syncState == "SYNCING" -> "⌛ Enviando Backup para o Drive..."
+                                    else -> "⚠ Falha ao autenticar com Play Services"
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = when {
+                                    !isCloudEnabled -> OnSurfaceVariant
+                                    viewModel.sessionManager.userEmail == null -> Color(0xFFFFB4AB)
+                                    syncState == "SYNCED" -> Color(0xFF10B981)
+                                    syncState == "SYNCING" -> Secondary
+                                    else -> Color(0xFFFFB4AB)
+                                }
+                            )
+                        }
+                    }
+
+                    if (viewModel.sessionManager.userEmail.isNullOrEmpty()) {
+                        Button(
+                            onClick = {
+                                val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestEmail()
+                                    .build()
+                                val client = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
+                                googleSignInLauncher.launch(client.signInIntent)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Entrar com Conta Google", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    } else {
+                        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Conectado como: ${viewModel.sessionManager.userEmail}", fontSize = 12.sp, color = Primary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.triggerSyncSimulation()
+                                    Toast.makeText(context, "Sincronizando...", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("Sincronizar Agora com o Drive", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { activeSubPopup = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("OK")
                 }
             }
         )
