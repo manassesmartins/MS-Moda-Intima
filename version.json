@@ -1,9 +1,0 @@
-{
-  "version": "1.2.27",
-  "changelog": "Build automático: Commit build: update version and CI configuration
-
-- Reset version to 1.2
-- Add FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 environment variable
-- Clean up outdated version.json file",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}
