@@ -1,0 +1,7 @@
+{
+  "version": "1.2.35",
+  "changelog": "Build automático: Commit refactor: remove Supabase dependency
+
+Remove Supabase integration artifacts and clean up project configuration to focus on local-first functionality.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
