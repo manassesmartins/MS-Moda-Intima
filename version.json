@@ -1,9 +1,0 @@
-{
-  "version": "1.2.26",
-  "changelog": "Build automático: Commit feat: add closing reminder and order date filtering
-
-- Add financial closing notification on the dashboard
-- Implement date-based filtering for orders
-- Update app version to 1.2",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}
