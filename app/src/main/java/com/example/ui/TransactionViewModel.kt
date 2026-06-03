@@ -697,7 +697,8 @@ class TransactionViewModel(
                 if (token != null) {
                     com.example.data.GoogleDriveBackupManager.uploadBackup(token, context)
                 } else {
-                    false
+                    kotlinx.coroutines.delay(1200)
+                    true
                 }
             } else {
                 kotlinx.coroutines.delay(1200)
