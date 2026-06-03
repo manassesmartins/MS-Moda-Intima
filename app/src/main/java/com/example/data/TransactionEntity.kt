@@ -12,7 +12,7 @@ data class TransactionEntity(
     val category: String, // e.g., "Matéria-prima", "Mão de Obra", "Logística & Envios", "Marketing", "Insumos", "Venda"
     val dateString: String, // "12 OUT 2023", "Ontem", "Há 2h" etc.
     val timestamp: Long = System.currentTimeMillis(),
-    val synced: Boolean = true, // Simulation of Supabase Cloud synchronization
+    val synced: Boolean = true, // Simulation of cloud synchronization
     val extraText: String = "", // "Lote #204", "Fornecedor TexArt", "Cliente VIP Alpha" etc.
     val week: String = "1ª Semana" // "1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana", "5ª Semana"
 )

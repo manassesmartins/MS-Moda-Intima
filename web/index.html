@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor de Produção - Desktop Web</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1927,40 +1927,9 @@ function initP2PMQTT() {
         const DEFAULT_SUPABASE_URL = "https://iaykxwwgczlmznbjeaqn.supabase.co";
         const DEFAULT_SUPABASE_KEY = "sb_publishable_pVCHAW8EI-tMqbMIOYa4sQ_hjhseR-u";
 
-        // Initialize Supabase if credentials exist
+        // Initialize Supabase if credentials exist (Disabled)
         function attemptSupabaseInitialization() {
-            let cachedUrl = localStorage.getItem('ms_supabase_url');
-            let cachedKey = localStorage.getItem('ms_supabase_key');
-            
-            // Set default settings if cache is empty
-            if (!cachedUrl || !cachedKey) {
-                cachedUrl = DEFAULT_SUPABASE_URL;
-                cachedKey = DEFAULT_SUPABASE_KEY;
-                localStorage.setItem('ms_supabase_url', DEFAULT_SUPABASE_URL);
-                localStorage.setItem('ms_supabase_key', DEFAULT_SUPABASE_KEY);
-            }
-            
-            // Set dynamic inputs to match active ones
-            if (cachedUrl) document.getElementById('supabase-url').value = cachedUrl;
-            if (cachedKey) document.getElementById('supabase-key').value = cachedKey;
-
-            if (cachedUrl && cachedKey && window.supabase) {
-                try {
-                    supabaseClient = window.supabase.createClient(cachedUrl, cachedKey);
-                    console.log("Supabase inicializado.");
-                    
-                    // Check if we have a saved user
-                    const savedUser = localStorage.getItem('ms_user');
-                    if (savedUser) {
-                        user = JSON.parse(savedUser);
-                        updateSyncBadge(true);
-                        document.getElementById('auth-panel').classList.add('hidden');
-                        fetchFromCloud(); // Try background fetch
-                    }
-                } catch(e) {
-                    console.error("Erro ao instanciar cliente do Supabase:", e);
-                }
-            }
+            console.log("Supabase desativado.");
         }
 
         // Auth Tabs Toggle

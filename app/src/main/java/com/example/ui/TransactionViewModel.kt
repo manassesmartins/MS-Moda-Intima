@@ -277,8 +277,7 @@ class TransactionViewModel(
                     sessionManager.saveSession(
                         userId = localId,
                         email = email,
-                        authToken = null,
-                        usingSupabase = false
+                        authToken = null
                     )
                     
                     // Push initialized structure
@@ -314,8 +313,7 @@ class TransactionViewModel(
                         sessionManager.saveSession(
                             userId = localUser.id,
                             email = email,
-                            authToken = null,
-                            usingSupabase = false
+                            authToken = null
                         )
                         
                         // Sincroniza dados com Google Drive se conectado
@@ -349,8 +347,7 @@ class TransactionViewModel(
                         sessionManager.saveSession(
                             userId = adminId,
                             email = email,
-                            authToken = null,
-                            usingSupabase = false
+                            authToken = null
                         )
                         triggerSyncSimulation()
                         val config = repository.getBrandConfig()
@@ -430,7 +427,6 @@ class TransactionViewModel(
                     userId = userId,
                     email = email,
                     authToken = token ?: "google-access-token-placeholder",
-                    usingSupabase = true, // compatibility flag kept active
                     name = name,
                     avatarUrl = computedAvatarUrl
                 )

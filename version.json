@@ -1,7 +1,0 @@
-{
-  "version": "1.2.34",
-  "changelog": "Build automático: Commit chore: update repository configuration and version
-
-Migrate GitHub updater settings to default to the correct repository and normalize the application version to 1.2.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}

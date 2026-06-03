@@ -11,7 +11,6 @@ class SessionManager(context: Context) {
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_AUTH_TOKEN = "auth_token"
-        private const val KEY_USING_SUPABASE = "using_supabase"
         
         // Customization keys
         private const val KEY_APP_NAME = "custom_app_name"
@@ -48,7 +47,6 @@ class SessionManager(context: Context) {
         userId: String,
         email: String,
         authToken: String? = null,
-        usingSupabase: Boolean = false,
         name: String? = null,
         avatarUrl: String? = null
     ) {
@@ -57,7 +55,6 @@ class SessionManager(context: Context) {
             putString(KEY_USER_ID, userId)
             putString(KEY_USER_EMAIL, email)
             putString(KEY_AUTH_TOKEN, authToken)
-            putBoolean(KEY_USING_SUPABASE, usingSupabase)
             putString("user_name", name ?: "")
             putString("user_avatar", avatarUrl ?: "")
             apply()
@@ -80,7 +77,4 @@ class SessionManager(context: Context) {
 
     val authToken: String?
         get() = prefs.getString(KEY_AUTH_TOKEN, null)
-
-    val isUsingSupabase: Boolean
-        get() = prefs.getBoolean(KEY_USING_SUPABASE, false)
 }

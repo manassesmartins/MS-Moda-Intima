@@ -69,6 +69,25 @@ fun DashboardScreen(
     var showReportDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // Outer-level remembered computations to prevent heavy re-evaluation on scroll and during animations
+    val weeklyProfitData = remember(transactions) {
+        val weeksToCount = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana")
+        WeeklyProfitList(weeksToCount.map { w ->
+            val weekTxs = transactions.filter { it.week == w }
+            val income = weekTxs.filter { it.type == "INFLOW" || it.type == "Venda" }.sumOf { it.amount }
+            val expense = weekTxs.filter { it.type == "OUTFLOW" || it.type == "Despesa" }.sumOf { it.amount }
+            w to (income - expense)
+        })
+    }
+
+    val totalIn = summary.totalInflow
+    val totalOut = summary.totalOutflow
+    val bal = summary.currentBalance
+    val marginPct = remember(totalIn, bal) { if (totalIn > 0.0) (bal / totalIn) * 100.0 else 0.0 }
+    val totalPieces = remember(orders) { orders.sumOf { it.quantity } }
+    val avgTicket = remember(orders, totalIn) { if (orders.isNotEmpty()) totalIn / orders.size else 0.0 }
+    val costPerPiece = remember(totalPieces, totalOut) { if (totalPieces > 0) totalOut / totalPieces else 0.0 }
+
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
@@ -461,29 +480,11 @@ fun DashboardScreen(
 
                     // Advanced Operational Ratio Metrics
                     item {
-                        val totalIn = summary.totalInflow
-                        val totalOut = summary.totalOutflow
-                        val bal = summary.currentBalance
-                        val marginPct = if (totalIn > 0.0) (bal / totalIn) * 100.0 else 0.0
-                        val totalPieces = orders.sumOf { it.quantity }
-                        val avgTicket = if (orders.isNotEmpty()) totalIn / orders.size else 0.0
-                        val costPerPiece = if (totalPieces > 0) totalOut / totalPieces else 0.0
-
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Weekly Profit Bar Chart
-                            val weeklyProfitData = remember(transactions) {
-                                val weeksToCount = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana")
-                                weeksToCount.map { w ->
-                                    val weekTxs = transactions.filter { it.week == w }
-                                    val income = weekTxs.filter { it.type == "INFLOW" || it.type == "Venda" }.sumOf { it.amount }
-                                    val expense = weekTxs.filter { it.type == "OUTFLOW" || it.type == "Despesa" }.sumOf { it.amount }
-                                    w to (income - expense)
-                                }
-                            }
-                            
                             WeeklyProfitChart(weeklyData = weeklyProfitData)
                             Spacer(modifier = Modifier.height(6.dp))
 
@@ -1361,12 +1362,16 @@ fun MonthlyReportsSection(
     }
 }
 
-@Composable
-fun WeeklyProfitChart(weeklyData: List<Pair<String, Double>>, modifier: Modifier = Modifier) {
-    if (weeklyData.isEmpty()) return
+@Stable
+data class WeeklyProfitList(val items: List<Pair<String, Double>>)
 
-    val maxProfit = weeklyData.maxOfOrNull { it.second }?.takeIf { it > 0 } ?: 1.0
-    val minProfit = weeklyData.minOfOrNull { it.second }?.takeIf { it < 0 } ?: 0.0
+@Composable
+fun WeeklyProfitChart(weeklyData: WeeklyProfitList, modifier: Modifier = Modifier) {
+    val items = weeklyData.items
+    if (items.isEmpty()) return
+
+    val maxProfit = remember(items) { items.maxOfOrNull { it.second }?.takeIf { it > 0 } ?: 1.0 }
+    val minProfit = remember(items) { items.minOfOrNull { it.second }?.takeIf { it < 0 } ?: 0.0 }
 
     val primary = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
@@ -1401,10 +1406,10 @@ fun WeeklyProfitChart(weeklyData: List<Pair<String, Double>>, modifier: Modifier
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Bottom
         ) {
-            val amplitude = if ((maxProfit - minProfit) == 0.0) 1.0 else (maxProfit - minProfit)
+            val amplitude = remember(maxProfit, minProfit) { if ((maxProfit - minProfit) == 0.0) 1.0 else (maxProfit - minProfit) }
             
-            weeklyData.forEach { (weekStr, profit) ->
-                val ratio = (Math.abs(profit) / amplitude).toFloat().coerceIn(0f, 1f)
+            items.forEach { (weekStr, profit) ->
+                val ratio = remember(profit, amplitude) { (Math.abs(profit) / amplitude).toFloat().coerceIn(0f, 1f) }
                 val barColor = if (profit >= 0.0) primary else errorColor
 
                 Column(
