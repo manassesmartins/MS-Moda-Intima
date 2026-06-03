@@ -48,6 +48,22 @@ class GitHubUpdater(private val context: Context) {
     private val sharedPrefs = context.getSharedPreferences("ms_producao_github_updater_prefs", Context.MODE_PRIVATE)
     private val client = OkHttpClient()
 
+    init {
+        // Migrate old cached values or blank values to the new default repository configurations
+        val currentOwner = sharedPrefs.getString("github_owner", "")
+        if (currentOwner.isNullOrBlank() || currentOwner == "ManassesMartins") {
+            sharedPrefs.edit().putString("github_owner", "manassesmartins").apply()
+        }
+        val currentRepo = sharedPrefs.getString("github_repo", "")
+        if (currentRepo.isNullOrBlank() || currentRepo == "workspace-ms-producao-valeriacalc") {
+            sharedPrefs.edit().putString("github_repo", "Gestor-de-Producao").apply()
+        }
+        val currentBranch = sharedPrefs.getString("github_branch", "")
+        if (currentBranch.isNullOrBlank()) {
+            sharedPrefs.edit().putString("github_branch", "main").apply()
+        }
+    }
+
     private val _status = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     val status: StateFlow<UpdateStatus> = _status.asStateFlow()
 
@@ -55,13 +71,13 @@ class GitHubUpdater(private val context: Context) {
 
     // Configurable parameters with smart defaults
     var owner: String
-        get() = sharedPrefs.getString("github_owner", "ManassesMartins")?.takeIf { it.isNotBlank() } ?: "ManassesMartins"
+        get() = sharedPrefs.getString("github_owner", "manassesmartins")?.takeIf { it.isNotBlank() } ?: "manassesmartins"
         set(value) {
             sharedPrefs.edit().putString("github_owner", value.trim()).apply()
         }
 
     var repo: String
-        get() = sharedPrefs.getString("github_repo", "workspace-ms-producao-valeriacalc")?.takeIf { it.isNotBlank() } ?: "workspace-ms-producao-valeriacalc"
+        get() = sharedPrefs.getString("github_repo", "Gestor-de-Producao")?.takeIf { it.isNotBlank() } ?: "Gestor-de-Producao"
         set(value) {
             sharedPrefs.edit().putString("github_repo", value.trim()).apply()
         }
