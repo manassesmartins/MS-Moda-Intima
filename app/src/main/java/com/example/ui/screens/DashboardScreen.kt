@@ -243,6 +243,47 @@ fun DashboardScreen(
                             }
                         }
                     }
+                    
+                    // Financial Closing Reminder Alert
+                    item {
+                        val currentDay = remember { java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) }
+                        if (currentDay == java.util.Calendar.FRIDAY || currentDay == java.util.Calendar.SATURDAY) {
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Tertiary.copy(alpha = 0.15f)),
+                                border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.3f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = "Aviso de Fechamento",
+                                        tint = Tertiary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "Fechamento Financeiro",
+                                            color = Tertiary,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                        Text(
+                                            text = "Finalize o caixa da semana para manter as métricas em dia.",
+                                            color = OnSurface,
+                                            fontSize = 11.sp,
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Balanço Atual / Saldo Atual Card
                     item {
                         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -432,6 +473,20 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            // Weekly Profit Bar Chart
+                            val weeklyProfitData = remember(transactions) {
+                                val weeksToCount = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana")
+                                weeksToCount.map { w ->
+                                    val weekTxs = transactions.filter { it.week == w }
+                                    val income = weekTxs.filter { it.type == "INFLOW" || it.type == "Venda" }.sumOf { it.amount }
+                                    val expense = weekTxs.filter { it.type == "OUTFLOW" || it.type == "Despesa" }.sumOf { it.amount }
+                                    w to (income - expense)
+                                }
+                            }
+                            
+                            WeeklyProfitChart(weeklyData = weeklyProfitData)
+                            Spacer(modifier = Modifier.height(6.dp))
+
                             Text(
                                 text = "Métricas de Produção & Eficiência",
                                 fontSize = 14.sp,
@@ -1300,6 +1355,87 @@ fun MonthlyReportsSection(
                             color = OnSurfaceVariant
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WeeklyProfitChart(weeklyData: List<Pair<String, Double>>, modifier: Modifier = Modifier) {
+    if (weeklyData.isEmpty()) return
+
+    val maxProfit = weeklyData.maxOfOrNull { it.second }?.takeIf { it > 0 } ?: 1.0
+    val minProfit = weeklyData.minOfOrNull { it.second }?.takeIf { it < 0 } ?: 0.0
+
+    val primary = MaterialTheme.colorScheme.primary
+    val errorColor = MaterialTheme.colorScheme.error
+    val onSurface = MaterialTheme.colorScheme.onSurface 
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White.copy(alpha = 0.05f))
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        Text(
+            "Lucro Líquido Semanal",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = onSurface
+        )
+        Text(
+            "Últimos 4 períodos",
+            fontSize = 11.sp,
+            color = onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            val amplitude = if ((maxProfit - minProfit) == 0.0) 1.0 else (maxProfit - minProfit)
+            
+            weeklyData.forEach { (weekStr, profit) ->
+                val ratio = (Math.abs(profit) / amplitude).toFloat().coerceIn(0f, 1f)
+                val barColor = if (profit >= 0.0) primary else errorColor
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.weight((1f - ratio).coerceAtLeast(0.001f)))
+                    Text(
+                        text = String.format(Locale("pt", "BR"), "%.0f", profit),
+                        fontSize = 9.sp,
+                        color = barColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis 
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                            .weight(ratio.coerceAtLeast(0.001f))
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                            .background(barColor.copy(alpha = 0.8f))
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = weekStr.take(2),
+                        fontSize = 10.sp,
+                        color = onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

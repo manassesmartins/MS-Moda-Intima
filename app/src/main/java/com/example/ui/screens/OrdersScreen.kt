@@ -60,15 +60,37 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
 
     val context = LocalContext.current
     val orders by viewModel.allOrders.collectAsStateWithLifecycle(emptyList())
+    val existingClients = remember(orders) { orders.map { it.clientName }.distinct().sorted() }
 
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")) }
     var selectedOrderWeek by remember { mutableStateOf("Tudo") }
     var showAddDialog by remember { mutableStateOf(false) }
     var orderToEdit by remember { mutableStateOf<com.example.data.OrderEntity?>(null) }
     var orderForInvoice by remember { mutableStateOf<com.example.data.OrderEntity?>(null) }
+    
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var selectedFilterDateMillis by remember { mutableStateOf<Long?>(null) }
 
-    val filteredOrders = remember(selectedOrderWeek, orders) {
-        if (selectedOrderWeek == "Tudo") orders else orders.filter { it.week == selectedOrderWeek }
+    val filteredOrders = remember(selectedOrderWeek, selectedFilterDateMillis, orders) {
+        val byWeek = if (selectedOrderWeek == "Tudo") orders else orders.filter { it.week == selectedOrderWeek }
+        if (selectedFilterDateMillis != null) {
+            val cal = java.util.Calendar.getInstance()
+            cal.timeInMillis = selectedFilterDateMillis!!
+            val d1 = cal.get(java.util.Calendar.DAY_OF_YEAR)
+            val y1 = cal.get(java.util.Calendar.YEAR)
+            
+            byWeek.filter { o ->
+                val c2 = java.util.Calendar.getInstance()
+                c2.timeInMillis = o.timestamp
+                c2.get(java.util.Calendar.DAY_OF_YEAR) == d1 && c2.get(java.util.Calendar.YEAR) == y1
+            }
+        } else {
+            byWeek
+        }
+    }
+
+    val groupedOrders = remember(filteredOrders) {
+        filteredOrders.groupBy { Pair(it.clientName.trim().lowercase(Locale.getDefault()), it.week) }.values.toList()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -99,6 +121,18 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                             color = OnSurfaceVariant
                         )
                     }
+                    IconButton(
+                        onClick = { showDatePickerDialog = true },
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (selectedFilterDateMillis != null) Primary.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Calendário",
+                            tint = if (selectedFilterDateMillis != null) Primary else OnSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -114,14 +148,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(32.dp))
-                                .background(
-                                    if (isSelected) Primary.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f)
-                                )
-                                .border(
-                                    1.dp,
-                                    if (isSelected) Primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.1f),
-                                    RoundedCornerShape(32.dp)
-                                )
+                                .background(if (isSelected) Primary.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
+                                .border(1.dp, if (isSelected) Primary.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.1f), RoundedCornerShape(32.dp))
                                 .clickable { selectedOrderWeek = w }
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
@@ -158,7 +186,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
             }
 
             // Order Rows
-            if (filteredOrders.isEmpty()) {
+            if (groupedOrders.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -175,7 +203,11 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                     }
                 }
             } else {
-                items(filteredOrders, key = { it.id }) { order ->
+                items(groupedOrders, key = { it.first().id }) { group ->
+                    val firstOrder = group.first()
+                    val totalQty = group.sumOf { it.quantity }
+                    val totalValue = group.sumOf { it.totalValue }
+
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
@@ -190,34 +222,18 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = order.clientName,
+                                        text = firstOrder.clientName.uppercase(),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = OnSurface
                                     )
-                                    Text(
-                                        text = "${order.pantyType} - M/T ${order.pantySize}",
-                                        fontSize = 13.sp,
-                                        color = OnSurfaceVariant
-                                    )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(Secondary.copy(alpha = 0.2f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(order.businessArea, fontSize = 10.sp, color = Secondary, fontWeight = FontWeight.SemiBold)
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(if (order.status == "Concluído") Tertiary.copy(alpha=0.2f) else ErrorColor.copy(alpha=0.2f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(order.status, fontSize = 10.sp, color = if (order.status == "Concluído") Tertiary else ErrorColor, fontWeight = FontWeight.SemiBold)
-                                        }
+                                    if (group.size > 1) {
+                                        Text(
+                                            text = "${group.size} Itens neste pedido",
+                                            fontSize = 13.sp,
+                                            color = OnSurfaceVariant
+                                        )
                                     }
                                 }
                                 Box(
@@ -227,11 +243,92 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = order.week,
+                                        text = firstOrder.week,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Primary
                                     )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Divider(color = Color.White.copy(alpha = 0.05f))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // List all sub-items in the group
+                            group.forEach { order ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("${order.pantyType} - M/T ${order.pantySize}", fontSize = 13.sp, color = OnSurface, fontWeight = FontWeight.Bold)
+                                        Text("Qtd: ${order.quantity} | R$ ${order.pantyValue} un.", fontSize = 11.sp, color = OnSurfaceVariant)
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(Secondary.copy(alpha = 0.2f))
+                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(order.businessArea, fontSize = 9.sp, color = Secondary, fontWeight = FontWeight.SemiBold)
+                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(if (order.status == "Concluído") Tertiary.copy(alpha=0.2f) else ErrorColor.copy(alpha=0.2f))
+                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(order.status, fontSize = 9.sp, color = if (order.status == "Concluído") Tertiary else ErrorColor, fontWeight = FontWeight.SemiBold)
+                                            }
+                                        }
+                                    }
+
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = String.format(Locale("pt", "BR"), "R$ %,.2f", order.totalValue),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Tertiary,
+                                            modifier = Modifier.padding(bottom = 6.dp)
+                                        )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            IconButton(
+                                                onClick = { orderToEdit = order },
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.White.copy(alpha = 0.05f))
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = "Editar",
+                                                    tint = Primary,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = { viewModel.deleteOrder(order.id) },
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.White.copy(alpha = 0.05f))
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Apagar",
+                                                    tint = ErrorColor,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                if (order != group.last()) {
+                                    Divider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 4.dp))
                                 }
                             }
 
@@ -245,14 +342,14 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text("QUANTIDADE", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
-                                    Text("${order.quantity} unidades", fontSize = 14.sp, color = OnSurface, fontWeight = FontWeight.SemiBold)
+                                    Text("QUANTIDADE TOTAL", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                                    Text("$totalQty unidades", fontSize = 14.sp, color = OnSurface, fontWeight = FontWeight.SemiBold)
                                 }
 
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("TOTAL DO PEDIDO", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                                    Text("TOTAL GERAL DO PEDIDO", fontSize = 10.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                                     Text(
-                                        text = String.format(Locale("pt", "BR"), "R$ %,.2f", order.totalValue),
+                                        text = String.format(Locale("pt", "BR"), "R$ %,.2f", totalValue),
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Tertiary
@@ -267,9 +364,9 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // PDF slip invoice icon
+                                // PDF slip invoice icon (we'll just use the first order as the lead for the PDF, ideally we'd pass the whole group, but to keep it simple, we pass the first order - the user requested merging in UI)
                                 OutlinedButton(
-                                    onClick = { orderForInvoice = order },
+                                    onClick = { orderForInvoice = firstOrder },
                                     border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.3f)),
                                     shape = RoundedCornerShape(8.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Tertiary),
@@ -282,41 +379,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Comanda (PDF)", fontSize = 12.sp)
-                                }
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    IconButton(
-                                        onClick = { orderToEdit = order },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Editar Pedido",
-                                            tint = Primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = {
-                                            viewModel.deleteOrder(order.id)
-                                        },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Apagar Pedido",
-                                            tint = ErrorColor,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
+                                    Text("Comanda Principal (PDF)", fontSize = 12.sp)
                                 }
                             }
                         }
@@ -347,6 +410,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
     // Modal dialog overlays
     if (showAddDialog) {
         OrderAddEditDialog(
+            orders = orders,
             onDismiss = { showAddDialog = false },
             onSave = { name, model, size, qty, valUnit, week, area, status ->
                 viewModel.addOrder(name, model, size, qty, valUnit, week, area, status)
@@ -359,6 +423,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
     orderToEdit?.let { order ->
         OrderAddEditDialog(
             order = order,
+            orders = orders,
             onDismiss = { orderToEdit = null },
             onSave = { name, model, size, qty, valUnit, week, area, status ->
                 viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status)
@@ -374,27 +439,93 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
             onDismiss = { orderForInvoice = null }
         )
     }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    if (showDatePickerDialog) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedFilterDateMillis ?: System.currentTimeMillis())
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedFilterDateMillis = datePickerState.selectedDateMillis
+                    showDatePickerDialog = false
+                }) {
+                    Text("Filtrar", color = Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    selectedFilterDateMillis = null 
+                    showDatePickerDialog = false 
+                }) { 
+                    Text("Limpar", color = ErrorColor) 
+                }
+            },
+            colors = DatePickerDefaults.colors(containerColor = SurfaceContainerHigh)
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderAddEditDialog(
     order: com.example.data.OrderEntity? = null,
+    orders: List<com.example.data.OrderEntity>,
     onDismiss: () -> Unit,
     onSave: (String, String, String, Int, Double, String, String, String) -> Unit
 ) {
+    val existingClients = remember(orders) { orders.map { it.clientName }.distinct().sorted() }
     var name by remember { mutableStateOf(order?.clientName ?: "") }
+    var expandedNameDropdown by remember { mutableStateOf(false) }
+
     var model by remember { mutableStateOf(order?.pantyType ?: "") }
     var size by remember { mutableStateOf(order?.pantySize ?: "M") }
     var qtyText by remember { mutableStateOf(order?.quantity?.toString() ?: "100") }
     var priceText by remember { mutableStateOf(order?.pantyValue?.toString() ?: "1.15") }
-    var selectedWeek by remember { mutableStateOf(order?.week ?: "1ª Semana") }
+    
+    // Convert current Order timestamp to initial date or use current time
+    var selectedTimeMillis by remember { mutableStateOf(order?.timestamp ?: System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    
+    // Automatically calculate week string based on time
+    val selectedWeek = remember(selectedTimeMillis) {
+        val cal = java.util.Calendar.getInstance(Locale("pt", "BR"))
+        cal.timeInMillis = selectedTimeMillis
+        val weekOfMonth = cal.get(java.util.Calendar.WEEK_OF_MONTH)
+        "${weekOfMonth}ª Semana"
+    }
+
     var area by remember { mutableStateOf(order?.businessArea ?: "Geral") }
     var status by remember { mutableStateOf(order?.status ?: "Pendente") }
     
     val areaOptions = listOf("Costura", "Corte", "Bordado", "Embalagem", "Revisão", "Geral")
     val statusOptions = listOf("Pendente", "Em Andamento", "Concluído", "Atrasado")
+    val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")) }
 
     val totalValue = (qtyText.toIntOrNull() ?: 0) * (priceText.replace(',', '.').toDoubleOrNull() ?: 0.0)
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedTimeMillis)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedTimeMillis = it }
+                    showDatePicker = false
+                }) {
+                    Text("OK", color = Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = OnSurfaceVariant) }
+            },
+            colors = DatePickerDefaults.colors(containerColor = SurfaceContainerHigh)
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -409,20 +540,85 @@ fun OrderAddEditDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome do Cliente", color = OnSurfaceVariant) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface,
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                ExposedDropdownMenuBox(
+                    expanded = expandedNameDropdown,
+                    onExpandedChange = { expandedNameDropdown = it },
+                ) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it ; expandedNameDropdown = true },
+                        label = { Text("Nome do Cliente", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    if (existingClients.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = expandedNameDropdown,
+                            onDismissRequest = { expandedNameDropdown = false },
+                            modifier = Modifier.background(SurfaceContainerHigh)
+                        ) {
+                            existingClients.filter { it.contains(name, ignoreCase=true) }.forEach { client ->
+                                DropdownMenuItem(
+                                    text = { Text(client, color = OnSurface) },
+                                    onClick = {
+                                        name = client
+                                        expandedNameDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Historical orders preview
+                val clientHistory = remember(name, orders) {
+                    val matchingClientName = name.trim().lowercase(Locale.getDefault())
+                    orders.filter { it.clientName.trim().lowercase(Locale.getDefault()) == matchingClientName }
+                        .sortedByDescending { it.timestamp }
+                        .take(3)
+                }
+                
+                if (clientHistory.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.05f))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Histórico Recente do Cliente", fontSize = 11.sp, color = Primary, fontWeight = FontWeight.Bold)
+                        clientHistory.forEach { histOrder ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    // Autofill this historical order details
+                                    model = histOrder.pantyType
+                                    size = histOrder.pantySize
+                                    qtyText = histOrder.quantity.toString()
+                                    priceText = histOrder.pantyValue.toString()
+                                },
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("${histOrder.pantyType} - M/T ${histOrder.pantySize}", fontSize = 12.sp, color = OnSurface, fontWeight = FontWeight.SemiBold)
+                                    Text("${histOrder.week} - Qtd: ${histOrder.quantity}", fontSize = 10.sp, color = OnSurfaceVariant)
+                                }
+                                Icon(imageVector = Icons.Default.Add, contentDescription = "Preencher dados", modifier = Modifier.size(16.dp), tint = Primary)
+                            }
+                            if (histOrder != clientHistory.last()) {
+                                Divider(color = Color.White.copy(alpha = 0.05f))
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = model,
@@ -496,28 +692,18 @@ fun OrderAddEditDialog(
                     )
                 }
 
-                // Week selector Dropdown or chips
+                // Scheduled Date & Auto-calculated Week
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Semana do Pedido", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Text("Data Agendada", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color.White.copy(0.05f)).clickable { showDatePicker = true }.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val weeks = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana", "5ª Semana")
-                        items(weeks, key = { it }) { w ->
-                            val isSelected = selectedWeek == w
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (isSelected) Primary.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
-                                    .border(1.dp, if (isSelected) Primary else Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
-                                    .clickable { selectedWeek = w }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text(w, color = if (isSelected) Primary else OnSurface, fontSize = 12.sp)
-                            }
-                        }
+                        Text(dateFormatter.format(Date(selectedTimeMillis)), color = OnSurface, fontSize = 14.sp)
+                        Icon(imageVector = Icons.Default.DateRange, contentDescription = "Selecionar Data", tint = Primary)
                     }
+                    Text("Será alocado na: $selectedWeek", fontSize = 11.sp, color = Primary, fontWeight = FontWeight.SemiBold)
                 }
 
                 // Area and Status Selectors
