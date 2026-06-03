@@ -1,0 +1,9 @@
+{
+  "version": "1.2.25",
+  "changelog": "Build automático: Commit chore: update build configuration and network security
+
+- Reset app version to 1.2
+- Enable SSL/TLS for P2P MQTT communication
+- Improve backup synchronization logic in ViewModel",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
