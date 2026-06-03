@@ -1,0 +1,9 @@
+{
+  "version": "1.2.33",
+  "changelog": "Build automático: Commit feat: add silent update check on resume
+
+- Implement update check in MainActivity.onResume
+- Reset versioning to 1.2
+- Update app icon and remove legacy version.json metadata",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
