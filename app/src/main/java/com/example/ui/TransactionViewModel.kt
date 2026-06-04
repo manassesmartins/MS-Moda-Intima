@@ -581,6 +581,13 @@ class TransactionViewModel(
             initialValue = emptyList()
         )
 
+    val allInvestments: StateFlow<List<com.example.data.InvestmentEntity>> = repository.allInvestments
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
 
     // Filtered transaction list
     val filteredTransactions: StateFlow<List<TransactionEntity>> = combine(
@@ -615,11 +622,52 @@ class TransactionViewModel(
             breakdown["Marketing"] = 10.0
         }
 
+        // Calculate dynamic profit percentage vs. last month
+        val pctChange = if (orders.isEmpty() && transactions.isEmpty()) {
+            12.4
+        } else {
+            val cal = java.util.Calendar.getInstance()
+            val currentYear = cal.get(java.util.Calendar.YEAR)
+            val currentMonth = cal.get(java.util.Calendar.MONTH)
+
+            val currentMonthOrders = orders.filter { o ->
+                val oCal = java.util.Calendar.getInstance().apply { timeInMillis = o.timestamp }
+                oCal.get(java.util.Calendar.YEAR) == currentYear && oCal.get(java.util.Calendar.MONTH) == currentMonth
+            }
+            val currentMonthTxs = transactions.filter { t ->
+                val tCal = java.util.Calendar.getInstance().apply { timeInMillis = t.timestamp }
+                tCal.get(java.util.Calendar.YEAR) == currentYear && tCal.get(java.util.Calendar.MONTH) == currentMonth && t.type == "OUTFLOW"
+            }
+            val currentMonthProfit = currentMonthOrders.sumOf { it.totalValue } - currentMonthTxs.sumOf { it.amount }
+
+            val prevMonthCal = java.util.Calendar.getInstance().apply {
+                add(java.util.Calendar.MONTH, -1)
+            }
+            val prevYear = prevMonthCal.get(java.util.Calendar.YEAR)
+            val prevMonth = prevMonthCal.get(java.util.Calendar.MONTH)
+
+            val prevMonthOrders = orders.filter { o ->
+                val oCal = java.util.Calendar.getInstance().apply { timeInMillis = o.timestamp }
+                oCal.get(java.util.Calendar.YEAR) == prevYear && oCal.get(java.util.Calendar.MONTH) == prevMonth
+            }
+            val prevMonthTxs = transactions.filter { t ->
+                val tCal = java.util.Calendar.getInstance().apply { timeInMillis = t.timestamp }
+                tCal.get(java.util.Calendar.YEAR) == prevYear && tCal.get(java.util.Calendar.MONTH) == prevMonth && t.type == "OUTFLOW"
+            }
+            val prevMonthProfit = prevMonthOrders.sumOf { it.totalValue } - prevMonthTxs.sumOf { it.amount }
+
+            if (prevMonthProfit == 0.0) {
+                if (currentMonthProfit == 0.0) 0.0 else if (currentMonthProfit > 0.0) 100.0 else -100.0
+            } else {
+                ((currentMonthProfit - prevMonthProfit) / java.lang.Math.abs(prevMonthProfit)) * 100.0
+            }
+        }
+
         FinancialSummary(
             currentBalance = balance,
             totalInflow = totalIn,
             totalOutflow = totalOut,
-            profitPercentageVsLastMonth = 12.4, // Baseline
+            profitPercentageVsLastMonth = pctChange,
             categoryBreakdown = breakdown
         )
     }.stateIn(
@@ -946,6 +994,56 @@ class TransactionViewModel(
     fun clearCalculationsAndReseed() {
         viewModelScope.launch {
             repository.clearCalculations()
+            triggerSyncSimulation()
+        }
+    }
+
+    fun addInvestment(description: String, totalAmount: Double) {
+        viewModelScope.launch {
+            repository.insertInvestment(
+                com.example.data.InvestmentEntity(
+                    description = description,
+                    totalAmount = totalAmount,
+                    abatedAmount = 0.0,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+            triggerSyncSimulation()
+        }
+    }
+
+    fun abateInvestment(investment: com.example.data.InvestmentEntity, amount: Double, week: String) {
+        viewModelScope.launch {
+            val updated = investment.copy(
+                abatedAmount = (investment.abatedAmount + amount).coerceAtMost(investment.totalAmount)
+            )
+            repository.updateInvestment(updated)
+            
+            // Automatically log an OUTFLOW transaction for the abatement
+            val sdf = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale("pt", "BR"))
+            val finalDateString = sdf.format(java.util.Date()).uppercase(java.util.Locale.getDefault())
+            
+            val transaction = com.example.data.TransactionEntity(
+                id = 0,
+                description = "Abatimento: ${investment.description}",
+                amount = amount,
+                type = "OUTFLOW",
+                category = "Manutenção", // Fits into category budgets automatically
+                dateString = finalDateString,
+                timestamp = System.currentTimeMillis(),
+                synced = _isCloudBackupEnabled.value,
+                extraText = "Amortização de Investimento",
+                week = week
+            )
+            repository.insert(transaction)
+            
+            triggerSyncSimulation()
+        }
+    }
+
+    fun deleteInvestment(id: Long) {
+        viewModelScope.launch {
+            repository.deleteInvestmentById(id)
             triggerSyncSimulation()
         }
     }

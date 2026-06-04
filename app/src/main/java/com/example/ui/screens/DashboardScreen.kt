@@ -72,11 +72,16 @@ fun DashboardScreen(
     val brandName = brandConfig?.brandName ?: "Gestor de Produção"
 
     // Outer-level remembered computations to prevent heavy re-evaluation on scroll and during animations
-    val weeklyProfitData = remember(transactions) {
+    val weeklyProfitData = remember(transactions, orders) {
         val weeksToCount = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana")
         WeeklyProfitList(weeksToCount.map { w ->
+            val weekOrders = orders.filter { it.week == w }
+            val weekInflowOrders = weekOrders.sumOf { it.totalValue }
+            
             val weekTxs = transactions.filter { it.week == w }
-            val income = weekTxs.filter { it.type == "INFLOW" || it.type == "Venda" }.sumOf { it.amount }
+            val weekInflowTxs = weekTxs.filter { it.type == "INFLOW" || it.type == "Venda" }.sumOf { it.amount }
+            
+            val income = weekInflowOrders + weekInflowTxs
             val expense = weekTxs.filter { it.type == "OUTFLOW" || it.type == "Despesa" }.sumOf { it.amount }
             w to (income - expense)
         })
@@ -182,8 +187,9 @@ fun DashboardScreen(
         ) {
             val tabs = listOf(
                 "PAINEL" to "Painel",
-                "SEMANAL" to "Apurado Semanal",
-                "MENSAL" to "Fechamento Mensal / DRE"
+                "SEMANAL" to "Semanal",
+                "MENSAL" to "Fechamento",
+                "INVESTIMENTOS" to "Investimentos"
             )
             tabs.forEach { (subId, label) ->
                 val isSel = activeSubTab == subId
@@ -344,17 +350,23 @@ fun DashboardScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                val pct = summary.profitPercentageVsLastMonth
+                                val isPositive = pct >= 0.0
+                                val arrowIcon = if (isPositive) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
+                                val trendColor = if (isPositive) Tertiary else ErrorColor
+                                val formattedPct = String.format(Locale("pt", "BR"), "%+.1f%%", pct)
+
                                 Icon(
-                                    imageVector = Icons.Default.Check, // Trending Upwards
+                                    imageVector = arrowIcon,
                                     contentDescription = "Tendência",
-                                    tint = Tertiary,
+                                    tint = trendColor,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = "+12%",
+                                    text = formattedPct,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Tertiary
+                                    color = trendColor
                                 )
                                 Text(
                                     text = "vs. mês anterior",
@@ -642,6 +654,11 @@ fun DashboardScreen(
             "MENSAL" -> {
                 Box(modifier = Modifier.weight(1f)) {
                     MonthlyReportsSection(transactions, orders, context, viewModel)
+                }
+            }
+            "INVESTIMENTOS" -> {
+                Box(modifier = Modifier.weight(1f)) {
+                    InvestmentsSection(viewModel, context)
                 }
             }
         }
@@ -1444,6 +1461,348 @@ fun WeeklyProfitChart(weeklyData: WeeklyProfitList, modifier: Modifier = Modifie
                         color = onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InvestmentsSection(
+    viewModel: TransactionViewModel,
+    context: android.content.Context
+) {
+    val investments by viewModel.allInvestments.collectAsStateWithLifecycle()
+    
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showAbateDialog by remember { mutableStateOf<com.example.data.InvestmentEntity?>(null) }
+    
+    var descInput by remember { mutableStateOf("") }
+    var valueInput by remember { mutableStateOf("") }
+    
+    var abateAmountInput by remember { mutableStateOf("") }
+    var selectedWeekForAbatement by remember { mutableStateOf("1ª Semana") }
+    
+    val totalInvested = remember(investments) { investments.sumOf { it.totalAmount } }
+    val totalAbated = remember(investments) { investments.sumOf { it.abatedAmount } }
+    val pendingBalance = remember(totalInvested, totalAbated) { totalInvested - totalAbated }
+    
+    val Primary = MaterialTheme.colorScheme.primary
+    val Secondary = MaterialTheme.colorScheme.secondary
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val ErrorColor = MaterialTheme.colorScheme.error
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Novo Investimento", fontWeight = FontWeight.Bold, color = Color.White) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Registre investimentos de longo prazo para realizar abatimentos (amortizações) parciais no caixa semanal.", fontSize = 12.sp, color = OnSurfaceVariant)
+                    
+                    OutlinedTextField(
+                        value = descInput,
+                        onValueChange = { descInput = it },
+                        label = { Text("Descrição (Ex: Nova Máquina, Reforma)") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    OutlinedTextField(
+                        value = valueInput,
+                        onValueChange = { valueInput = it },
+                        label = { Text("Valor Total (R$)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val amt = valueInput.toDoubleOrNull()
+                        if (descInput.isNotBlank() && amt != null && amt > 0.0) {
+                            viewModel.addInvestment(descInput.trim(), amt)
+                            descInput = ""
+                            valueInput = ""
+                            showAddDialog = false
+                            Toast.makeText(context, "Investimento adicionado!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Preencha os campos corretamente.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Adicionar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("Cancelar", color = OnSurfaceVariant)
+                }
+            },
+            containerColor = Color(0xFF1E0E2E),
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    if (showAbateDialog != null) {
+        val currentInv = showAbateDialog!!
+        AlertDialog(
+            onDismissRequest = { showAbateDialog = null },
+            title = { Text("Abater Valor de Investimento", fontWeight = FontWeight.Bold, color = Color.White) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Lançar um abatimento (amortização) de valor parcial de '${currentInv.description}'. O valor informado será deduzido do caixa como uma despesa na semana escolhida.", fontSize = 12.sp, color = OnSurfaceVariant)
+                    
+                    val maxAbatible = currentInv.totalAmount - currentInv.abatedAmount
+                    Text("Saldo Restante Abatível: " + String.format(Locale("pt", "BR"), "R$ %,.2f", maxAbatible), fontWeight = FontWeight.Bold, color = Tertiary, fontSize = 13.sp)
+
+                    OutlinedTextField(
+                        value = abateAmountInput,
+                        onValueChange = { abateAmountInput = it },
+                        label = { Text("Valor a Abater (R$)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Text("Escolher Semana para lançar no Caixa:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    
+                    val weeks = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana", "5ª Semana")
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(weeks) { w ->
+                            val isSel = selectedWeekForAbatement == w
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (isSel) Primary.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f))
+                                    .border(1.dp, if (isSel) Primary else Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                                    .clickable { selectedWeekForAbatement = w }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(w, fontSize = 11.sp, color = if (isSel) Primary else OnSurfaceVariant, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val toAbate = abateAmountInput.toDoubleOrNull()
+                        val maxAbatible = currentInv.totalAmount - currentInv.abatedAmount
+                        if (toAbate != null && toAbate > 0.0 && toAbate <= (maxAbatible + 0.01)) {
+                            viewModel.abateInvestment(currentInv, toAbate, selectedWeekForAbatement)
+                            abateAmountInput = ""
+                            showAbateDialog = null
+                            Toast.makeText(context, "Abatimento lançado com sucesso!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Valor inválido ou excede o saldo restante.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Confirmar Abatimento")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAbateDialog = null }) {
+                    Text("Cancelar", color = OnSurfaceVariant)
+                }
+            },
+            containerColor = Color(0xFF1E0E2E),
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+    ) {
+        // Summary GlassCard
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text("RESUMO DOS INVESTIMENTOS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Primary, letterSpacing = 0.5.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Total Cadastrado", fontSize = 11.sp, color = OnSurfaceVariant)
+                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", totalInvested), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                    }
+                    Column {
+                        Text("Total Abatido", fontSize = 11.sp, color = OnSurfaceVariant)
+                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", totalAbated), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Tertiary)
+                    }
+                    Column {
+                        Text("Saldo a Abater", fontSize = 11.sp, color = OnSurfaceVariant)
+                        Text(String.format(Locale("pt", "BR"), "R$ %,.2f", pendingBalance), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Secondary)
+                    }
+                }
+            }
+        }
+        
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Investimentos Cadastrados", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                
+                Button(
+                    onClick = { showAddDialog = true },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Cadastrar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        
+        if (investments.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Info, contentDescription = "Info", tint = OnSurfaceVariant, modifier = Modifier.size(36.dp))
+                        Text(
+                            text = "Nenhum investimento registrado.",
+                            color = OnSurfaceVariant,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Cadastre máquinas, reformas ou estoques para começar a abater valores.",
+                            color = OnSurfaceVariant.copy(alpha = 0.6f),
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(investments, key = { it.id }) { inv ->
+                val ratio = if (inv.totalAmount > 0) (inv.abatedAmount / inv.totalAmount).toFloat().coerceIn(0f, 1f) else 0f
+                val remaining = inv.totalAmount - inv.abatedAmount
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = getGlassContainerColor()),
+                    border = getGlassBorderStroke()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(inv.description, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
+                                Text("Registrado em: " + SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(Date(inv.timestamp)), fontSize = 10.sp, color = OnSurfaceVariant)
+                            }
+                            IconButton(
+                                onClick = { viewModel.deleteInvestment(inv.id) },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = ErrorColor.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Investido", fontSize = 10.sp, color = OnSurfaceVariant)
+                                Text(String.format(Locale("pt", "BR"), "R$ %,.2f", inv.totalAmount), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = OnSurface)
+                            }
+                            Column {
+                                Text("Abatido", fontSize = 10.sp, color = OnSurfaceVariant)
+                                Text(String.format(Locale("pt", "BR"), "R$ %,.2f", inv.abatedAmount), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Tertiary)
+                            }
+                            Column {
+                                Text("Pendente", fontSize = 10.sp, color = OnSurfaceVariant)
+                                Text(String.format(Locale("pt", "BR"), "R$ %,.2f", remaining), fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Secondary)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(10.dp))
+                        
+                        // Progress bar with percentage
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            LinearProgressIndicator(
+                                progress = ratio,
+                                color = Tertiary,
+                                trackColor = Color.White.copy(alpha = 0.05f),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                            )
+                            Text(String.format(Locale("pt", "BR"), "%.1f%%", ratio * 100f), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                        }
+                        
+                        if (remaining > 0.05) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = { showAbateDialog = inv },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Secondary.copy(alpha = 0.15f), contentColor = Secondary),
+                                border = BorderStroke(1.dp, Secondary.copy(alpha = 0.3f)),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Icon(Icons.Default.TrendingDown, contentDescription = "Abater", modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Abater Valor", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Tertiary.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .align(Alignment.End)
+                            ) {
+                                Text("Totalmente Abatido", fontSize = 10.sp, color = Tertiary, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -304,6 +304,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val isAddingTransaction by viewModel.isAddingTransaction.collectAsStateWithLifecycle()
     val transactions by viewModel.filteredTransactions.collectAsStateWithLifecycle()
+    val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
     val orders by viewModel.allOrders.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val isCloudBackupEnabled by viewModel.isCloudBackupEnabled.collectAsStateWithLifecycle()
@@ -461,7 +462,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                         when (currentTab) {
                             AppTab.DASHBOARD -> DashboardScreen(
                                 summary = summary,
-                                transactions = transactions,
+                                transactions = allTransactions,
                                 orders = orders,
                                 onVerTodosClick = { viewModel.setTab(AppTab.TRANSACTIONS) },
                                 viewModel = viewModel,

@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [TransactionEntity::class, CategoryEntity::class, OrderEntity::class, PieceCalculationEntity::class, UserEntity::class, BrandConfigEntity::class],
-    version = 6,
+    entities = [TransactionEntity::class, CategoryEntity::class, OrderEntity::class, PieceCalculationEntity::class, UserEntity::class, BrandConfigEntity::class, InvestmentEntity::class],
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -17,6 +17,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val pieceCalculationDao: PieceCalculationDao
     abstract val userDao: UserDao
     abstract val brandConfigDao: BrandConfigDao
+    abstract val investmentDao: InvestmentDao
 
     companion object {
         @Volatile

@@ -918,7 +918,11 @@ fun ProfileSettingsPopup(
                     )
                     
                     val scanner = remember {
-                        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context)
+                        val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+                            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+                            .enableAutoZoom()
+                            .build()
+                        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, options)
                     }
 
                     OutlinedTextField(
@@ -935,21 +939,64 @@ fun ProfileSettingsPopup(
                         ),
                         trailingIcon = {
                             IconButton(onClick = {
-                                scanner.startScan()
-                                    .addOnSuccessListener { barcode ->
-                                        barcode.rawValue?.let { scannedPin ->
-                                            if (scannedPin.length == 6 && scannedPin.all { it.isDigit() }) {
-                                                pinCode = scannedPin
-                                            } else {
-                                                Toast.makeText(context, "QR Code inválido", Toast.LENGTH_SHORT).show()
+                                try {
+                                    scanner.startScan()
+                                        .addOnSuccessListener { barcode ->
+                                            barcode.rawValue?.let { scannedText ->
+                                                val regex = Regex("\\b\\d{6}\\b")
+                                                val match = regex.find(scannedText)
+                                                if (match != null) {
+                                                    val pin = match.value
+                                                    pinCode = pin
+                                                    Toast.makeText(context, "Conectando ao código: $pin", Toast.LENGTH_SHORT).show()
+                                                    
+                                                    // Auto-trigger sync once successfully scanned
+                                                    if (!isSyncing) {
+                                                        isSyncing = true
+                                                        coroutineScope.launch {
+                                                            val success = com.example.data.MqttSyncManager.syncWithWeb(
+                                                                pinCode = pin,
+                                                                context = context,
+                                                                transactions = txs,
+                                                                categories = cats,
+                                                                orders = orders,
+                                                                calculations = calcs,
+                                                                brandConfig = brandConfig?.let { config ->
+                                                                    org.json.JSONObject().apply {
+                                                                        put("brandName", config.brandName)
+                                                                        put("category", config.category)
+                                                                        put("niche", config.niche)
+                                                                        put("colorScheme", config.colorScheme)
+                                                                        put("logoIcon", config.logoIcon)
+                                                                        put("logoText", config.logoText)
+                                                                        put("logoImage", config.logoImage)
+                                                                        put("isConfigured", config.isConfigured)
+                                                                    }
+                                                                }
+                                                            )
+                                                            withContext(Dispatchers.Main) {
+                                                                isSyncing = false
+                                                                pinCode = ""
+                                                                Toast.makeText(context, if (success) "Dados espelhados com sucesso via QR!" else "Erro na sincronização, tente novamente.", Toast.LENGTH_SHORT).show()
+                                                                if (success) activeSubPopup = null
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    Toast.makeText(context, "Código de 6 dígitos não encontrado no QR Code.", Toast.LENGTH_LONG).show()
+                                                }
+                                            } ?: run {
+                                                Toast.makeText(context, "QR Code vazio.", Toast.LENGTH_SHORT).show()
                                             }
                                         }
-                                    }
-                                    .addOnFailureListener {
-                                        Toast.makeText(context, "Falha ao escanear", Toast.LENGTH_SHORT).show()
-                                    }
+                                        .addOnFailureListener { e ->
+                                            Toast.makeText(context, "Leitura cancelada ou falhou.", Toast.LENGTH_SHORT).show()
+                                        }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Erro ao iniciar scanner: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
                             }) {
-                                Icon(imageVector = Icons.Default.Search, contentDescription = "Escanear QR")
+                                Icon(imageVector = Icons.Default.QrCodeScanner, contentDescription = "Escanear QR Code", tint = Primary)
                             }
                         },
                         shape = RoundedCornerShape(8.dp),

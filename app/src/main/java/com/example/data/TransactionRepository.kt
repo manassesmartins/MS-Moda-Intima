@@ -13,7 +13,8 @@ class TransactionRepository(
     private val orderDao: OrderDao,
     private val pieceCalculationDao: PieceCalculationDao,
     val userDao: UserDao,
-    private val brandConfigDao: BrandConfigDao
+    private val brandConfigDao: BrandConfigDao,
+    private val investmentDao: InvestmentDao
 ) {
 
     val allTransactions: Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
@@ -21,6 +22,19 @@ class TransactionRepository(
     val allOrders: Flow<List<OrderEntity>> = orderDao.getAllOrders()
     val allCalculations: Flow<List<PieceCalculationEntity>> = pieceCalculationDao.getAllCalculations()
     val brandConfig: Flow<BrandConfigEntity?> = brandConfigDao.getBrandConfigFlow()
+    val allInvestments: Flow<List<InvestmentEntity>> = investmentDao.getAllInvestmentsFlow()
+
+    suspend fun insertInvestment(investment: InvestmentEntity): Long {
+        return investmentDao.insertInvestment(investment)
+    }
+
+    suspend fun updateInvestment(investment: InvestmentEntity) {
+        investmentDao.updateInvestment(investment)
+    }
+
+    suspend fun deleteInvestmentById(id: Long) {
+        investmentDao.deleteInvestmentById(id)
+    }
 
     suspend fun getBrandConfig(): BrandConfigEntity? {
         return brandConfigDao.getBrandConfig()

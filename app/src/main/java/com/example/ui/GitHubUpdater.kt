@@ -140,15 +140,47 @@ class GitHubUpdater(private val context: Context) {
                     if (response.isSuccessful) {
                         val bodyString = response.body?.string()
                         if (!bodyString.isNullOrEmpty()) {
-                            val json = JSONObject(bodyString)
-                            val latestVersion = json.optString("version", "").trim()
+                            val latestVersion = "\"version\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(bodyString)?.groupValues?.get(1)?.trim() ?: ""
                             if (latestVersion.isNotEmpty()) {
-                                val changelog = json.optString("changelog", "Nova versão disponível no repositório.")
-                                val rawDownloadUrl = json.optString("downloadUrl", "").trim()
+                                val rawDownloadUrl = "\"downloadUrl\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(bodyString)?.groupValues?.get(1)?.trim() ?: ""
                                 val downloadUrl = if (rawDownloadUrl.isNotEmpty()) {
                                     rawDownloadUrl
                                 } else {
                                     "https://raw.githubusercontent.com/$owner/$repo/$branch/$apkPath"
+                                }
+
+                                var changelog = "Nova versão disponível no repositório."
+                                val changelogKeyIndex = bodyString.indexOf("\"changelog\"")
+                                if (changelogKeyIndex != -1) {
+                                    val colonIndex = bodyString.indexOf(":", changelogKeyIndex)
+                                    if (colonIndex != -1) {
+                                        val startQuoteIndex = bodyString.indexOf("\"", colonIndex)
+                                        if (startQuoteIndex != -1) {
+                                            val downloadUrlTokenIndex = bodyString.indexOf("\"downloadUrl\"", startQuoteIndex)
+                                            val endIndex = if (downloadUrlTokenIndex != -1) {
+                                                var lastQuote = bodyString.lastIndexOf("\"", downloadUrlTokenIndex)
+                                                while (lastQuote > startQuoteIndex && (bodyString[lastQuote] == '"' || bodyString[lastQuote].isWhitespace() || bodyString[lastQuote] == ',')) {
+                                                    lastQuote--
+                                                }
+                                                lastQuote + 1
+                                            } else {
+                                                val braceIndex = bodyString.lastIndexOf("}")
+                                                if (braceIndex != -1) {
+                                                    var lastQuote = braceIndex - 1
+                                                    while (lastQuote > startQuoteIndex && (bodyString[lastQuote].isWhitespace() || bodyString[lastQuote] == '"')) {
+                                                        lastQuote--
+                                                    }
+                                                    lastQuote + 1
+                                                } else {
+                                                    bodyString.length
+                                                }
+                                            }
+                                            if (endIndex > startQuoteIndex + 1) {
+                                                val extracted = bodyString.substring(startQuoteIndex + 1, endIndex).trim()
+                                                changelog = if (extracted.endsWith("\"")) extracted.dropLast(1) else extracted
+                                            }
+                                        }
+                                    }
                                 }
 
                                 val hasNewerVersion = isNewerVersion(latestVersion, currentVersion)

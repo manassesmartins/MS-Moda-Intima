@@ -850,6 +850,14 @@ fun SettingsScreen(
             val calcs by viewModel.allCalculations.collectAsState()
             val bConfig by viewModel.brandConfig.collectAsState()
             
+            val scanner = remember {
+                val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+                    .enableAutoZoom()
+                    .build()
+                com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, options)
+            }
+            
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "CONECTAR AO COMPUTADOR / WEB",
@@ -861,7 +869,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 Text(
-                    text = "Acesse o site da versão desktop pelo computador, e digite o Código de 6 dígitos gerado na tela abaixo para espelhar todos os dados em tempo real (P2P).",
+                    text = "Acesse o site da versão desktop pelo computador, e use o scanner de QR Code ou digite o Código de 6 dígitos para espelhar todos os dados em tempo real (P2P).",
                     fontSize = 12.sp,
                     color = OnSurfaceVariant,
                     lineHeight = 16.sp,
@@ -880,6 +888,66 @@ fun SettingsScreen(
                         focusedTextColor = OnSurface,
                         unfocusedTextColor = OnSurface
                     ),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            try {
+                                scanner.startScan()
+                                    .addOnSuccessListener { barcode ->
+                                        barcode.rawValue?.let { scannedText ->
+                                            val regex = Regex("\\b\\d{6}\\b")
+                                            val match = regex.find(scannedText)
+                                            if (match != null) {
+                                                val pin = match.value
+                                                pinCode = pin
+                                                Toast.makeText(context, "Conectando ao código: $pin", Toast.LENGTH_SHORT).show()
+                                                
+                                                if (!isSyncing) {
+                                                    isSyncing = true
+                                                    coroutineScope.launch {
+                                                        val success = com.example.data.MqttSyncManager.syncWithWeb(
+                                                            pinCode = pin,
+                                                            context = context,
+                                                            transactions = txs,
+                                                            categories = cats,
+                                                            orders = orders,
+                                                            calculations = calcs,
+                                                            brandConfig = bConfig?.let { config ->
+                                                                org.json.JSONObject().apply {
+                                                                    put("brandName", config.brandName)
+                                                                    put("category", config.category)
+                                                                    put("niche", config.niche)
+                                                                    put("colorScheme", config.colorScheme)
+                                                                    put("logoIcon", config.logoIcon)
+                                                                    put("logoText", config.logoText)
+                                                                    put("logoImage", config.logoImage)
+                                                                    put("isConfigured", config.isConfigured)
+                                                                }
+                                                            }
+                                                        )
+                                                        withContext(Dispatchers.Main) {
+                                                            isSyncing = false
+                                                            pinCode = ""
+                                                            Toast.makeText(context, if (success) "Dados espelhados com sucesso via QR!" else "Erro na sincronização, tente novamente.", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                Toast.makeText(context, "Código de 6 dígitos não encontrado no QR Code.", Toast.LENGTH_LONG).show()
+                                            }
+                                        } ?: run {
+                                            Toast.makeText(context, "QR Code vazio.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Leitura cancelada ou falhou.", Toast.LENGTH_SHORT).show()
+                                    }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro ao iniciar scanner: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }) {
+                            Icon(imageVector = Icons.Default.QrCodeScanner, contentDescription = "Escanear QR Code", tint = Primary)
+                        }
+                    },
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
