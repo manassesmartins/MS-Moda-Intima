@@ -419,7 +419,7 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                         listOf("7", "8", "9", "*"),
                         listOf("4", "5", "6", "-"),
                         listOf("1", "2", "3", "+"),
-                        listOf("+/-", "0", ".", "")
+                        listOf("+/-", "0", ".", "=")
                     )
 
                     Column(
@@ -436,6 +436,7 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                     val isDelete = key == "⌫"
                                     val isPercent = key == "%"
                                     val isSign = key == "+/-"
+                                    val isEqual = key == "="
                                     val isEmpty = key == ""
                                     
                                     Box(
@@ -446,8 +447,9 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                             .background(
                                                 when {
                                                     isEmpty -> Color.Transparent
-                                                     isClear || isDelete -> ErrorColor.copy(alpha = 0.15f)
+                                                    isClear || isDelete -> ErrorColor.copy(alpha = 0.15f)
                                                     isOp || isPercent || isSign -> Primary.copy(alpha = 0.15f)
+                                                    isEqual -> Primary
                                                     else -> Color.White.copy(alpha = 0.05f)
                                                 }
                                             )
@@ -457,6 +459,7 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                                     isEmpty -> Color.Transparent
                                                     isClear || isDelete -> ErrorColor.copy(alpha = 0.3f)
                                                     isOp || isPercent || isSign -> Primary.copy(alpha = 0.3f)
+                                                    isEqual -> Primary
                                                     else -> Color.White.copy(alpha = 0.08f)
                                                 },
                                                 RoundedCornerShape(12.dp)
@@ -519,6 +522,26 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                                         activeOp = key.first()
                                                         opPressed = true
                                                     }
+                                                    isEqual -> {
+                                                        if (prevVal != null && activeOp != null) {
+                                                            val currentVal = displayVal.toDoubleOrNull() ?: 0.0
+                                                            val result = when (activeOp) {
+                                                                '+' -> prevVal!! + currentVal
+                                                                '-' -> prevVal!! - currentVal
+                                                                '*' -> prevVal!! * currentVal
+                                                                '/' -> if (currentVal != 0.0) prevVal!! / currentVal else Double.NaN
+                                                                else -> currentVal
+                                                            }
+                                                            displayVal = if (result.isNaN()) {
+                                                                "Erro"
+                                                            } else {
+                                                                if (result % 1 == 0.0) result.toInt().toString() else String.format(Locale.US, "%.4f", result)
+                                                            }
+                                                            prevVal = null
+                                                            activeOp = null
+                                                            opPressed = true
+                                                        }
+                                                    }
                                                 }
                                             },
                                         contentAlignment = Alignment.Center
@@ -531,6 +554,7 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                                 color = when {
                                                     isClear || isDelete -> ErrorColor
                                                     isOp || isPercent || isSign -> Primary
+                                                    isEqual -> OnPrimary
                                                     else -> OnSurface
                                                 },
                                                 fontFamily = FontFamily.Monospace
@@ -540,37 +564,6 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                 }
                             }
                         }
-                    }
-
-                    // Wide bottom evaluate (=) key
-                    Button(
-                        onClick = {
-                            if (prevVal != null && activeOp != null) {
-                                val currentVal = displayVal.toDoubleOrNull() ?: 0.0
-                                val result = when (activeOp) {
-                                    '+' -> prevVal!! + currentVal
-                                    '-' -> prevVal!! - currentVal
-                                    '*' -> prevVal!! * currentVal
-                                    '/' -> if (currentVal != 0.0) prevVal!! / currentVal else Double.NaN
-                                    else -> currentVal
-                                }
-                                displayVal = if (result.isNaN()) {
-                                    "Erro"
-                                } else {
-                                    if (result % 1 == 0.0) result.toInt().toString() else String.format(Locale.US, "%.4f", result)
-                                }
-                                prevVal = null
-                                activeOp = null
-                                opPressed = true
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                    ) {
-                        Text(text = "=", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = OnPrimary, fontFamily = FontFamily.Monospace)
                     }
                 }
             }

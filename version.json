@@ -1,7 +1,0 @@
-{
-  "version": "1.2.40",
-  "changelog": "Build automático: Commit feat: add database migrations and update version
-
-Implement Room migrations for orders table updates and the new investments table. Reset version name to 1.2 and remove obsolete version tracking file.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}
