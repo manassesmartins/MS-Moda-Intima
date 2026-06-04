@@ -1,7 +1,0 @@
-{
-  "version": "1.2.39",
-  "changelog": "Build automático: Commit chore: update version to 1.2
-
-Reset version name and simplify version.json tracking.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}
