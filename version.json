@@ -1,0 +1,10 @@
+{
+  "version": "1.2.36",
+  "changelog": "Build automático: Commit refactor: rebrand application to Gestor de Produção
+
+- Rename application brand across UI and web components
+- Update launcher icon
+- Restrict FAB visibility to transactions tab
+- Improve TransactionViewModel order/edit methods with timestamp injection",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
