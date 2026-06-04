@@ -1,0 +1,9 @@
+{
+  "version": "1.2.38",
+  "changelog": "Build automático: Commit feat: add investments module and update database
+
+- Added InvestmentEntity to Room database schema (v7)
+- Implemented DAO and repository methods for investments
+- Updated version name and GitHubUpdater parsing logic",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
