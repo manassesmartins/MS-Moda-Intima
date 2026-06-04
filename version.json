@@ -1,0 +1,9 @@
+{
+  "version": "1.2.37",
+  "changelog": "Build automático: Commit feat(orders): implement PDF sharing for client invoices
+
+- Added  utility for PDF generation
+- Updated OrdersScreen to replace "Download PDF" with share functionality
+- Simplified versioning and version string format",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
