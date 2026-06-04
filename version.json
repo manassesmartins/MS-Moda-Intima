@@ -1,0 +1,7 @@
+{
+  "version": "1.2.41",
+  "changelog": "Build automático: Commit fix: update version code and fix calculator UI
+
+Update version name to 1.2 and replace empty key with equals button in the calculator UI.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
