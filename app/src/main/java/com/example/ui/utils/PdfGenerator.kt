@@ -158,3 +158,122 @@ fun generatePdfAndShare(
         Toast.makeText(context, "Erro ao exportar PDF: " + e.message, Toast.LENGTH_LONG).show()
     }
 }
+
+fun generateInvoicePdfAndShare(
+    context: Context,
+    order: OrderEntity,
+    matchingOrders: List<OrderEntity>,
+    brandName: String
+) {
+    try {
+        val pdfDocument = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+        val paint = Paint()
+
+        // Center / Header
+        paint.color = Color.BLACK
+        paint.textSize = 18f
+        paint.isFakeBoldText = true
+        paint.textAlign = Paint.Align.CENTER
+        canvas.drawText(brandName.uppercase(Locale.getDefault()), 297.5f, 65f, paint)
+
+        paint.textSize = 10f
+        paint.isFakeBoldText = true
+        paint.color = Color.GRAY
+        canvas.drawText("DOCUMENTO DE FECHAMENTO SEMANAL", 297.5f, 85f, paint)
+
+        paint.color = Color.BLACK
+        canvas.drawLine(40f, 100f, 555f, 100f, paint)
+
+        // Metadata left-aligned
+        paint.textAlign = Paint.Align.LEFT
+        paint.textSize = 11f
+        paint.isFakeBoldText = true
+        canvas.drawText("CLIENTE:", 50f, 130f, paint)
+        paint.isFakeBoldText = false
+        canvas.drawText(order.clientName.uppercase(Locale.getDefault()), 120f, 130f, paint)
+
+        paint.isFakeBoldText = true
+        canvas.drawText("SEMANA DO REGISTRO:", 50f, 150f, paint)
+        paint.isFakeBoldText = false
+        canvas.drawText(order.week, 200f, 150f, paint)
+
+        paint.isFakeBoldText = true
+        canvas.drawText("DATA DE EMISSÃO:", 50f, 170f, paint)
+        paint.isFakeBoldText = false
+        val dateFormatter = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
+        canvas.drawText(dateFormatter.format(Date(order.timestamp)), 170f, 170f, paint)
+
+        canvas.drawLine(40f, 190f, 555f, 190f, paint)
+
+        // Itemized Table Heading
+        paint.textSize = 11f
+        paint.isFakeBoldText = true
+        canvas.drawText("ESPECIFICAÇÕES", 50f, 215f, paint)
+        paint.textAlign = Paint.Align.RIGHT
+        canvas.drawText("TOTAL", 545f, 215f, paint)
+
+        canvas.drawLine(40f, 225f, 555f, 225f, paint)
+
+        // Items logic list
+        var currentY = 250f
+        paint.textSize = 10f
+        matchingOrders.forEach { item ->
+            paint.textAlign = Paint.Align.LEFT
+            paint.isFakeBoldText = true
+            canvas.drawText("${item.pantyType} (Tam ${item.pantySize})", 50f, currentY, paint)
+            
+            paint.textAlign = Paint.Align.RIGHT
+            val formattedTotal = String.format(Locale("pt", "BR"), "R$ %,.2f", item.totalValue)
+            canvas.drawText(formattedTotal, 545f, currentY, paint)
+            
+            currentY += 15f
+            paint.textAlign = Paint.Align.LEFT
+            paint.isFakeBoldText = false
+            paint.color = Color.DKGRAY
+            canvas.drawText("=> Qtd: ${item.quantity} un x R$ ${String.format(Locale("pt", "BR"), "%,.2f", item.pantyValue)}", 50f, currentY, paint)
+            
+            paint.color = Color.BLACK
+            currentY += 25f
+        }
+
+        canvas.drawLine(40f, currentY, 555f, currentY, paint)
+        currentY += 25f
+
+        // Grand Total row
+        paint.textSize = 12f
+        paint.isFakeBoldText = true
+        paint.textAlign = Paint.Align.LEFT
+        canvas.drawText("VALOR TOTAL A PAGAR:", 50f, currentY, paint)
+        
+        paint.textAlign = Paint.Align.RIGHT
+        val grandTotalStr = String.format(Locale("pt", "BR"), "R$ %,.2f", matchingOrders.sumOf { it.totalValue })
+        canvas.drawText(grandTotalStr, 545f, currentY, paint)
+
+        pdfDocument.finishPage(page)
+
+        val comandaFile = File(context.cacheDir, "Comanda_${order.clientName.replace(" ", "_")}.pdf")
+        val stream = FileOutputStream(comandaFile)
+        pdfDocument.writeTo(stream)
+        pdfDocument.close()
+        stream.close()
+
+        // Native share sheet menu trigger
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_TITLE, "Compartilhar Comanda de Entrega")
+            putExtra(Intent.EXTRA_SUBJECT, "Comanda Semanal - $brandName")
+            putExtra(Intent.EXTRA_TEXT, "Prezado cliente, segue fechamento e comanda da semana referente à sua produção de confecções da marca $brandName.")
+            val comandaUri = Uri.fromFile(comandaFile)
+            putExtra(Intent.EXTRA_STREAM, comandaUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Enviar Comanda Semanal"))
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Erro ao gerar PDF da comanda: " + e.message, Toast.LENGTH_LONG).show()
+    }
+}

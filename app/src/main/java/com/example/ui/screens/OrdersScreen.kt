@@ -810,6 +810,8 @@ fun OrderInvoiceDialog(
 ) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")) }
+    val Primary = MaterialTheme.colorScheme.primary
+    val OnPrimary = MaterialTheme.colorScheme.onPrimary
     
     val matchingOrders = remember(order, allOrders) {
         allOrders.filter { 
@@ -958,12 +960,23 @@ fun OrderInvoiceDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    Toast.makeText(context, "Baixando comanda em PDF... Concluído!", Toast.LENGTH_LONG).show()
+                    com.example.ui.utils.generateInvoicePdfAndShare(
+                        context = context,
+                        order = order,
+                        matchingOrders = matchingOrders,
+                        brandName = brandName
+                    )
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary)
             ) {
-                Text("Baixar PDF / Imprimir", fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Compartilhar Comanda", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
