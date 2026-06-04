@@ -20,7 +20,8 @@ fun generatePdfAndShare(
     inflow: Double,
     outflow: Double,
     transactions: List<TransactionEntity>,
-    orders: List<OrderEntity>
+    orders: List<OrderEntity>,
+    brandName: String
 ) {
     try {
         val pdfDocument = PdfDocument()
@@ -33,7 +34,7 @@ fun generatePdfAndShare(
         paint.color = Color.BLACK
         paint.textSize = 18f
         paint.isFakeBoldText = true
-        canvas.drawText("GESTOR DE PRODUÇÃO - RELATÓRIO OPERACIONAL", 40f, 65f, paint)
+        canvas.drawText((brandName + " - RELATÓRIO OPERACIONAL").uppercase(Locale.getDefault()), 40f, 65f, paint)
 
         // Subtitle
         paint.textSize = 10f
@@ -125,14 +126,6 @@ fun generatePdfAndShare(
             canvas.drawText(String.format("R$ %,.2f", t.amount), 450f, currentY, paint)
             currentY += 15f
         }
-
-        // Signature area
-        currentY = 750f
-        canvas.drawLine(40f, currentY, 220f, currentY, paint)
-        canvas.drawLine(340f, currentY, 520f, currentY, paint)
-        
-        canvas.drawText("Assinatura Produção / Contábil", 65f, currentY + 15, paint)
-        canvas.drawText("Data de Validação Oficial", 365f, currentY + 15, paint)
 
         pdfDocument.finishPage(page)
 

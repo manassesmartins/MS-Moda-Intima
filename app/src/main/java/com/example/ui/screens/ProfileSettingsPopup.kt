@@ -374,7 +374,7 @@ fun ProfileSettingsPopup(
                         OutlinedTextField(
                             value = brandNameInput,
                             onValueChange = { brandNameInput = it },
-                            placeholder = { Text("Ex: Ateliê Realeza") },
+                            placeholder = { Text("Ex: Confecção Real") },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
                             shape = RoundedCornerShape(8.dp),
@@ -517,7 +517,7 @@ fun ProfileSettingsPopup(
 
         val schemeOptions = listOf(
             "PINK" to "Rosa Clássico (Orquídea)",
-            "EMERALD" to "Esmeralda Vibrante (Ateliê)",
+            "EMERALD" to "Esmeralda Vibrante (Estúdio)",
             "PURPLE" to "Ametista Imperial (Crochê)",
             "BLUE" to "Safira Oceano (Confecção)"
         )

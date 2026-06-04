@@ -68,6 +68,8 @@ fun DashboardScreen(
     var activeSubTab by remember { mutableStateOf("PAINEL") } // "PAINEL", "SEMANAL", "MENSAL"
     var showReportDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val brandConfig by viewModel.brandConfig.collectAsStateWithLifecycle()
+    val brandName = brandConfig?.brandName ?: "Gestor de Produção"
 
     // Outer-level remembered computations to prevent heavy re-evaluation on scroll and during animations
     val weeklyProfitData = remember(transactions) {
@@ -147,7 +149,8 @@ fun DashboardScreen(
                             inflow = summary.totalInflow,
                             outflow = summary.totalOutflow,
                             transactions = transactions,
-                            orders = orders
+                            orders = orders,
+                            brandName = brandName
                         )
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)

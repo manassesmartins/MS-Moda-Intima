@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.*
 import com.example.ui.theme.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,36 +46,20 @@ fun NewTransactionScreen(
     val OnTertiary = MaterialTheme.colorScheme.onTertiary
     val OnSurface = MaterialTheme.colorScheme.onSurface
     val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
-    val SurfaceContainer = MaterialTheme.colorScheme.surfaceVariant
-    val SurfaceContainerHigh = MaterialTheme.colorScheme.surfaceVariant
     val SurfaceDark = MaterialTheme.colorScheme.background
     val ErrorColor = MaterialTheme.colorScheme.error
 
     var description by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.description ?: "") }
     var amountText by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.amount?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "") }
-    var category by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.category ?: "Variados") }
     val type = transactionToEdit?.type ?: "OUTFLOW"
     val toggleSync = remember(transactionToEdit) { mutableStateOf(isCloudBackupEnabled) }
     var selectedWeek by remember(transactionToEdit) { mutableStateOf(transactionToEdit?.week ?: "1ª Semana") }
 
-    val dynamicCategories by viewModel.allCategories.collectAsStateWithLifecycle(emptyList())
-
-    val displayedCategories = remember(dynamicCategories, type) {
-        val filtered = dynamicCategories.filter { it.type == type }.map { it.name }
-        if (filtered.isEmpty()) {
-            if (type == "INFLOW") listOf("Vendas", "Encomendas", "Outros")
-            else listOf("Funcionários", "Pano", "Viés", "Linha", "Etiqueta de composição", "Etiqueta lateral", "Forro", "Manutenção", "Variados")
-        } else {
-            filtered
-        }
+    val transactions by viewModel.allTransactions.collectAsStateWithLifecycle(emptyList())
+    val existingExpenses = remember(transactions) {
+        transactions.filter { it.type == "OUTFLOW" }.map { it.description }.distinct().sorted()
     }
-
-    // Auto update selected category if not in the new list of categories
-    LaunchedEffect(type, displayedCategories) {
-        if (category !in displayedCategories && displayedCategories.isNotEmpty() && transactionToEdit == null) {
-            category = displayedCategories.first()
-        }
-    }
+    var expandedDescDropdown by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -85,7 +70,7 @@ fun NewTransactionScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = if (transactionToEdit != null) "Editar Lançamento" else "Novo Lançamento",
+                    text = if (transactionToEdit != null) "Editar Gasto" else "Novo Gasto",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Primary
@@ -129,15 +114,15 @@ fun NewTransactionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Check, // Simulated Cash Icon
-                            contentDescription = "Lançamento",
-                            tint = Primary,
+                            imageVector = Icons.Default.Warning, // Clear visual icon for Gastos/Outflows
+                            contentDescription = "Gasto",
+                            tint = ErrorColor,
                             modifier = Modifier.size(36.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = if (transactionToEdit != null) "Atualize as informações do lançamento de fluxo de caixa para manter suas contas corretas." else "Registre saídas e custos do seu negócio para manter as despesas organizadas e controladas.",
+                        text = if (transactionToEdit != null) "Atualize as informações do gasto registrado para manter suas contas corretas." else "Registre e salve seus gastos na lista para ter total controle financeiro sem complicações.",
                         fontSize = 14.sp,
                         color = OnSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -147,33 +132,61 @@ fun NewTransactionScreen(
                 }
             }
 
-            // Description Input Field
+            // Description Input Field with autocomplete list/dropdown matching existing clients style!
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "DESCRIÇÃO",
+                        text = "DESCRIÇÃO DO GASTO (HISTÓRICO)",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = OnSurfaceVariant,
                         letterSpacing = 0.5.sp
                     )
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        placeholder = { Text("Ex: Compra de Linhas de Seda", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = OnSurface,
-                            unfocusedTextColor = OnSurface,
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.04f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.04f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("description_input"),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    ExposedDropdownMenuBox(
+                        expanded = expandedDescDropdown,
+                        onExpandedChange = { expandedDescDropdown = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { 
+                                description = it
+                                expandedDescDropdown = true 
+                            },
+                            placeholder = { Text("Ex: Fornecedor de Tecidos, Energia, etc.", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = OnSurface,
+                                unfocusedTextColor = OnSurface,
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.12f),
+                                focusedContainerColor = Color.White.copy(alpha = 0.04f),
+                                unfocusedContainerColor = Color.White.copy(alpha = 0.04f)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .testTag("description_input"),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        val filteredExpenses = existingExpenses.filter { it.contains(description, ignoreCase = true) }
+                        if (filteredExpenses.isNotEmpty() && expandedDescDropdown) {
+                            ExposedDropdownMenu(
+                                expanded = expandedDescDropdown,
+                                onDismissRequest = { expandedDescDropdown = false },
+                                modifier = Modifier.background(SurfaceDark)
+                            ) {
+                                filteredExpenses.forEach { exp ->
+                                    DropdownMenuItem(
+                                        text = { Text(exp, color = OnSurface) },
+                                        onClick = {
+                                            description = exp
+                                            expandedDescDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -213,7 +226,7 @@ fun NewTransactionScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "SEMANA DO LANÇAMENTO",
+                        text = "SEMANA DO REGISTRO",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = OnSurfaceVariant,
@@ -245,67 +258,6 @@ fun NewTransactionScreen(
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     color = if (isSelected) Primary else OnSurfaceVariant
                                 )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Category Selection dropdown/scroller list (represented cleanly with selectable glass chips)
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "CATEGORIA",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = OnSurfaceVariant,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth().testTag("category_select")
-                    ) {
-                        // Dropdown selection trigger inside card
-                        var isExpanded by remember { mutableStateOf(false) }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(12.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                                .clickable { isExpanded = !isExpanded }
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = category, fontSize = 16.sp, color = OnSurface)
-                                Icon(
-                                    imageVector = Icons.Default.Check, // Pulldown arrow representation
-                                    contentDescription = "Selecionar Categoria",
-                                    tint = Primary
-                                )
-                            }
-
-                            DropdownMenu(
-                                expanded = isExpanded,
-                                onDismissRequest = { isExpanded = false },
-                                modifier = Modifier
-                                    .background(SurfaceContainerHigh)
-                                    .fillMaxWidth(0.85f)
-                            ) {
-                                displayedCategories.forEach { cat ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = cat, color = OnSurface) },
-                                        onClick = {
-                                            category = cat
-                                            isExpanded = false
-                                        }
-                                    )
-                                }
                             }
                         }
                     }
@@ -365,7 +317,7 @@ fun NewTransactionScreen(
                     onClick = {
                         val amt = amountText.replace(',', '.').toDoubleOrNull() ?: 0.0
                         if (description.isNotBlank() && amt > 0) {
-                            onSubmit(description, amt, category, type, selectedWeek)
+                            onSubmit(description, amt, "Gasto", type, selectedWeek)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -385,7 +337,7 @@ fun NewTransactionScreen(
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         Text(
-                            text = if (transactionToEdit != null) "Atualizar Lançamento" else "Salvar Lançamento",
+                            text = if (transactionToEdit != null) "Atualizar Gasto" else "Salvar Gasto",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -415,7 +367,7 @@ fun NewTransactionScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Os lançamentos salvos aqui impactam diretamente seus relatórios mensais de lucratividade do seu negócio.",
+                            text = "Os gastos salvos aqui impactam diretamente seus relatórios mensais de lucratividade do seu negócio.",
                             fontSize = 11.sp,
                             color = OnSurfaceVariant,
                             lineHeight = 16.sp

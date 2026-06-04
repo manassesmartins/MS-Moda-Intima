@@ -421,8 +421,8 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                     }
                 },
                 floatingActionButton = {
-                    // Show FAB on Dashboard or Transactions tab
-                    if (currentTab == AppTab.DASHBOARD || currentTab == AppTab.TRANSACTIONS) {
+                    // Show FAB on Transactions tab only
+                    if (currentTab == AppTab.TRANSACTIONS) {
                         FloatingActionButton(
                             onClick = { viewModel.setAddingTransaction(true) },
                             containerColor = Primary,
@@ -434,7 +434,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "Adicionar Lançamento",
+                                contentDescription = "Adicionar Gasto",
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -1160,7 +1160,7 @@ fun MsModaIntimaBottomBar(
     ) {
         val tabs = listOf(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel"),
-            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo Caixa"),
+            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Gastos"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Pedidos"),
             Triple(AppTab.CALCS, Icons.Default.Star, "Custo Peças")
         )
@@ -1292,7 +1292,7 @@ fun MsModaIntimaNavigationRail(
 
         val tabs = listOf(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
-            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Fluxo de Caixa"),
+            Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Gastos"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
             Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças")
         )

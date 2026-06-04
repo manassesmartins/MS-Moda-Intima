@@ -60,6 +60,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
 
     val context = LocalContext.current
     val orders by viewModel.allOrders.collectAsStateWithLifecycle(emptyList())
+    val brandConfig by viewModel.brandConfig.collectAsStateWithLifecycle()
+    val brandName = brandConfig?.brandName ?: "Gestor de Produção"
     val existingClients = remember(orders) { orders.map { it.clientName }.distinct().sorted() }
 
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")) }
@@ -412,8 +414,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
         OrderAddEditDialog(
             orders = orders,
             onDismiss = { showAddDialog = false },
-            onSave = { name, model, size, qty, valUnit, week, area, status ->
-                viewModel.addOrder(name, model, size, qty, valUnit, week, area, status)
+            onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
+                viewModel.addOrder(name, model, size, qty, valUnit, week, area, status, timestamp)
                 showAddDialog = false
                 Toast.makeText(context, "Pedido agendado com sucesso!", Toast.LENGTH_SHORT).show()
             }
@@ -425,8 +427,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
             order = order,
             orders = orders,
             onDismiss = { orderToEdit = null },
-            onSave = { name, model, size, qty, valUnit, week, area, status ->
-                viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status)
+            onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
+                viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status, timestamp)
                 orderToEdit = null
                 Toast.makeText(context, "Pedido atualizado!", Toast.LENGTH_SHORT).show()
             }
@@ -436,6 +438,8 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
     orderForInvoice?.let { order ->
         OrderInvoiceDialog(
             order = order,
+            allOrders = orders,
+            brandName = brandName,
             onDismiss = { orderForInvoice = null }
         )
     }
@@ -474,7 +478,7 @@ fun OrderAddEditDialog(
     order: com.example.data.OrderEntity? = null,
     orders: List<com.example.data.OrderEntity>,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, Int, Double, String, String, String) -> Unit
+    onSave: (String, String, String, Int, Double, String, String, String, Long) -> Unit
 ) {
     val existingClients = remember(orders) { orders.map { it.clientName }.distinct().sorted() }
     var name by remember { mutableStateOf(order?.clientName ?: "") }
@@ -512,7 +516,17 @@ fun OrderAddEditDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { selectedTimeMillis = it }
+                    datePickerState.selectedDateMillis?.let { selectedUtcMillis ->
+                        val utcCal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                        utcCal.timeInMillis = selectedUtcMillis
+                        val year = utcCal.get(java.util.Calendar.YEAR)
+                        val month = utcCal.get(java.util.Calendar.MONTH)
+                        val day = utcCal.get(java.util.Calendar.DAY_OF_MONTH)
+                        
+                        val localCal = java.util.Calendar.getInstance()
+                        localCal.set(year, month, day, 12, 0, 0)
+                        selectedTimeMillis = localCal.timeInMillis
+                    }
                     showDatePicker = false
                 }) {
                     Text("OK", color = Primary)
@@ -770,7 +784,7 @@ fun OrderAddEditDialog(
                     val qty = qtyText.toIntOrNull() ?: 0
                     val valUnit = priceText.replace(',', '.').toDoubleOrNull() ?: 0.0
                     if (name.isNotBlank() && model.isNotBlank() && qty > 0 && valUnit > 0) {
-                        onSave(name, model, size, qty, valUnit, selectedWeek, area, status)
+                        onSave(name, model, size, qty, valUnit, selectedWeek, area, status, selectedTimeMillis)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
@@ -790,14 +804,28 @@ fun OrderAddEditDialog(
 @Composable
 fun OrderInvoiceDialog(
     order: com.example.data.OrderEntity,
+    allOrders: List<com.example.data.OrderEntity>,
+    brandName: String,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")) }
+    
+    val matchingOrders = remember(order, allOrders) {
+        allOrders.filter { 
+            it.clientName.trim().equals(order.clientName.trim(), ignoreCase = true) && 
+            it.week == order.week 
+        }
+    }
+    
+    val totalToPay = remember(matchingOrders) {
+        matchingOrders.sumOf { it.totalValue }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Comanda de Encomenda Corrente", color = Tertiary, fontWeight = FontWeight.Bold)
+            Text("Comanda - $brandName", color = Tertiary, fontWeight = FontWeight.Bold)
         },
         containerColor = Color.White, // Paper White look!
         text = {
@@ -813,15 +841,18 @@ fun OrderInvoiceDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "GESTOR DE PRODUÇÃO - COMANDA",
+                        text = brandName.uppercase(Locale.getDefault()),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Nossas Entradas e Saidas de Pedidos",
-                        fontSize = 12.sp,
-                        color = Color.DarkGray
+                        text = "DOCUMENTO DE FECHAMENTO SEMANAL",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
                     )
                     Text(
                         text = "--------------------------------------------------------",
@@ -850,7 +881,7 @@ fun OrderInvoiceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("DATA DE FATURA:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("DATA DE EMISSÃO:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     val formattedDate = dateFormatter.format(Date(order.timestamp))
                     Text(formattedDate, fontSize = 11.sp, color = Color.Black)
                 }
@@ -864,7 +895,7 @@ fun OrderInvoiceDialog(
                 )
 
                 // Item description table
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -873,28 +904,31 @@ fun OrderInvoiceDialog(
                         Text("TOTAL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "${order.pantyType} (Tam ${order.pantySize})",
-                            fontSize = 11.sp,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = String.format(Locale("pt", "BR"), "R$ %,.2f", order.totalValue),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
+                    matchingOrders.forEach { item ->
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "${item.pantyType} (Tam ${item.pantySize})",
+                                    fontSize = 11.sp,
+                                    color = Color.Black
+                                )
+                                Text(
+                                    text = String.format(Locale("pt", "BR"), "R$ %,.2f", item.totalValue),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            }
+                            Text(
+                                text = "=> Qtd: ${item.quantity} un x R$ ${item.pantyValue}",
+                                fontSize = 11.sp,
+                                color = Color.DarkGray
+                            )
+                        }
                     }
-
-                    Text(
-                        text = "=> Qtd: ${order.quantity} un x R$ ${order.pantyValue}",
-                        fontSize = 11.sp,
-                        color = Color.DarkGray
-                    )
                 }
 
                 Text(
@@ -908,22 +942,16 @@ fun OrderInvoiceDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("VALOR A PAGAR:", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                    Text("VALOR TOTAL A PAGAR:", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                     Text(
-                        text = String.format(Locale("pt", "BR"), "R$ %,.2f", order.totalValue),
+                        text = String.format(Locale("pt", "BR"), "R$ %,.2f", totalToPay),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
                     )
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-                Text(
-                    text = "ASSINATURA DA LOJA",
-                    fontSize = 9.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
                 Divider(color = Color.LightGray, modifier = Modifier.padding(top = 10.dp))
             }
         },

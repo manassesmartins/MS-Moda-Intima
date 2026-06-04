@@ -799,7 +799,7 @@ class TransactionViewModel(
         }
     }
 
-    fun addOrder(clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente") {
+    fun addOrder(clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente", timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             val totalValue = quantity * pantyValue
             val order = com.example.data.OrderEntity(
@@ -812,14 +812,14 @@ class TransactionViewModel(
                 week = week,
                 businessArea = businessArea,
                 status = status,
-                timestamp = System.currentTimeMillis()
+                timestamp = timestamp
             )
             repository.insertOrder(order)
             triggerSyncSimulation()
         }
     }
 
-    fun editOrder(id: Long, clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente") {
+    fun editOrder(id: Long, clientName: String, pantyType: String, pantySize: String, quantity: Int, pantyValue: Double, week: String, businessArea: String = "Geral", status: String = "Pendente", timestamp: Long = System.currentTimeMillis()) {
         viewModelScope.launch {
             val totalValue = quantity * pantyValue
             val order = com.example.data.OrderEntity(
@@ -833,7 +833,7 @@ class TransactionViewModel(
                 week = week,
                 businessArea = businessArea,
                 status = status,
-                timestamp = System.currentTimeMillis()
+                timestamp = timestamp
             )
             repository.insertOrder(order)
             triggerSyncSimulation()

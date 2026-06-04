@@ -502,8 +502,8 @@ function initP2PMQTT() {
                 <i class="fa-solid fa-gem text-primary text-xs"></i>
             </div>
             <div>
-                <h1 id="header-brand-name" class="text-sm font-extrabold text-white tracking-tight leading-none">MS Moda Íntima</h1>
-                <span id="header-brand-niche" class="text-[9px] text-purple-200/50 font-mono tracking-wider">Atelier Web</span>
+                <h1 id="header-brand-name" class="text-sm font-extrabold text-white tracking-tight leading-none">Gestor de Produção</h1>
+                <span id="header-brand-niche" class="text-[9px] text-purple-200/50 font-mono tracking-wider">Gestão Web</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -524,7 +524,7 @@ function initP2PMQTT() {
                     <i class="fa-solid fa-gem text-primary"></i>
                 </div>
                 <div>
-                    <h1 id="sidebar-brand-name" class="text-base font-extrabold text-white tracking-tight leading-none">MS Moda Íntima</h1>
+                    <h1 id="sidebar-brand-name" class="text-base font-extrabold text-white tracking-tight leading-none">Gestor de Produção</h1>
                     <span id="sidebar-brand-niche" class="text-[9px] text-purple-200/50 font-mono tracking-wider uppercase mt-1 block">WORKSPACE</span>
                 </div>
             </div>
@@ -572,7 +572,7 @@ function initP2PMQTT() {
         </nav>
 
         <div class="p-5 border-t border-white/5 text-[10px] text-purple-200/40 text-center">
-            <p>MS Moda Íntima Web v1.3</p>
+            <p>Gestor de Produção Web v1.3</p>
             <p class="mt-0.5">Offline-First LocalStorage Sync</p>
         </div>
     </aside>
@@ -586,7 +586,7 @@ function initP2PMQTT() {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold text-white tracking-tight">Painel de Negócios</h2>
-                        <p class="text-xs text-purple-200/60">Análise de faturamento, despesas operacionais e saúde do atelier</p>
+                        <p class="text-xs text-purple-200/60">Análise de faturamento, despesas operacionais e saúde do negócio</p>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="generateDetailedPDF()" class="px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-purple-200 hover:text-white hover:bg-white/10 text-xs font-bold active:scale-[0.98] transition-all flex items-center gap-1.5 font-sans">
@@ -867,7 +867,7 @@ function initP2PMQTT() {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold text-white tracking-tight">Histórico de Custos (Saídas)</h2>
-                        <p class="text-xs text-purple-200/60">Relação completa de despesas, insumos e saídas do atelier</p>
+                        <p class="text-xs text-purple-200/60">Relação completa de despesas, insumos e saídas do negócio</p>
                     </div>
                     
                     <div class="flex items-center gap-2">
@@ -1039,7 +1039,7 @@ function initP2PMQTT() {
                         <form id="settings-brand-form" onsubmit="handleSettingsBrandUpdate(event)" class="space-y-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-semibold uppercase text-purple-200/60 mb-1">Nome do Ateliê</label>
+                                    <label class="block text-xs font-semibold uppercase text-purple-200/60 mb-1">Nome da Marca / Negócio</label>
                                     <input type="text" id="settings-brand-name" required class="glass-input w-full px-3.5 py-2.5 text-sm">
                                 </div>
                                 <div>
@@ -1120,7 +1120,7 @@ function initP2PMQTT() {
                                     <span id="sync-email-status" class="font-mono text-white text-xs text-right max-w-[180px] truncate">Nenhuma (Local Only)</span>
                                 </div>
                                 <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
-                                    <span class="text-purple-200/70">Registros do Ateliê</span>
+                                    <span class="text-purple-200/70">Registros Locais</span>
                                     <span id="sync-pending-count" class="font-bold text-secondary text-sm">0 locais</span>
                                 </div>
                             </div>
@@ -1155,7 +1155,7 @@ function initP2PMQTT() {
         </div>
 
         <footer class="mt-8 pt-4 border-t border-white/5 text-center text-xs text-purple-200/35">
-            <p>&copy; 2026 MS Moda Íntima Atelier. Todos os direitos reservados.</p>
+            <p>&copy; 2026 Gestor de Produção. Todos os direitos reservados.</p>
         </footer>
     </main>
 
@@ -1602,7 +1602,7 @@ function initP2PMQTT() {
         function updateBrandPreview() {
             const bName = document.getElementById('setup-brand-name').value.trim() || "Minha Marca";
             const bCategory = document.getElementById('setup-category').value;
-            const bNiche = document.getElementById('setup-niche').value.trim() || "Atelier Premium";
+            const bNiche = document.getElementById('setup-niche').value.trim() || "Confecção Premium";
 
             document.getElementById('preview-brand-name').innerText = bName;
             document.getElementById('preview-brand-category').innerText = bCategory;
@@ -1677,7 +1677,7 @@ function initP2PMQTT() {
             if (!config) return;
 
             // Set browser document title
-            document.title = `${config.brandName || 'Atelier'} - Workspace`;
+            document.title = `${config.brandName || 'Gestor'} - Workspace`;
 
             // Replace text titles in workspace headers & sidebars
             const sideName = document.getElementById('sidebar-brand-name');
@@ -1688,7 +1688,7 @@ function initP2PMQTT() {
             if (sideName) sideName.innerText = config.brandName;
             if (sideNiche) sideNiche.innerText = config.niche || config.category || "WORKSPACE";
             if (headName) headName.innerText = config.brandName;
-            if (headNiche) headNiche.innerText = config.category || "Atelier Web";
+            if (headNiche) headNiche.innerText = config.category || "Gestão Web";
 
             // Logo icon representation mapping
             const logoIconClassMap = {
@@ -1711,7 +1711,7 @@ function initP2PMQTT() {
                     sidebarLogoContainer.innerHTML = `<img src="${config.logoImage}" class="w-full h-full object-cover">`;
                 } else {
                     sidebarLogoContainer.className = "w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30 flex-row gap-1 shrink-0";
-                    sidebarLogoContainer.innerHTML = `<span class="text-xs font-extrabold text-primary select-none">${config.brandName ? config.brandName.substring(0, 2).toUpperCase() : 'Atelier'}</span>`;
+                    sidebarLogoContainer.innerHTML = `<span class="text-xs font-extrabold text-primary select-none">${config.brandName ? config.brandName.substring(0, 2).toUpperCase() : 'Gestor'}</span>`;
                 }
             }
             if (headerLogoContainer) {
@@ -1720,7 +1720,7 @@ function initP2PMQTT() {
                     headerLogoContainer.innerHTML = `<img src="${config.logoImage}" class="w-full h-full object-cover">`;
                 } else {
                     headerLogoContainer.className = "w-8 h-8 bg-primary/25 rounded-lg flex items-center justify-center border border-primary/35 shrink-0";
-                    headerLogoContainer.innerHTML = `<span class="text-[9px] font-black text-primary select-none">${config.brandName ? config.brandName.substring(0, 2).toUpperCase() : 'Atelier'}</span>`;
+                    headerLogoContainer.innerHTML = `<span class="text-[9px] font-black text-primary select-none">${config.brandName ? config.brandName.substring(0, 2).toUpperCase() : 'Gestor'}</span>`;
                 }
             }
 
@@ -1761,7 +1761,7 @@ function initP2PMQTT() {
             // Apply logo and title changes to Login Page
             const authBrandTitle = document.getElementById('auth-brand-title');
             if (authBrandTitle) {
-                authBrandTitle.innerText = (config.brandName || "MS MODA ÍNTIMA").toUpperCase();
+                authBrandTitle.innerText = (config.brandName || "GESTOR DE PRODUÇÃO").toUpperCase();
             }
              const authBrandIcon = document.getElementById('auth-brand-icon');
              if (authBrandIcon) {
@@ -2084,7 +2084,7 @@ function initP2PMQTT() {
                 // Update bottom status card & Sync state
                 document.getElementById('auth-status-icon').className = "fa-solid fa-cloud-arrow-up text-green-400 text-sm";
                 document.getElementById('auth-status-title').innerText = "Sincronização Google Sheets Ativa";
-                document.getElementById('auth-status-desc').innerText = `Sua sessão está conectada como ${email}. Os dados do atelier estão sincronizados em tempo real.`;
+                document.getElementById('auth-status-desc').innerText = `Sua sessão está conectada como ${email}. Os dados do negócio estão sincronizados em tempo real.`;
 
                 // Success timeout transition to workspace
                 setTimeout(() => {
@@ -3460,8 +3460,8 @@ function initP2PMQTT() {
                     <!-- HEADER -->
                     <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #111; padding-bottom: 15px; margin-bottom: 25px; align-items: flex-end;">
                         <div>
-                            <h1 style="margin: 0; font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; font-family: sans-serif;">MS Moda Íntima</h1>
-                            <p style="margin: 3px 0 0 0; font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold;">Atelier de Costura & Confecção - Relatório Financeiro Executivo</p>
+                            <h1 style="margin: 0; font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; font-family: sans-serif;">Gestor de Produção</h1>
+                            <p style="margin: 3px 0 0 0; font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold;">Gestão de Costura & Confecção - Relatório Financeiro Executivo</p>
                         </div>
                         <div style="text-align: right;">
                             <span style="font-size: 11px; color: #333; font-weight: bold; background: #eee; padding: 4px 8px; border-radius: 4px;">DOCUMENTO OFICIAL</span>
@@ -3474,7 +3474,7 @@ function initP2PMQTT() {
                         <h3 style="margin: 0 0 5px 0; font-size: 13px; text-transform: uppercase; font-weight: bold; color: #111;">Declaração de Competência Financeira</h3>
                         <p style="margin: 0; font-size: 11px; color: #444; text-align: justify;">
                             Este demonstrativo apresenta os faturamentos de encomendas consolidadas, apuração de custos em matérias-primas e insumos (pano, viés, linha, forros),
-                            retornos em costuras e a eficiência operacional de produção do atelier MS Moda Íntima. Os dados abaixo refletem de maneira fidedigna o inventário e registros do período corrente.
+                            retornos em costuras e a eficiência operacional de produção do Gestor de Produção. Os dados abaixo refletem de maneira fidedigna o inventário e registros do período corrente.
                         </p>
                     </div>
 
@@ -3590,8 +3590,8 @@ function initP2PMQTT() {
                     <!-- SIGNATURE BLOCK -->
                     <div style="display: flex; flex-direction: row; justify-content: space-between; margin-top: 50px; font-size: 11px; width: 100%;">
                         <div style="width: 250px; border-top: 1px solid #111; text-align: center; padding-top: 8px; margin-top: 20px;">
-                            <p style="margin: 0; font-weight: bold;">Assinatura Contábil / Atelier</p>
-                            <p style="margin: 3px 0 0 0; color: #666; font-size: 10px;">MS Moda Íntima</p>
+                            <p style="margin: 0; font-weight: bold;">Assinatura Contábil</p>
+                            <p style="margin: 3px 0 0 0; color: #666; font-size: 10px;">Gestor de Produção</p>
                         </div>
                         <div style="width: 250px; border-top: 1px solid #111; text-align: center; padding-top: 8px; margin-top: 20px;">
                             <p style="margin: 0; font-weight: bold;">Data de Validação Oficial</p>
@@ -3601,7 +3601,7 @@ function initP2PMQTT() {
 
                     <!-- LEGAL STAMP FOOTER -->
                     <div style="text-align: center; margin-top: 55px; border-top: 1px solid #eee; padding-top: 15px; font-size: 10px; color: #888;">
-                        Demonstrativo emitido via MS Moda Íntima Workspace App. Dados protegidos nos termos da regulamentação contábil local.
+                        Demonstrativo emitido via Gestor de Produção Workspace App. Dados protegidos nos termos da regulamentação contábil local.
                     </div>
                 </div>
             `;

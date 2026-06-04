@@ -154,7 +154,7 @@ fun TransactionListItem(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Right Content (Amount and Category badge)
+                // Right Content (Amount and Week badge)
                 Column(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.wrapContentWidth(Alignment.End)
@@ -176,7 +176,7 @@ fun TransactionListItem(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = item.category.uppercase(Locale.getDefault()),
+                            text = item.week.uppercase(Locale.getDefault()),
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
                             color = OnSurfaceVariant,
@@ -218,7 +218,7 @@ fun TransactionsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Fluxo de Caixa",
+            text = "Gastos",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Primary
@@ -268,28 +268,6 @@ fun TransactionsScreen(
                         )
                     }
                 }
-            }
-
-            // Category Manager Button
-            var showCategoryManager by remember { mutableStateOf(false) }
-            IconButton(
-                onClick = { showCategoryManager = true },
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f))
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
-                    .size(38.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Gerenciar Categorias",
-                    tint = Primary,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
-            if (showCategoryManager) {
-                CategoryManagerDialog(viewModel = viewModel, onDismiss = { showCategoryManager = false })
             }
         }
 

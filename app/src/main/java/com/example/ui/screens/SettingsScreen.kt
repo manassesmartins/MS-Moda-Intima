@@ -383,7 +383,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = brandNameInput,
                         onValueChange = { brandNameInput = it },
-                        placeholder = { Text("Ex: Ateliê Realeza, Bella Confecções") },
+                        placeholder = { Text("Ex: Confecção Real, Bella Confecções") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Primary,

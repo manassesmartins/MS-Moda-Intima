@@ -254,7 +254,7 @@ fun BusinessSetupScreen(viewModel: TransactionViewModel) {
                         OutlinedTextField(
                             value = brandName,
                             onValueChange = { brandName = it },
-                            placeholder = { Text("Ex: Ateliê Realeza, Bella Confecções") },
+                            placeholder = { Text("Ex: Confecção Real, Bella Confecções") },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = previewScheme.primary,
