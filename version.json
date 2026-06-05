@@ -1,9 +1,0 @@
-{
-  "version": "1.2.43",
-  "changelog": "Build automático: Commit feat: add category selection to transaction flow
-
-- Integrate master categories into the new transaction screen
-- Update UI styling in calculation and order screens
-- Reset versioning to 1.2",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}

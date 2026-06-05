@@ -79,6 +79,11 @@ class TransactionViewModel(
                     repository.deleteById(pending.entity.id)
                     triggerSyncSimulation()
                     _showUndoSnackbar.tryEmit("Lançamento removido")
+                    
+                    val json = org.json.JSONObject().apply {
+                        put("id", pending.entity.id)
+                    }
+                    com.example.data.LiveSyncManager.publishMutation("transactions", "delete", json)
                 }
                 is PendingDelete.Category -> {
                     lastDeletedCategory = pending.entity
@@ -86,6 +91,11 @@ class TransactionViewModel(
                     repository.deleteCategoryById(pending.entity.id)
                     triggerSyncSimulation()
                     _showUndoSnackbar.tryEmit("Categoria removida")
+                    
+                    val json = org.json.JSONObject().apply {
+                        put("id", pending.entity.id)
+                    }
+                    com.example.data.LiveSyncManager.publishMutation("categories", "delete", json)
                 }
                 is PendingDelete.Order -> {
                     lastDeletedOrder = pending.entity
@@ -93,6 +103,11 @@ class TransactionViewModel(
                     repository.deleteOrderById(pending.entity.id)
                     triggerSyncSimulation()
                     _showUndoSnackbar.tryEmit("Pedido removido")
+                    
+                    val json = org.json.JSONObject().apply {
+                        put("id", pending.entity.id)
+                    }
+                    com.example.data.LiveSyncManager.publishMutation("orders", "delete", json)
                 }
                 is PendingDelete.Calculation -> {
                     lastDeletedCalculation = pending.entity
@@ -100,6 +115,11 @@ class TransactionViewModel(
                     repository.deleteCalculationById(pending.entity.id)
                     triggerSyncSimulation()
                     _showUndoSnackbar.tryEmit("Cálculo de peça removido")
+                    
+                    val json = org.json.JSONObject().apply {
+                        put("id", pending.entity.id)
+                    }
+                    com.example.data.LiveSyncManager.publishMutation("calculations", "delete", json)
                 }
             }
         }
@@ -112,6 +132,20 @@ class TransactionViewModel(
                     lastDeletedTransaction?.let { tx ->
                         repository.insert(tx)
                         triggerSyncSimulation()
+                        
+                        val json = org.json.JSONObject().apply {
+                            put("id", tx.id)
+                            put("description", tx.description)
+                            put("amount", tx.amount)
+                            put("type", tx.type)
+                            put("category", tx.category)
+                            put("dateString", tx.dateString)
+                            put("timestamp", tx.timestamp)
+                            put("extraText", tx.extraText)
+                            put("week", tx.week)
+                        }
+                        com.example.data.LiveSyncManager.publishMutation("transactions", "insert", json)
+                        
                         lastDeletedTransaction = null
                         lastDeleteType = null
                     }
@@ -120,6 +154,14 @@ class TransactionViewModel(
                     lastDeletedCategory?.let { cat ->
                         repository.insertCategory(cat)
                         triggerSyncSimulation()
+                        
+                        val json = org.json.JSONObject().apply {
+                            put("id", cat.id)
+                            put("name", cat.name)
+                            put("type", cat.type)
+                        }
+                        com.example.data.LiveSyncManager.publishMutation("categories", "insert", json)
+                        
                         lastDeletedCategory = null
                         lastDeleteType = null
                     }
@@ -128,6 +170,22 @@ class TransactionViewModel(
                     lastDeletedOrder?.let { order ->
                         repository.insertOrder(order)
                         triggerSyncSimulation()
+                        
+                        val json = org.json.JSONObject().apply {
+                            put("id", order.id)
+                            put("clientName", order.clientName)
+                            put("pantyType", order.pantyType)
+                            put("pantySize", order.pantySize)
+                            put("quantity", order.quantity)
+                            put("pantyValue", order.pantyValue)
+                            put("totalValue", order.totalValue)
+                            put("week", order.week)
+                            put("businessArea", order.businessArea)
+                            put("status", order.status)
+                            put("timestamp", order.timestamp)
+                        }
+                        com.example.data.LiveSyncManager.publishMutation("orders", "insert", json)
+                        
                         lastDeletedOrder = null
                         lastDeleteType = null
                     }
@@ -136,6 +194,16 @@ class TransactionViewModel(
                     lastDeletedCalculation?.let { calc ->
                         repository.insertCalculation(calc)
                         triggerSyncSimulation()
+                        
+                        val json = org.json.JSONObject().apply {
+                            put("id", calc.id)
+                            put("pano", calc.pano)
+                            if (calc.kg != null) put("kg", calc.kg)
+                            if (calc.valorKg != null) put("valorKg", calc.valorKg)
+                            if (calc.quantidade != null) put("quantidade", calc.quantidade)
+                        }
+                        com.example.data.LiveSyncManager.publishMutation("calculations", "insert", json)
+                        
                         lastDeletedCalculation = null
                         lastDeleteType = null
                     }
@@ -714,6 +782,7 @@ class TransactionViewModel(
             isPulling = true
             try {
                 repository.seedMockDataIfEmpty()
+                com.example.data.LiveSyncManager.initializeStoredSync(context, repository)
             } catch (e: Exception) {
                 android.util.Log.e("TransactionViewModel", "Error seeding data", e)
             } finally {
@@ -742,6 +811,14 @@ class TransactionViewModel(
 
     fun setTab(tab: AppTab) {
         _currentTab.value = tab
+    }
+
+    fun startLiveSync(code: String) {
+        com.example.data.LiveSyncManager.startSync(context, code, repository)
+    }
+
+    fun stopLiveSync() {
+        com.example.data.LiveSyncManager.stopSync(context)
     }
 
     fun setAddingTransaction(adding: Boolean) {
@@ -814,9 +891,22 @@ class TransactionViewModel(
                 week = week
             )
 
-            repository.insert(transaction)
+            val newId = repository.insert(transaction)
             triggerSyncSimulation()
             _isAddingTransaction.value = false
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("description", description)
+                put("amount", amount)
+                put("type", type)
+                put("category", category)
+                put("dateString", finalDateString)
+                put("timestamp", transaction.timestamp)
+                put("extraText", transaction.extraText)
+                put("week", week)
+            }
+            com.example.data.LiveSyncManager.publishMutation("transactions", "insert", json)
         }
     }
 
@@ -852,13 +942,33 @@ class TransactionViewModel(
 
             repository.insert(transaction)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("description", description)
+                put("amount", amount)
+                put("type", type)
+                put("category", category)
+                put("dateString", finalDateString)
+                put("timestamp", transaction.timestamp)
+                put("extraText", transaction.extraText)
+                put("week", week)
+            }
+            com.example.data.LiveSyncManager.publishMutation("transactions", "insert", json)
         }
     }
 
     fun addCategory(name: String, type: String) {
         viewModelScope.launch {
-            repository.insertCategory(com.example.data.CategoryEntity(name = name, type = type))
+            val newId = repository.insertCategory(com.example.data.CategoryEntity(name = name, type = type))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("name", name)
+                put("type", type)
+            }
+            com.example.data.LiveSyncManager.publishMutation("categories", "insert", json)
         }
     }
 
@@ -866,6 +976,13 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.insertCategory(com.example.data.CategoryEntity(id = id, name = name, type = type))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("name", name)
+                put("type", type)
+            }
+            com.example.data.LiveSyncManager.publishMutation("categories", "insert", json)
         }
     }
 
@@ -879,8 +996,15 @@ class TransactionViewModel(
     // --- Master Lists CRUD ---
     fun addClient(name: String, phone: String = "") {
         viewModelScope.launch {
-            repository.insertClient(com.example.data.ClientEntity(name = name, phone = phone))
+            val newId = repository.insertClient(com.example.data.ClientEntity(name = name, phone = phone))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("name", name)
+                put("phone", phone)
+            }
+            com.example.data.LiveSyncManager.publishMutation("clients", "insert", json)
         }
     }
 
@@ -888,6 +1012,13 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.insertClient(com.example.data.ClientEntity(id = id, name = name, phone = phone))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("name", name)
+                put("phone", phone)
+            }
+            com.example.data.LiveSyncManager.publishMutation("clients", "insert", json)
         }
     }
 
@@ -895,6 +1026,11 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.deleteClientById(id)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+            }
+            com.example.data.LiveSyncManager.publishMutation("clients", "delete", json)
         }
     }
 
@@ -921,8 +1057,14 @@ class TransactionViewModel(
 
     fun addProductModel(name: String) {
         viewModelScope.launch {
-            repository.insertProductModel(com.example.data.ProductModelEntity(name = name))
+            val newId = repository.insertProductModel(com.example.data.ProductModelEntity(name = name))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("name", name)
+            }
+            com.example.data.LiveSyncManager.publishMutation("models", "insert", json)
         }
     }
 
@@ -930,6 +1072,12 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.insertProductModel(com.example.data.ProductModelEntity(id = id, name = name))
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("name", name)
+            }
+            com.example.data.LiveSyncManager.publishMutation("models", "insert", json)
         }
     }
 
@@ -937,6 +1085,11 @@ class TransactionViewModel(
         viewModelScope.launch {
             repository.deleteProductModelById(id)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+            }
+            com.example.data.LiveSyncManager.publishMutation("models", "delete", json)
         }
     }
 
@@ -1008,8 +1161,23 @@ class TransactionViewModel(
                 status = status,
                 timestamp = timestamp
             )
-            repository.insertOrder(order)
+            val newId = repository.insertOrder(order)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("clientName", clientName)
+                put("pantyType", pantyType)
+                put("pantySize", pantySize)
+                put("quantity", quantity)
+                put("pantyValue", pantyValue)
+                put("totalValue", totalValue)
+                put("week", week)
+                put("businessArea", businessArea)
+                put("status", status)
+                put("timestamp", timestamp)
+            }
+            com.example.data.LiveSyncManager.publishMutation("orders", "insert", json)
         }
     }
 
@@ -1031,6 +1199,21 @@ class TransactionViewModel(
             )
             repository.insertOrder(order)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("clientName", clientName)
+                put("pantyType", pantyType)
+                put("pantySize", pantySize)
+                put("quantity", quantity)
+                put("pantyValue", pantyValue)
+                put("totalValue", totalValue)
+                put("week", week)
+                put("businessArea", businessArea)
+                put("status", status)
+                put("timestamp", timestamp)
+            }
+            com.example.data.LiveSyncManager.publishMutation("orders", "insert", json)
         }
     }
 
@@ -1101,32 +1284,48 @@ class TransactionViewModel(
     // Piece calculation CRUD operations
     fun addCalculation(pano: String, kg: Double?, valorKg: Double?, quantidade: Int?) {
         viewModelScope.launch {
-            repository.insertCalculation(
-                com.example.data.PieceCalculationEntity(
-                    pano = pano,
-                    kg = kg,
-                    valorKg = valorKg,
-                    quantidade = quantidade,
-                    timestamp = System.currentTimeMillis()
-                )
+            val entity = com.example.data.PieceCalculationEntity(
+                pano = pano,
+                kg = kg,
+                valorKg = valorKg,
+                quantidade = quantidade,
+                timestamp = System.currentTimeMillis()
             )
+            val newId = repository.insertCalculation(entity)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", newId)
+                put("pano", pano)
+                if (kg != null) put("kg", kg)
+                if (valorKg != null) put("valorKg", valorKg)
+                if (quantidade != null) put("quantidade", quantidade)
+            }
+            com.example.data.LiveSyncManager.publishMutation("calculations", "insert", json)
         }
     }
 
     fun updateCalculation(id: Long, pano: String, kg: Double?, valorKg: Double?, quantidade: Int?) {
         viewModelScope.launch {
-            repository.insertCalculation(
-                com.example.data.PieceCalculationEntity(
-                    id = id,
-                    pano = pano,
-                    kg = kg,
-                    valorKg = valorKg,
-                    quantidade = quantidade,
-                    timestamp = System.currentTimeMillis() // Shows date of last alteration!
-                )
+            val entity = com.example.data.PieceCalculationEntity(
+                id = id,
+                pano = pano,
+                kg = kg,
+                valorKg = valorKg,
+                quantidade = quantidade,
+                timestamp = System.currentTimeMillis() // Shows date of last alteration!
             )
+            repository.insertCalculation(entity)
             triggerSyncSimulation()
+            
+            val json = org.json.JSONObject().apply {
+                put("id", id)
+                put("pano", pano)
+                if (kg != null) put("kg", kg)
+                if (valorKg != null) put("valorKg", valorKg)
+                if (quantidade != null) put("quantidade", quantidade)
+            }
+            com.example.data.LiveSyncManager.publishMutation("calculations", "insert", json)
         }
     }
 

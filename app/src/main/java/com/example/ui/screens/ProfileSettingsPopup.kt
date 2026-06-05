@@ -210,6 +210,16 @@ fun ProfileSettingsPopup(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 SettingsMenuRow(
+                    title = "Grupo de Sincronização Ao Vivo",
+                    subtitle = "Trabalhar em tempo real com outras pessoas no mesmo banco",
+                    iconVec = Icons.Default.Group,
+                    onClick = { activeSubPopup = "LIVESYNC" },
+                    primaryColor = Primary
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                SettingsMenuRow(
                     title = "Importação e Exportação Local",
                     subtitle = "Exportar ou restaurar banco SQLite em arquivo",
                     iconVec = Icons.Default.Share,
@@ -1052,6 +1062,165 @@ fun ProfileSettingsPopup(
                             Icon(imageVector = Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Iniciar Pareamento", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { activeSubPopup = null }) {
+                    Text("Voltar", color = OnSurfaceVariant)
+                }
+            }
+        )
+    }
+
+    if (activeSubPopup == "LIVESYNC") {
+        var groupInput by remember { mutableStateOf("") }
+        val currentGroupCode = com.example.data.LiveSyncManager.activeGroupCode
+        
+        AlertDialog(
+            onDismissRequest = { activeSubPopup = null },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = Icons.Default.Group, contentDescription = null, tint = Primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sincronização Ao Vivo", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = OnSurface)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Trabalhe no mesmo banco de dados com seus parceiros! Qualquer lançamento, pedido ou alteração feita por você ou eles será atualizada instantaneamente nas duas telas.",
+                        fontSize = 12.sp,
+                        color = OnSurfaceVariant,
+                        lineHeight = 16.sp
+                    )
+                    
+                    if (currentGroupCode != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Primary.copy(alpha = 0.08f)),
+                            border = BorderStroke(1.dp, Primary.copy(alpha = 0.24f)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("CONECTADO AO GRUPO", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Primary, letterSpacing = 1.sp)
+                                
+                                Text(
+                                    text = currentGroupCode,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Primary,
+                                    letterSpacing = 2.sp
+                                )
+                                
+                                Text(
+                                    text = "Compartilhe este código acima com outros membros para que eles se conectem ao mesmo banco.",
+                                    fontSize = 11.sp,
+                                    color = OnSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 14.sp
+                                )
+                                
+                                Spacer(modifier = Modifier.height(4.dp))
+                                
+                                Button(
+                                    onClick = {
+                                        viewModel.stopLiveSync()
+                                        Toast.makeText(context, "Sincronização ao vivo desativada.", Toast.LENGTH_SHORT).show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().height(40.dp)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Sair do Grupo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                val allowedChars = ('A'..'Z') + ('0'..'9')
+                                val randomSuffix = (1..6).map { allowedChars.random() }.joinToString("")
+                                val newCode = "GP-$randomSuffix"
+                                
+                                viewModel.startLiveSync(newCode)
+                                Toast.makeText(context, "Novo grupo criado com sucesso: $newCode", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth().height(44.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Criar Novo Grupo de Trabalho", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        ) {
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = OnSurfaceVariant.copy(alpha = 0.2f))
+                            Text("OU", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = OnSurfaceVariant.copy(alpha = 0.6f), modifier = Modifier.padding(horizontal = 8.dp))
+                            HorizontalDivider(modifier = Modifier.weight(1f), color = OnSurfaceVariant.copy(alpha = 0.2f))
+                        }
+                        
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Se conectar a um grupo existente:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = OnSurface)
+                            
+                            OutlinedTextField(
+                                value = groupInput,
+                                onValueChange = { groupInput = it.uppercase() },
+                                placeholder = { Text("Ex: GP-T9Y4M3", color = OnSurfaceVariant.copy(alpha = 0.4f)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = OnSurfaceVariant.copy(alpha = 0.24f),
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    focusedTextColor = OnSurface,
+                                    unfocusedTextColor = OnSurface
+                                )
+                            )
+                            
+                            Button(
+                                onClick = {
+                                    val formatted = groupInput.trim()
+                                    if (formatted.isNotEmpty() && formatted.startsWith("GP-")) {
+                                        viewModel.startLiveSync(formatted)
+                                        Toast.makeText(context, "Conectado ao grupo $formatted!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Insira um código válido iniciando com 'GP-'.", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(42.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Secondary, contentColor = OnSecondary)
+                            ) {
+                                Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Entrar no Grupo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }
