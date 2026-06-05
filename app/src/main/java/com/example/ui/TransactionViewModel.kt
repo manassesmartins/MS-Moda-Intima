@@ -26,6 +26,7 @@ enum class AppTab {
     TRANSACTIONS,
     ORDERS,
     CALCS,
+    EMPLOYEES,
     SETTINGS
 }
 
@@ -588,6 +589,34 @@ class TransactionViewModel(
             initialValue = emptyList()
         )
 
+    val allClients: StateFlow<List<com.example.data.ClientEntity>> = repository.allClients
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val allEmployees: StateFlow<List<com.example.data.EmployeeEntity>> = repository.allEmployees
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val allPayments: StateFlow<List<com.example.data.EmployeePaymentEntity>> = repository.allPayments
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val allProductModels: StateFlow<List<com.example.data.ProductModelEntity>> = repository.allProductModels
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
 
     // Filtered transaction list
     val filteredTransactions: StateFlow<List<TransactionEntity>> = combine(
@@ -844,6 +873,123 @@ class TransactionViewModel(
         val cat = allCategories.value.find { it.id == id }
         if (cat != null) {
             _showDeleteConfirmation.value = PendingDelete.Category(cat)
+        }
+    }
+
+    // --- Master Lists CRUD ---
+    fun addClient(name: String, phone: String = "") {
+        viewModelScope.launch {
+            repository.insertClient(com.example.data.ClientEntity(name = name, phone = phone))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun updateClient(id: Long, name: String, phone: String = "") {
+        viewModelScope.launch {
+            repository.insertClient(com.example.data.ClientEntity(id = id, name = name, phone = phone))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun deleteClient(id: Long) {
+        viewModelScope.launch {
+            repository.deleteClientById(id)
+            triggerSyncSimulation()
+        }
+    }
+
+    fun addEmployee(name: String, role: String = "Costureira") {
+        viewModelScope.launch {
+            repository.insertEmployee(com.example.data.EmployeeEntity(name = name, role = role))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun updateEmployee(id: Long, name: String, role: String = "Costureira") {
+        viewModelScope.launch {
+            repository.insertEmployee(com.example.data.EmployeeEntity(id = id, name = name, role = role))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun deleteEmployee(id: Long) {
+        viewModelScope.launch {
+            repository.deleteEmployeeById(id)
+            triggerSyncSimulation()
+        }
+    }
+
+    fun addProductModel(name: String) {
+        viewModelScope.launch {
+            repository.insertProductModel(com.example.data.ProductModelEntity(name = name))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun updateProductModel(id: Long, name: String) {
+        viewModelScope.launch {
+            repository.insertProductModel(com.example.data.ProductModelEntity(id = id, name = name))
+            triggerSyncSimulation()
+        }
+    }
+
+    fun deleteProductModel(id: Long) {
+        viewModelScope.launch {
+            repository.deleteProductModelById(id)
+            triggerSyncSimulation()
+        }
+    }
+
+    fun addEmployeePayment(employeeId: Long, employeeName: String, amount: Double, week: String, dateString: String) {
+        viewModelScope.launch {
+            val finalDateString = if (dateString.isEmpty()) {
+                val sdf = SimpleDateFormat("dd MMM yyyy", Locale("pt", "BR"))
+                sdf.format(Date()).uppercase(Locale.getDefault())
+            } else {
+                dateString
+            }
+            
+            // Auto-register outflow in general cash flow under "Mão de Obra" category
+            val transaction = com.example.data.TransactionEntity(
+                id = 0,
+                description = "Pagto: $employeeName ($week)",
+                amount = amount,
+                type = "OUTFLOW",
+                category = "Mão de Obra",
+                dateString = finalDateString,
+                timestamp = System.currentTimeMillis(),
+                synced = _isCloudBackupEnabled.value,
+                extraText = "Funcionário",
+                week = week
+            )
+            val txId = repository.insert(transaction)
+            
+            val payment = com.example.data.EmployeePaymentEntity(
+                id = 0,
+                employeeId = employeeId,
+                employeeName = employeeName,
+                amount = amount,
+                week = week,
+                paymentDate = finalDateString,
+                status = "Pago",
+                timestamp = System.currentTimeMillis(),
+                transactionId = txId
+            )
+            repository.insertPayment(payment)
+            triggerSyncSimulation()
+        }
+    }
+
+    fun deleteEmployeePayment(id: Long) {
+        viewModelScope.launch {
+            val payment = repository.allPayments.first().find { it.id == id }
+            if (payment != null) {
+                payment.transactionId?.let { txId ->
+                    repository.deleteById(txId)
+                }
+                repository.deletePaymentById(id)
+                triggerSyncSimulation()
+            }
         }
     }
 

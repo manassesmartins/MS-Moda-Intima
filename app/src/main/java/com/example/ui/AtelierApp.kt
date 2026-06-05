@@ -481,6 +481,9 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                             AppTab.CALCS -> CalculationsScreen(
                                 viewModel = viewModel
                             )
+                            AppTab.EMPLOYEES -> com.example.ui.screens.EmployeesScreen(
+                                viewModel = viewModel
+                            )
                             AppTab.SETTINGS -> SettingsScreen(
                                 isCloudEnabled = isCloudBackupEnabled,
                                 onCloudEnabledChange = { viewModel.setCloudBackupEnabled(it) },
@@ -1163,7 +1166,8 @@ fun MsModaIntimaBottomBar(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Gastos"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Custo Peças")
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo Peças"),
+            Triple(AppTab.EMPLOYEES, Icons.Default.AccountBox, "Recursos")
         )
 
         tabs.forEach { (tab, icon, label) ->
@@ -1295,7 +1299,8 @@ fun MsModaIntimaNavigationRail(
             Triple(AppTab.DASHBOARD, Icons.Default.Home, "Painel de Negócios"),
             Triple(AppTab.TRANSACTIONS, Icons.Default.List, "Gastos"),
             Triple(AppTab.ORDERS, Icons.Default.ShoppingCart, "Agendamento de Pedidos"),
-            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças")
+            Triple(AppTab.CALCS, Icons.Default.Star, "Custo de Peças"),
+            Triple(AppTab.EMPLOYEES, Icons.Default.AccountBox, "Recursos & Cadastros")
         )
 
         tabs.forEach { (tab, icon, label) ->

@@ -693,17 +693,12 @@ fun WeeklyReportsSection(
     val profitPercentage = remember(profit, totalOrdersValue) { if (totalOrdersValue > 0) (profit / totalOrdersValue) * 100 else 0.0 }
 
     val expensesByCategory = remember(filteredOutflows) {
-        val standardCategories = listOf(
-            "Funcionários", "Pano", "Viés", "Linha", 
-            "Etiqueta de composição", "Etiqueta lateral", "Forro", 
-            "Manutenção", "Variados"
-        )
-        val map = standardCategories.associateWith { 0.0 }.toMutableMap()
+        val map = mutableMapOf<String, Double>()
         filteredOutflows.forEach { out ->
-            val matchedCat = if (out.category in standardCategories) out.category else "Variados"
-            map[matchedCat] = (map[matchedCat] ?: 0.0) + out.amount
+            val cat = out.category.trim().ifEmpty { "Despesas Gerais" }
+            map[cat] = (map[cat] ?: 0.0) + out.amount
         }
-        map
+        map.toList().sortedByDescending { it.second }.toMap()
     }
 
     LazyColumn(
@@ -958,7 +953,7 @@ fun WeeklyReportsSection(
                                         .fillMaxWidth()
                                         .height(6.dp)
                                         .clip(RoundedCornerShape(3.dp)),
-                                    color = if (cat == "Funcionários") ErrorColor else Primary,
+                                    color = if (cat == "Funcionários" || cat == "Mão de Obra") ErrorColor else Primary,
                                     trackColor = Color.White.copy(alpha = 0.1f)
                                 )
                             }

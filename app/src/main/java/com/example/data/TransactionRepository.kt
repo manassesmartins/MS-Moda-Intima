@@ -14,7 +14,11 @@ class TransactionRepository(
     private val pieceCalculationDao: PieceCalculationDao,
     val userDao: UserDao,
     private val brandConfigDao: BrandConfigDao,
-    private val investmentDao: InvestmentDao
+    private val investmentDao: InvestmentDao,
+    private val clientDao: ClientDao,
+    private val employeeDao: EmployeeDao,
+    private val employeePaymentDao: EmployeePaymentDao,
+    private val productModelDao: ProductModelDao
 ) {
 
     val allTransactions: Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
@@ -23,6 +27,42 @@ class TransactionRepository(
     val allCalculations: Flow<List<PieceCalculationEntity>> = pieceCalculationDao.getAllCalculations()
     val brandConfig: Flow<BrandConfigEntity?> = brandConfigDao.getBrandConfigFlow()
     val allInvestments: Flow<List<InvestmentEntity>> = investmentDao.getAllInvestmentsFlow()
+    val allClients: Flow<List<ClientEntity>> = clientDao.getAllClients()
+    val allEmployees: Flow<List<EmployeeEntity>> = employeeDao.getAllEmployees()
+    val allPayments: Flow<List<EmployeePaymentEntity>> = employeePaymentDao.getAllPayments()
+    val allProductModels: Flow<List<ProductModelEntity>> = productModelDao.getAllProductModels()
+
+    suspend fun insertClient(client: ClientEntity): Long {
+        return clientDao.insertClient(client)
+    }
+
+    suspend fun deleteClientById(id: Long) {
+        clientDao.deleteClientById(id)
+    }
+
+    suspend fun insertEmployee(employee: EmployeeEntity): Long {
+        return employeeDao.insertEmployee(employee)
+    }
+
+    suspend fun deleteEmployeeById(id: Long) {
+        employeeDao.deleteEmployeeById(id)
+    }
+
+    suspend fun insertPayment(payment: EmployeePaymentEntity): Long {
+        return employeePaymentDao.insertPayment(payment)
+    }
+
+    suspend fun deletePaymentById(id: Long) {
+        employeePaymentDao.deletePaymentById(id)
+    }
+
+    suspend fun insertProductModel(model: ProductModelEntity): Long {
+        return productModelDao.insertProductModel(model)
+    }
+
+    suspend fun deleteProductModelById(id: Long) {
+        productModelDao.deleteProductModelById(id)
+    }
 
     suspend fun insertInvestment(investment: InvestmentEntity): Long {
         return investmentDao.insertInvestment(investment)
@@ -81,6 +121,10 @@ class TransactionRepository(
         categoryDao.deleteAll()
         orderDao.deleteAll()
         pieceCalculationDao.deleteAll()
+        clientDao.deleteAll()
+        employeeDao.deleteAll()
+        employeePaymentDao.deleteAll()
+        productModelDao.deleteAll()
     }
 
     suspend fun insertCategory(category: CategoryEntity): Long {

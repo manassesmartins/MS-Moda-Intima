@@ -413,9 +413,17 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
     if (showAddDialog) {
         OrderAddEditDialog(
             orders = orders,
+            viewModel = viewModel,
             onDismiss = { showAddDialog = false },
             onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
                 viewModel.addOrder(name, model, size, qty, valUnit, week, area, status, timestamp)
+                // Save client and model if they don't exist in master tables
+                if (viewModel.allClients.value.none { it.name.trim().equals(name.trim(), ignoreCase = true) }) {
+                    viewModel.addClient(name.trim())
+                }
+                if (viewModel.allProductModels.value.none { it.name.trim().equals(model.trim(), ignoreCase = true) }) {
+                    viewModel.addProductModel(model.trim())
+                }
                 showAddDialog = false
                 Toast.makeText(context, "Pedido agendado com sucesso!", Toast.LENGTH_SHORT).show()
             }
@@ -426,9 +434,17 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
         OrderAddEditDialog(
             order = order,
             orders = orders,
+            viewModel = viewModel,
             onDismiss = { orderToEdit = null },
             onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
                 viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status, timestamp)
+                // Save client and model if they don't exist in master tables
+                if (viewModel.allClients.value.none { it.name.trim().equals(name.trim(), ignoreCase = true) }) {
+                    viewModel.addClient(name.trim())
+                }
+                if (viewModel.allProductModels.value.none { it.name.trim().equals(model.trim(), ignoreCase = true) }) {
+                    viewModel.addProductModel(model.trim())
+                }
                 orderToEdit = null
                 Toast.makeText(context, "Pedido atualizado!", Toast.LENGTH_SHORT).show()
             }
@@ -477,14 +493,26 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
 fun OrderAddEditDialog(
     order: com.example.data.OrderEntity? = null,
     orders: List<com.example.data.OrderEntity>,
+    viewModel: com.example.ui.TransactionViewModel,
     onDismiss: () -> Unit,
     onSave: (String, String, String, Int, Double, String, String, String, Long) -> Unit
 ) {
-    val existingClients = remember(orders) { orders.map { it.clientName }.distinct().sorted() }
+    val productModels by viewModel.allProductModels.collectAsStateWithLifecycle()
+    val masterClients by viewModel.allClients.collectAsStateWithLifecycle()
+
+    val existingClients = remember(orders, masterClients) {
+        (masterClients.map { it.name } + orders.map { it.clientName }).distinct().sortedBy { it.lowercase() }
+    }
+
+    val existingModels = remember(orders, productModels) {
+        (productModels.map { it.name } + orders.map { it.pantyType }).distinct().sortedBy { it.lowercase() }
+    }
+
     var name by remember { mutableStateOf(order?.clientName ?: "") }
     var expandedNameDropdown by remember { mutableStateOf(false) }
 
     var model by remember { mutableStateOf(order?.pantyType ?: "") }
+    var expandedModelDropdown by remember { mutableStateOf(false) }
     var size by remember { mutableStateOf(order?.pantySize ?: "M") }
     var qtyText by remember { mutableStateOf(order?.quantity?.toString() ?: "100") }
     var priceText by remember { mutableStateOf(order?.pantyValue?.toString() ?: "1.15") }
@@ -634,19 +662,41 @@ fun OrderAddEditDialog(
                     }
                 }
 
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = { model = it },
-                    label = { Text("Tipo/Modelo de Calcinha", color = OnSurfaceVariant) },
-                    placeholder = { Text("Ex: Cotton Summerplex", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = OnSurface,
-                        unfocusedTextColor = OnSurface,
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                ExposedDropdownMenuBox(
+                    expanded = expandedModelDropdown,
+                    onExpandedChange = { expandedModelDropdown = it },
+                ) {
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = { model = it ; expandedModelDropdown = true },
+                        label = { Text("Tipo/Modelo de Calcinha", color = OnSurfaceVariant) },
+                        placeholder = { Text("Ex: Cotton Summerplex", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    if (existingModels.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = expandedModelDropdown,
+                            onDismissRequest = { expandedModelDropdown = false },
+                            modifier = Modifier.background(SurfaceContainerHigh)
+                        ) {
+                            existingModels.filter { it.contains(model, ignoreCase=true) }.forEach { itemModel ->
+                                DropdownMenuItem(
+                                    text = { Text(itemModel, color = OnSurface) },
+                                    onClick = {
+                                        model = itemModel
+                                        expandedModelDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // Panty size selection chips
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
