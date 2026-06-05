@@ -1,7 +1,0 @@
-{
-  "version": "1.2.42",
-  "changelog": "Build automático: Commit feat: add resource management module
-
-Integrate database entities for Clients, Employees, Employee Payments, and Product Models. Update UI navigation to include an Employees/Resources tab and expand the repository and ViewModel to support these new data types. Increase database version to 8.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}

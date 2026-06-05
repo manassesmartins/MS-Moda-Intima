@@ -376,8 +376,8 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E102E)),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.02f)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -387,8 +387,8 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF11071F), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                             .padding(16.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
@@ -406,7 +406,7 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                                 text = displayVal,
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFE5A1FF),
+                                color = Primary,
                                 fontFamily = FontFamily.Monospace,
                                 maxLines = 1
                             )
@@ -582,33 +582,69 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
             containerColor = SurfaceDark,
             title = { Text("Nova Linha de Cálculo", color = Primary, fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = pano,
                         onValueChange = { pano = it },
-                        label = { Text("Pano (Tipo/Descrição)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Pano (Tipo/Descrição)", color = OnSurfaceVariant) },
+                        placeholder = { Text("Ex: Cotton Fio 30, Malha Estampada", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = kgText,
                         onValueChange = { kgText = it },
-                        label = { Text("Quilos (KG)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Quilos (KG)", color = OnSurfaceVariant) },
+                        placeholder = { Text("Ex: 10.5", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = valorKgText,
                         onValueChange = { valorKgText = it },
-                        label = { Text("Valor do KG (R$/KG)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Valor do KG (R$/KG)", color = OnSurfaceVariant) },
+                        placeholder = { Text("Ex: 45.00", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        prefix = { Text("R$ ", color = Primary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = qtyText,
                         onValueChange = { qtyText = it },
-                        label = { Text("Quantidade de Peças") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Quantidade de Peças", color = OnSurfaceVariant) },
+                        placeholder = { Text("Ex: 80", color = OnSurfaceVariant.copy(alpha = 0.5f)) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
                     )
                 }
@@ -623,9 +659,10 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                         showAddDialog = false
                         Toast.makeText(context, "Linha adicionada!", Toast.LENGTH_SHORT).show()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Adicionar", color = OnPrimary)
+                    Text("Adicionar", color = OnPrimary, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -648,33 +685,65 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
             containerColor = SurfaceDark,
             title = { Text("Editar Linha de Cálculo", color = Primary, fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = pano,
                         onValueChange = { pano = it },
-                        label = { Text("Pano (Tipo/Descrição)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Pano (Tipo/Descrição)", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = kgText,
                         onValueChange = { kgText = it },
-                        label = { Text("Quilos (KG)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Quilos (KG)", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = valorKgText,
                         onValueChange = { valorKgText = it },
-                        label = { Text("Valor do KG (R$/KG)") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Valor do KG (R$/KG)", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        prefix = { Text("R$ ", color = Primary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
                     OutlinedTextField(
                         value = qtyText,
                         onValueChange = { qtyText = it },
-                        label = { Text("Quantidade de Peças") },
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary),
+                        label = { Text("Quantidade de Peças", color = OnSurfaceVariant) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
                     )
                 }
@@ -686,9 +755,10 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                             viewModel.deleteCalculation(entity.id)
                             calculationToEdit = null
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = ErrorColor)
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrorColor),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Excluir", color = Color.White)
+                        Text("Excluir", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Button(
                         onClick = {
@@ -699,9 +769,10 @@ fun CalculationsScreen(viewModel: TransactionViewModel) {
                             calculationToEdit = null
                             Toast.makeText(context, "Alterações salvas!", Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Salvar", color = OnPrimary)
+                        Text("Salvar", color = OnPrimary, fontWeight = FontWeight.Bold)
                     }
                 }
             },

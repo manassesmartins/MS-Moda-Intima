@@ -297,33 +297,27 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                             color = Tertiary,
                                             modifier = Modifier.padding(bottom = 6.dp)
                                         )
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             IconButton(
                                                 onClick = { orderToEdit = order },
-                                                modifier = Modifier
-                                                    .size(28.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.05f))
+                                                modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Edit,
                                                     contentDescription = "Editar",
                                                     tint = Primary,
-                                                    modifier = Modifier.size(14.dp)
+                                                    modifier = Modifier.size(16.dp)
                                                 )
                                             }
                                             IconButton(
                                                 onClick = { viewModel.deleteOrder(order.id) },
-                                                modifier = Modifier
-                                                    .size(28.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.05f))
+                                                modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Delete,
                                                     contentDescription = "Apagar",
                                                     tint = ErrorColor,
-                                                    modifier = Modifier.size(14.dp)
+                                                    modifier = Modifier.size(16.dp)
                                                 )
                                             }
                                         }
@@ -417,13 +411,6 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
             onDismiss = { showAddDialog = false },
             onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
                 viewModel.addOrder(name, model, size, qty, valUnit, week, area, status, timestamp)
-                // Save client and model if they don't exist in master tables
-                if (viewModel.allClients.value.none { it.name.trim().equals(name.trim(), ignoreCase = true) }) {
-                    viewModel.addClient(name.trim())
-                }
-                if (viewModel.allProductModels.value.none { it.name.trim().equals(model.trim(), ignoreCase = true) }) {
-                    viewModel.addProductModel(model.trim())
-                }
                 showAddDialog = false
                 Toast.makeText(context, "Pedido agendado com sucesso!", Toast.LENGTH_SHORT).show()
             }
@@ -438,13 +425,6 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
             onDismiss = { orderToEdit = null },
             onSave = { name, model, size, qty, valUnit, week, area, status, timestamp ->
                 viewModel.editOrder(order.id, name, model, size, qty, valUnit, week, area, status, timestamp)
-                // Save client and model if they don't exist in master tables
-                if (viewModel.allClients.value.none { it.name.trim().equals(name.trim(), ignoreCase = true) }) {
-                    viewModel.addClient(name.trim())
-                }
-                if (viewModel.allProductModels.value.none { it.name.trim().equals(model.trim(), ignoreCase = true) }) {
-                    viewModel.addProductModel(model.trim())
-                }
                 orderToEdit = null
                 Toast.makeText(context, "Pedido atualizado!", Toast.LENGTH_SHORT).show()
             }
@@ -600,21 +580,38 @@ fun OrderAddEditDialog(
                         ),
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-                    if (existingClients.isNotEmpty()) {
-                        ExposedDropdownMenu(
-                            expanded = expandedNameDropdown,
-                            onDismissRequest = { expandedNameDropdown = false },
-                            modifier = Modifier.background(SurfaceContainerHigh)
-                        ) {
-                            existingClients.filter { it.contains(name, ignoreCase=true) }.forEach { client ->
-                                DropdownMenuItem(
-                                    text = { Text(client, color = OnSurface) },
-                                    onClick = {
-                                        name = client
-                                        expandedNameDropdown = false
-                                    }
-                                )
-                            }
+                    
+                    ExposedDropdownMenu(
+                        expanded = expandedNameDropdown,
+                        onDismissRequest = { expandedNameDropdown = false },
+                        modifier = Modifier.background(SurfaceContainerHigh).border(1.dp, Color.White.copy(alpha = 0.08f))
+                    ) {
+                        val filteredClients = existingClients.filter { it.contains(name, ignoreCase=true) }
+                        filteredClients.forEach { client ->
+                            DropdownMenuItem(
+                                text = { Text(client, color = OnSurface) },
+                                onClick = {
+                                    name = client
+                                    expandedNameDropdown = false
+                                }
+                            )
+                        }
+
+                        val trimmedName = name.trim()
+                        if (trimmedName.isNotEmpty() && !masterClients.any { it.name.trim().equals(trimmedName, ignoreCase = true) }) {
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = "+ Cadastrar \"$trimmedName\" como Cliente", 
+                                        color = Primary, 
+                                        fontWeight = FontWeight.Bold 
+                                    ) 
+                                },
+                                onClick = {
+                                    viewModel.addClient(trimmedName)
+                                    expandedNameDropdown = false
+                                }
+                            )
                         }
                     }
                 }
@@ -679,21 +676,38 @@ fun OrderAddEditDialog(
                         ),
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-                    if (existingModels.isNotEmpty()) {
-                        ExposedDropdownMenu(
-                            expanded = expandedModelDropdown,
-                            onDismissRequest = { expandedModelDropdown = false },
-                            modifier = Modifier.background(SurfaceContainerHigh)
-                        ) {
-                            existingModels.filter { it.contains(model, ignoreCase=true) }.forEach { itemModel ->
-                                DropdownMenuItem(
-                                    text = { Text(itemModel, color = OnSurface) },
-                                    onClick = {
-                                        model = itemModel
-                                        expandedModelDropdown = false
-                                    }
-                                )
-                            }
+                    
+                    ExposedDropdownMenu(
+                        expanded = expandedModelDropdown,
+                        onDismissRequest = { expandedModelDropdown = false },
+                        modifier = Modifier.background(SurfaceContainerHigh).border(1.dp, Color.White.copy(alpha = 0.08f))
+                    ) {
+                        val filteredModels = existingModels.filter { it.contains(model, ignoreCase=true) }
+                        filteredModels.forEach { itemModel ->
+                            DropdownMenuItem(
+                                text = { Text(itemModel, color = OnSurface) },
+                                onClick = {
+                                    model = itemModel
+                                    expandedModelDropdown = false
+                                }
+                            )
+                        }
+
+                        val trimmedModel = model.trim()
+                        if (trimmedModel.isNotEmpty() && !productModels.any { it.name.trim().equals(trimmedModel, ignoreCase = true) }) {
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = "+ Cadastrar Modelo \"$trimmedModel\"", 
+                                        color = Primary, 
+                                        fontWeight = FontWeight.Bold 
+                                    ) 
+                                },
+                                onClick = {
+                                    viewModel.addProductModel(trimmedModel)
+                                    expandedModelDropdown = false
+                                }
+                            )
                         }
                     }
                 }
