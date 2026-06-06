@@ -190,6 +190,110 @@ fun TransactionListItem(
 }
 
 @Composable
+fun TransactionGroupedRow(
+    item: TransactionEntity,
+    onItemClick: () -> Unit
+) {
+    val Tertiary = MaterialTheme.colorScheme.tertiary
+    val OnSurface = MaterialTheme.colorScheme.onSurface
+    val OnSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val ErrorColor = MaterialTheme.colorScheme.error
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onItemClick() }
+            .padding(vertical = 12.dp, horizontal = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Category Emblem
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = if (item.type == "INFLOW") Tertiary.copy(alpha = 0.1f) else ErrorColor.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .border(
+                        1.dp,
+                        if (item.type == "INFLOW") Tertiary.copy(alpha = 0.2f) else ErrorColor.copy(alpha = 0.2f),
+                        RoundedCornerShape(10.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (item.type == "INFLOW") Icons.Default.Check else Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = if (item.type == "INFLOW") Tertiary else ErrorColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            // Description and custom extra text
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = item.description,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = OnSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (item.extraText.isNotEmpty()) {
+                        Text(
+                            text = item.extraText,
+                            fontSize = 11.sp,
+                            color = OnSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Text(
+                            text = "•",
+                            fontSize = 11.sp,
+                            color = OnSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                    Text(
+                        text = item.dateString,
+                        fontSize = 10.sp,
+                        color = OnSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Amount and sign
+        val sign = if (item.type == "INFLOW") "+" else "-"
+        val color = if (item.type == "INFLOW") Tertiary else ErrorColor
+        Text(
+            text = String.format(Locale("pt", "BR"), "%s R$ %,.2f", sign, item.amount),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+@Composable
 fun TransactionsScreen(
     viewModel: TransactionViewModel,
     transactions: List<TransactionEntity>,
@@ -276,7 +380,7 @@ fun TransactionsScreen(
         // Scrolling lists
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             if (transactions.isEmpty()) {
@@ -296,11 +400,56 @@ fun TransactionsScreen(
                     }
                 }
             } else {
-                items(transactions, key = { it.id }) { item ->
-                    TransactionListItem(
-                        item = item,
-                        onItemClick = { onItemClick(item) }
-                    )
+                val groupedByWeek = transactions.groupBy { it.week }
+                groupedByWeek.forEach { (weekName, weekTransactions) ->
+                    item(key = "header_$weekName") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = weekName,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnSurface
+                            )
+                        }
+                    }
+
+                    item(key = "card_$weekName") {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = getGlassContainerColor()
+                            ),
+                            border = getGlassBorderStroke(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                weekTransactions.forEachIndexed { index, item ->
+                                    TransactionGroupedRow(
+                                        item = item,
+                                        onItemClick = { onItemClick(item) }
+                                    )
+                                    if (index < weekTransactions.lastIndex) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 14.dp),
+                                            color = OnSurfaceVariant.copy(alpha = 0.12f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

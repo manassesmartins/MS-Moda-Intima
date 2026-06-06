@@ -535,7 +535,7 @@ fun DashboardScreen(
                                                     .padding(horizontal = 4.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
-                                                    text = if (marginPct >= 40) "Alto" else "Baixo",
+                                                    text = if (marginPct >= 40) "Alta" else "Baixa",
                                                     fontSize = 8.sp,
                                                     color = if (marginPct >= 40) Color(0xFF10B981) else Color(0xFFF59E0B),
                                                     fontWeight = FontWeight.Bold
@@ -696,7 +696,10 @@ fun WeeklyReportsSection(
         val map = mutableMapOf<String, Double>()
         filteredOutflows.forEach { out ->
             val cat = out.category.trim().ifEmpty { "Despesas Gerais" }
-            map[cat] = (map[cat] ?: 0.0) + out.amount
+            val lowerCat = cat.lowercase()
+            if (lowerCat != "gasto" && lowerCat != "gastos" && lowerCat != "outros" && lowerCat != "diversos") {
+                map[cat] = (map[cat] ?: 0.0) + out.amount
+            }
         }
         map.toList().sortedByDescending { it.second }.toMap()
     }
@@ -903,7 +906,7 @@ fun WeeklyReportsSection(
                     Text(
                         text = if (profitPercentage >= 35.0) 
                             "OPERAÇÃO ALTAMENTE LUCRATIVA 👍" 
-                            else "ALERTA: MARGEM DE LUCRO BAIZA OU PREJUÍZO ⚠️",
+                            else "ALERTA: MARGEM DE LUCRO BAIXA OU PREJUÍZO ⚠️",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (profitPercentage >= 35.0) Tertiary else ErrorColor,
@@ -960,27 +963,6 @@ fun WeeklyReportsSection(
                         }
                     }
                 }
-            }
-        }
-
-        item {
-            Button(
-                onClick = {
-                    Toast.makeText(
-                        context,
-                        "Relatório consolidado exportado com sucesso localmente!",
-                        Toast.LENGTH_LONG
-                    ).show()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = getGlassContainerColor(),
-                    contentColor = OnSurface
-                ),
-                shape = RoundedCornerShape(12.dp),
-                border = getGlassBorderStroke(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Exportar Relatório Consolidado", fontWeight = FontWeight.Bold)
             }
         }
     }

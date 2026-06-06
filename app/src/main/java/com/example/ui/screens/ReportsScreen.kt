@@ -330,7 +330,7 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                             Text(
                                 text = if (profitPercentage >= 35.0) 
                                     "OPERAÇÃO ALTAMENTE LUCRATIVA 👍" 
-                                    else "ALERTA: MARGEM DE LUCRO BAIZA OU PREJUÍZO ⚠️",
+                                    else "ALERTA: MARGEM DE LUCRO BAIXA OU PREJUÍZO ⚠️",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (profitPercentage >= 35.0) Tertiary else ErrorColor,

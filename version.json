@@ -1,7 +1,0 @@
-{
-  "version": "1.2.44",
-  "changelog": "Build automático: Commit feat: add real-time group synchronization
-
-Implement LiveSyncManager to support collaborative editing via MQTT. Add UI options for group pairing in settings and integrate mutation publishing on transaction deletion.",
-  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
-}
