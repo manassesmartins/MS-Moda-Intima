@@ -1,0 +1,9 @@
+{
+  "version": "1.2.46",
+  "changelog": "Build automático: Commit refactor: update UI icons and labels
+
+- Replaced Warning icons with ArrowDownward for expenses to improve clarity
+- Updated "M/T" label to "TAM /" for better readability in order lists
+- Reset application version to 1.2",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
