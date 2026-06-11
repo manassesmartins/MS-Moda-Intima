@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -169,7 +170,7 @@ fun CategoryManagerDialog(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Warning,
+                                            imageVector = Icons.Default.ArrowDownward,
                                             contentDescription = null,
                                             tint = ErrorColor,
                                             modifier = Modifier.size(14.dp)

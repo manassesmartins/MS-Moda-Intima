@@ -267,7 +267,7 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("${order.pantyType} - M/T ${order.pantySize}", fontSize = 13.sp, color = OnSurface, fontWeight = FontWeight.Bold)
+                                        Text("${order.pantyType} - TAM / ${order.pantySize}", fontSize = 13.sp, color = OnSurface, fontWeight = FontWeight.Bold)
                                         Text("Qtd: ${order.quantity} | R$ ${order.pantyValue} un.", fontSize = 11.sp, color = OnSurfaceVariant)
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
                                             Box(
@@ -647,7 +647,7 @@ fun OrderAddEditDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text("${histOrder.pantyType} - M/T ${histOrder.pantySize}", fontSize = 12.sp, color = OnSurface, fontWeight = FontWeight.SemiBold)
+                                    Text("${histOrder.pantyType} - TAM / ${histOrder.pantySize}", fontSize = 12.sp, color = OnSurface, fontWeight = FontWeight.SemiBold)
                                     Text("${histOrder.week} - Qtd: ${histOrder.quantity}", fontSize = 10.sp, color = OnSurfaceVariant)
                                 }
                                 Icon(imageVector = Icons.Default.Add, contentDescription = "Preencher dados", modifier = Modifier.size(16.dp), tint = Primary)

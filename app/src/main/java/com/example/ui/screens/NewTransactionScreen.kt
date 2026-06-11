@@ -122,7 +122,7 @@ fun NewTransactionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Warning, // Clear visual icon for Gastos/Outflows
+                            imageVector = Icons.Default.ArrowDownward, // Clear visual icon for Gastos/Outflows
                             contentDescription = "Gasto",
                             tint = ErrorColor,
                             modifier = Modifier.size(36.dp)

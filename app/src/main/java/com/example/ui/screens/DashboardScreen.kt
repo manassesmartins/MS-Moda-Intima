@@ -451,7 +451,7 @@ fun DashboardScreen(
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
-                                            imageVector = Icons.Default.Warning,
+                                            imageVector = Icons.Default.ArrowDownward,
                                             contentDescription = "Saídas",
                                             tint = ErrorColor,
                                             modifier = Modifier.size(16.dp)

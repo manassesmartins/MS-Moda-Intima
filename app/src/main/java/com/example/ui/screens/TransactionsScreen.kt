@@ -103,7 +103,7 @@ fun TransactionListItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (item.type == "INFLOW") Icons.Default.Check else Icons.Default.Warning,
+                            imageVector = if (item.type == "INFLOW") Icons.Default.Check else Icons.Default.ArrowDownward,
                             contentDescription = null,
                             tint = if (item.type == "INFLOW") Tertiary else ErrorColor,
                             modifier = Modifier.size(20.dp)
@@ -228,7 +228,7 @@ fun TransactionGroupedRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (item.type == "INFLOW") Icons.Default.Check else Icons.Default.Warning,
+                    imageVector = if (item.type == "INFLOW") Icons.Default.Check else Icons.Default.ArrowDownward,
                     contentDescription = null,
                     tint = if (item.type == "INFLOW") Tertiary else ErrorColor,
                     modifier = Modifier.size(18.dp)
