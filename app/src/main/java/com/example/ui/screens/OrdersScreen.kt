@@ -273,14 +273,6 @@ fun OrdersScreen(viewModel: TransactionViewModel) {
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(4.dp))
-                                                    .background(Secondary.copy(alpha = 0.2f))
-                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(order.businessArea, fontSize = 9.sp, color = Secondary, fontWeight = FontWeight.SemiBold)
-                                            }
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(4.dp))
                                                     .background(if (order.status == "Concluído") Tertiary.copy(alpha=0.2f) else ErrorColor.copy(alpha=0.2f))
                                                     .padding(horizontal = 4.dp, vertical = 2.dp)
                                             ) {
@@ -785,27 +777,7 @@ fun OrderAddEditDialog(
                 }
 
                 // Area and Status Selectors
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Área de Negócios", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
-                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            items(areaOptions, key = { it }) { a ->
-                                val isSelected = area == a
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isSelected) Primary.copy(alpha = 0.2f) else Color.Transparent)
-                                        .border(1.dp, if (isSelected) Primary else Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                                        .clickable { area = a }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(a, color = if (isSelected) Primary else OnSurface, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                                }
-                            }
-                        }
-                    }
-                }
-                
+
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Status da Produção", fontSize = 11.sp, color = OnSurfaceVariant, fontWeight = FontWeight.Bold)
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -112,13 +112,14 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
             // Categorized outflows mapping cached in memory
             val expensesByCategory = remember(filteredOutflows) {
                 val standardCategories = listOf(
-                    "Funcionários", "Pano", "Viés", "Linha", 
+                    "Mão de Obra", "Pano", "Viés", "Linha", 
                     "Etiqueta de composição", "Etiqueta lateral", "Forro", 
                     "Manutenção", "Variados"
                 )
                 val map = standardCategories.associateWith { 0.0 }.toMutableMap()
                 filteredOutflows.forEach { out ->
-                    val matchedCat = if (out.category in standardCategories) out.category else "Variados"
+                    val cat = normalizeCategory(out.category)
+                    val matchedCat = if (cat in standardCategories) cat else "Variados"
                     map[matchedCat] = (map[matchedCat] ?: 0.0) + out.amount
                 }
                 map
@@ -381,7 +382,7 @@ fun ReportsScreen(viewModel: TransactionViewModel) {
                                                 .fillMaxWidth()
                                                 .height(6.dp)
                                                 .clip(RoundedCornerShape(3.dp)),
-                                            color = if (cat == "Funcionários") ErrorColor else Primary,
+                                            color = if (cat == "Mão de Obra" || cat == "Funcionários") ErrorColor else Primary,
                                             trackColor = Color.White.copy(alpha = 0.1f)
                                         )
                                     }

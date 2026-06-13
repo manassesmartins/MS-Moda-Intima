@@ -113,7 +113,7 @@ fun generatePdfAndShare(
         limitedOrders.forEach { o ->
             paint.textAlign = Paint.Align.LEFT
             canvas.drawText(o.clientName.uppercase(Locale.getDefault()).take(20), 45f, currentY, paint)
-            canvas.drawText(o.pantyType + " (" + o.businessArea + ")", 180f, currentY, paint)
+            canvas.drawText(o.pantyType, 180f, currentY, paint)
             canvas.drawText(o.quantity.toString() + " un", 340f, currentY, paint)
             paint.textAlign = Paint.Align.RIGHT
             canvas.drawText(String.format("R$ %,.2f", o.totalValue), 545f, currentY, paint)

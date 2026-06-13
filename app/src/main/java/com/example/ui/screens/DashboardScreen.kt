@@ -695,7 +695,8 @@ fun WeeklyReportsSection(
     val expensesByCategory = remember(filteredOutflows) {
         val map = mutableMapOf<String, Double>()
         filteredOutflows.forEach { out ->
-            val cat = out.category.trim().ifEmpty { "Despesas Gerais" }
+            val rawCat = out.category.trim().ifEmpty { "Despesas Gerais" }
+            val cat = normalizeCategory(rawCat)
             val lowerCat = cat.lowercase()
             if (lowerCat != "gasto" && lowerCat != "gastos" && lowerCat != "outros" && lowerCat != "diversos") {
                 map[cat] = (map[cat] ?: 0.0) + out.amount
@@ -807,6 +808,14 @@ fun WeeklyReportsSection(
                     }
                 }
             }
+        }
+
+        item {
+            WeeklySectionChart(
+                selectedWeek = selectedReportWeek,
+                transactions = transactions,
+                orders = orders
+            )
         }
 
         item {
@@ -1438,6 +1447,237 @@ fun WeeklyProfitChart(weeklyData: WeeklyProfitList, modifier: Modifier = Modifie
                         color = onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WeeklySectionChart(
+    selectedWeek: String,
+    transactions: List<TransactionEntity>,
+    orders: List<com.example.data.OrderEntity>,
+    modifier: Modifier = Modifier
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    val errorColor = MaterialTheme.colorScheme.error
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(getGlassBorderStroke(1.dp), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = getGlassContainerColor())
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (selectedWeek == "Tudo") {
+                Text(
+                    text = "Fluxo de Caixa Semanal",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primary
+                )
+                Text(
+                    text = "Acompanhamento do lucro de todas as semanas do mês",
+                    fontSize = 11.sp,
+                    color = onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val weeks = listOf("1ª Semana", "2ª Semana", "3ª Semana", "4ª Semana", "5ª Semana")
+                val weeklyProfits = remember(transactions, orders) {
+                    weeks.map { w ->
+                        val wOrders = orders.filter { it.week == w }
+                        val wInflowOrders = wOrders.sumOf { it.totalValue }
+                        val wTxs = transactions.filter { it.week == w }
+                        val wInflowTxs = wTxs.filter { it.type == "INFLOW" }.sumOf { it.amount }
+                        val wOutflowTxs = wTxs.filter { it.type == "OUTFLOW" }.sumOf { it.amount }
+                        w to (wInflowOrders + wInflowTxs - wOutflowTxs)
+                    }
+                }
+                
+                val maxProfit = remember(weeklyProfits) { weeklyProfits.maxOf { Math.abs(it.second) }.coerceAtLeast(100.0) }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    weeklyProfits.forEach { (weekStr, profit) ->
+                        val ratio = (Math.abs(profit) / maxProfit).toFloat().coerceIn(0.01f, 1f)
+                        val barColor = if (profit >= 0.0) tertiary else errorColor
+                        
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(modifier = Modifier.weight((1f - ratio).coerceAtLeast(0.01f)))
+                            Text(
+                                text = String.format(Locale("pt", "BR"), "R$ %,.0f", profit),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = barColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.5f)
+                                    .weight(ratio)
+                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                    .background(barColor.copy(alpha = 0.85f))
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = weekStr.replace("ª Semana", "ª Sem"),
+                                fontSize = 10.sp,
+                                color = onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = "Apurado Semanal: $selectedWeek",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primary
+                )
+                Text(
+                    text = "Comparativo de Entradas, Saídas e Resultado",
+                    fontSize = 11.sp,
+                    color = onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val weekOrders = remember(orders, selectedWeek) { orders.filter { it.week == selectedWeek } }
+                val weekInflowOrders = remember(weekOrders) { weekOrders.sumOf { it.totalValue } }
+                
+                val weekTxs = remember(transactions, selectedWeek) { transactions.filter { it.week == selectedWeek } }
+                val weekInflowTxs = remember(weekTxs) { weekTxs.filter { it.type == "INFLOW" }.sumOf { it.amount } }
+                val weekOutflowTxs = remember(weekTxs) { weekTxs.filter { it.type == "OUTFLOW" }.sumOf { it.amount } }
+                
+                val inflow = weekInflowOrders + weekInflowTxs
+                val outflow = weekOutflowTxs
+                val profit = inflow - outflow
+
+                val maxVal = maxOf(inflow, outflow).coerceAtLeast(100.0)
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // Bar 1: Entradas
+                    val inflowRatio = (inflow / maxVal).toFloat().coerceIn(0.01f, 1f)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.weight((1f - inflowRatio).coerceAtLeast(0.01f)))
+                        Text(
+                            text = String.format(Locale("pt", "BR"), "R$ %,.0f", inflow),
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tertiary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f)
+                                .weight(inflowRatio)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(tertiary.copy(alpha = 0.85f))
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Entradas",
+                            fontSize = 10.sp,
+                            color = onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    // Bar 2: Saídas
+                    val outflowRatio = (outflow / maxVal).toFloat().coerceIn(0.01f, 1f)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.weight((1f - outflowRatio).coerceAtLeast(0.01f)))
+                        Text(
+                            text = String.format(Locale("pt", "BR"), "R$ %,.0f", outflow),
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = errorColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f)
+                                .weight(outflowRatio)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(errorColor.copy(alpha = 0.85f))
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Saídas",
+                            fontSize = 10.sp,
+                            color = onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    // Bar 3: Resultado/Lucro
+                    val profitRatio = (Math.abs(profit) / maxVal).toFloat().coerceIn(0.01f, 1f)
+                    val profitColor = if (profit >= 0.0) tertiary else errorColor
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.weight((1f - profitRatio).coerceAtLeast(0.01f)))
+                        Text(
+                            text = String.format(Locale("pt", "BR"), "R$ %,.0f", profit),
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = profitColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f)
+                                .weight(profitRatio)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .background(profitColor.copy(alpha = 0.85f))
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Lucro",
+                            fontSize = 10.sp,
+                            color = onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

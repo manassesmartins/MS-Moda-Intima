@@ -32,6 +32,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import androidx.compose.ui.composed
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 import com.example.data.*
 import com.example.ui.theme.*
 import com.example.ui.utils.rememberBitmapFromBase64
@@ -409,6 +411,10 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                         appName = appName,
                         brandConfig = brandConfig,
                         onProfileClick = { showProfileSettingsDialog = true },
+                        syncState = syncState,
+                        onRefreshClick = {
+                            viewModel.refreshAppData(context)
+                        },
                         context = context
                     )
                 },
@@ -668,7 +674,7 @@ fun MsModaIntimaApp(viewModel: TransactionViewModel) {
                         onSubmit = { desc, amount, cat, type, week ->
                             val toEdit = transactionToEdit
                             if (toEdit != null) {
-                                viewModel.editTransaction(toEdit.id, desc, amount, cat, type, toEdit.dateString, week)
+                                viewModel.editTransaction(toEdit.id, desc, amount, cat, type, toEdit.dateString, week, toEdit.timestamp)
                                 Toast.makeText(context, "Lançamento atualizado com sucesso!", Toast.LENGTH_SHORT).show()
                                 transactionToEdit = null
                             } else {
@@ -1016,6 +1022,8 @@ fun MsModaIntimaTopBar(
     appName: String,
     brandConfig: com.example.data.BrandConfigEntity?,
     onProfileClick: () -> Unit,
+    syncState: String,
+    onRefreshClick: () -> Unit,
     context: android.content.Context
 ) {
     val Primary = MaterialTheme.colorScheme.primary
@@ -1071,6 +1079,38 @@ fun MsModaIntimaTopBar(
             }
         },
         actions = {
+            val isSyncing = syncState == "SYNCING"
+            val rotationTransition = rememberInfiniteTransition(label = "rotation")
+            val rotationAngle by rotationTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "rotation"
+            )
+
+            IconButton(
+                onClick = onRefreshClick,
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .testTag("refresh_app_data_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Atualizar Dados",
+                    tint = Primary,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .graphicsLayer {
+                            if (isSyncing) {
+                                rotationZ = rotationAngle
+                            }
+                        }
+                )
+            }
+
             // Profile icon or custom brand logo trigger button
             Box(
                 modifier = Modifier
