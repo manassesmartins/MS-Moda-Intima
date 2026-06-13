@@ -1,0 +1,7 @@
+{
+  "version": "1.2.47",
+  "changelog": "Build automático: Commit feat: add transaction category normalization
+
+Implement logic to standardize input categories and update dashboard reports to use normalized values for consistent expense grouping. Added manual refresh functionality for app data.",
+  "downloadUrl": "https://raw.githubusercontent.com/manassesmartins/Gestor-de-Producao/main/app-debug.apk"
+}
